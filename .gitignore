@@ -1,0 +1,14 @@
+# Rust build output
+target/
+**/target/
+
+# Compiled artifacts
+impl/c/n2qc
+*.o
+*.out
+*.rlib
+
+# OS / editor junk
+.DS_Store
+**/.DS_Store
+*.swp
