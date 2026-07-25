@@ -533,6 +533,8 @@ func main() {
 		check("N2QF cross-decrypt (Python -> Go)", eq, "true")
 	}
 
+	fails += modesCross() // extended-modes cross-check (Python -> Go)
+
 	if fails == 0 {
 		fmt.Println("ALL PASS")
 	} else {

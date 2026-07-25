@@ -10,5 +10,6 @@ pub mod consts;
 pub mod file;
 pub mod frame;
 pub mod modes;
+pub mod modes_ext;
 pub mod perm;
 pub mod pw;
