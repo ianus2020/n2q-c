@@ -1,63 +1,59 @@
-# N2Q-C — собственный криптоалгоритм (не обёртка)
+# N2Q-C — an original cryptographic algorithm (not a wrapper)
 
-**RU.** N2Q-C — это самостоятельный шифр, спроектированный «с нуля» по дисциплине
-настоящего криптодизайна, чтобы поднять идеи N2Q 2.5 с уровня игрушки до
-артефакта, готового к внешнему аудиту.
+N2Q-C is a self-contained authenticated cipher, designed from scratch under real
+crypto-design discipline — an attempt to lift the ideas of the earlier N2Q work
+from a toy to an artifact ready for external audit.
 
-Конструкция: **губка на собственной SPN-перестановке QP-w** (битслайсовый 5-битный
-S-box + линейный слой из вращений), в двух размерах — QP-320 (5×64, комплект
-**N2Q-128**) и QP-640 (5×128, комплект **N2Q-256**) с одной и той же подстановкой.
-Из одной перестановки строится вся библиотека: аутентифицированное шифрование
-(основной режим — **прощающий ошибки SIV**, плюс быстрый потоковый), хэш и
-поисковый blind-index. Ключевая идея аудируемости: стойкость всей библиотеки
-**сводится к одному вопросу** — насколько QP-w близка к случайной перестановке
-(доказательства для губки/дуплекса и SIV это гарантируют).
+**Construction:** a duplex **sponge over an original SPN permutation QP-w**
+(a bitsliced 5-bit S-box plus a linear layer of lane rotations), in two sizes —
+QP-320 (5×64, the **N2Q-128** suite) and QP-640 (5×128, the **N2Q-256** suite),
+sharing the same S-box. One permutation yields the whole library: authenticated
+encryption (the default mode is the **misuse-resistant SIV**, plus a fast
+streaming mode), hashing, a password KDF, and a searchable **blind index**. The
+point for auditability is that the security of the entire library **reduces to a
+single question** — how close QP-w is to a random permutation (the sponge/duplex
+and SIV proofs guarantee the rest).
 
-Честно: пока алгоритм не пережил публичный криптоанализ — **им не защищают
-реальные данные**; для продакшена сегодня берут libsodium/Ascon/AES-GCM. Задача
-этого этапа — не «доказать стойкость» (это невозможно в одиночку), а собрать
-дисциплинированный, чётко очерченный объект для атаки.
-
-**EN.** N2Q-C is an original authenticated cipher: a duplex sponge over a new SPN
-permutation (QP-320). One permutation yields AEAD, hash, KDF, and a searchable
-blind index; the sponge security reduction shrinks the whole audit to that single
-permutation. It is a research target, **not** yet safe for real secrets.
+**Honest status:** the algorithm has not yet survived public cryptanalysis, so
+**do not protect real data with it**. For production today, use a vetted library
+(libsodium / Ascon / AES-GCM). The goal of this stage is not to "prove security"
+(impossible alone) but to assemble a disciplined, clearly scoped object to attack.
 
 ---
 
-## Что уже есть (M1–M4)
+## What's already here (M1–M5)
 
-- **[SPEC.md](SPEC.md)** — спецификация v0.1: конструкция, критерии выбора и
-  режимы (SIV по умолчанию, два комплекта 128/256).
-- **[APPENDIX-A.md](APPENDIX-A.md)** — конкретные константы из M2: S-box (APN,
-  нелинейность 10, степень 4), вращения (диффузия за 4 раунда), раундовые
-  константы и тест-векторы перестановки. Всё воспроизводимо из публичного seed.
-- **[tools/const-search](tools/const-search)** — Rust-инструмент, который измеряет
-  свойства S-box и детерминированно выбирает константы (`cargo run --release --
-  construct | rotations | finalize`).
-- **[impl/](impl)** — эталонные реализации на **Rust и C** (M3): перестановка +
-  режимы N2Q-128, constant-time, сверены побайтово между собой и с инструментом.
-- **[docs/cryptanalysis.md](docs/cryptanalysis.md)** — досье по криптоанализу с
-  измеренными результатами M4 (лавина, степень, дифференциал, время) и границами
-  запаса по раундам.
-- **[tools/cryptanalysis](tools/cryptanalysis)** — инструмент, который снимает эти
-  измерения с реальной перестановки.
+- **[SPEC.md](SPEC.md)** — specification v0.1: construction, selection criteria,
+  and modes (SIV by default, the two 128/256 suites).
+- **[APPENDIX-A.md](APPENDIX-A.md)** — the concrete constants from M2: the S-box
+  (APN, nonlinearity 10, algebraic degree 4), rotations (full diffusion in 4
+  rounds), round constants, and permutation test vectors. All reproducible from a
+  public seed.
+- **[impl/](impl)** — reference implementations in **Rust, C, Python, Go, PHP and
+  Swift**, plus a **WebAssembly** build. Constant-time by design; cross-checked
+  byte-for-byte against shared KAT vectors.
+- **[docs/cryptanalysis.md](docs/cryptanalysis.md)** — the cryptanalysis dossier
+  with measured results (avalanche, degree, differential, timing) and
+  round-margin bounds.
+- **[docs/threat-model.md](docs/threat-model.md)** — assets, adversary model,
+  security goals, out-of-scope items, and usage requirements.
+- **[docs/comparison.md](docs/comparison.md)** — security (by design) and speed
+  (as implemented) versus market algorithms.
+- **[tools/](tools)** — the Rust tools that deterministically select the constants
+  (`const-search`) and take the cryptanalysis measurements from the real
+  permutation (`cryptanalysis`, `bench`).
 
-## Дорожная карта до аудита
+## Roadmap to audit
 
-| Этап | Что | Статус |
+| Stage | What | Status |
 |---|---|---|
-| M1 | Спецификация (конструкция + критерии) | ✅ готово |
-| M2 | Выбор констант: S-box, вращения, раунд-константы + KAT | ✅ готово |
-| M3 | Эталонные реализации: C + Rust, режимы, WASM-тестер, сверка по KAT | ✅ готово |
-| M4 | Собственный криптоанализ (лавина/степень/дифф./время), финализация раундов | ◐ измерения готовы; MILP-доказательство — open |
-| M5 | Формат-конверт, password-KDF (Balloon), threat model | ✅ готово |
-| M6 | Внешний аудит / публикация / challenge | — |
+| M1 | Specification (construction + criteria) | ✅ done |
+| M2 | Constant selection: S-box, rotations, round constants + KAT | ✅ done |
+| M3 | Reference implementations: Rust, C, Python, Go, PHP, Swift + WASM tester, KAT cross-check | ✅ done |
+| M4 | In-house cryptanalysis (avalanche / degree / differential / timing), round finalization | ◐ measurements done; a certified MILP bound is open |
+| M5 | Wire format, password KDF (Balloon), threat model | ✅ done |
+| M6 | External audit / publication / public challenge | — |
 
-## Как это соотносится с другими артефактами репозитория
+---
 
-- `Main server/` — исходный N2Q 2.5 (PHP, самодельный шифр — небезопасен).
-- `n2q-rs/` — N2Q 3.0: корректная **обёртка над стандартными примитивами**
-  (XChaCha20-Poly1305 и т.д.) — готова к использованию уже сейчас.
-- `n2q-c/` — **этот** проект: собственный алгоритм для тех, кому нужен именно
-  свой шифр, а не обёртка. Долгий путь, честные оговорки.
+*Research artifact. Not externally audited. Not for protecting real data yet.*

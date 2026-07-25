@@ -12,3 +12,6 @@ impl/c/n2qc
 .DS_Store
 **/.DS_Store
 *.swp
+
+# Site source (published as an Artifact, not part of the library)
+site/
