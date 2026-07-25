@@ -237,7 +237,7 @@ impossible too.
 - Decryption **irreversibly mutates state** — persist it carefully; restoring an
   old backup breaks the channel.
 - `root` must reach both sides securely (outside this library today — see
-  `connect.md`).
+  [federation.md](federation.md)).
 
 ### 3.8. Key rotation without re-encrypting (envelope)
 
@@ -396,8 +396,9 @@ The profiles are **mutually readable**: a token states how it was made.
 
 - **It does not agree keys between strangers.** Symmetric cryptography requires a
   shared key. Exchange between independent "encryption centres" needs a separate
-  layer (KEM + registry) — see **[connect.md](connect.md)**. Do not roll your own
-  key exchange.
+  layer. The architectures (one-time out-of-band, trusted hub, asymmetric
+  exchange) are laid out in **[federation.md](federation.md)**; the rollout plan is
+  in [connect.md](connect.md). Do not roll your own key exchange.
 - **It does not hide metadata** (who talked to whom, when) — that is a transport
   concern.
 - **It does not support range queries** over ciphertext (ORE) — deliberately:
