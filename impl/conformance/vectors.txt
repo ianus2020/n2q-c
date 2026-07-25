@@ -1,0 +1,22 @@
+# N2Q-C conformance vectors (canonical KATs)
+#
+# Any third-party port MUST reproduce every line below byte-for-byte. Values are
+# lowercase hex, produced by the C reference (impl/c/n2qc.c). Fixed inputs:
+#
+#   key16   = 00112233445566778899aabbccddeeff
+#   key32   = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+#   nonce   = a5 repeated 16 times
+#   ad      = "header"          (6 bytes)
+#   pt      = "hello n2q-c"      (11 bytes)
+#   Secure = 16 rounds, Fast = 8 rounds. Suites: N2Q-128 (QP-320), N2Q-256 (QP-640).
+#
+# name                     value
+hash128_secure_empty       5349a47ebb78bb4a403a518a28f86740ddfd96a880f72ea6ada15a1656072bed
+hash128_secure_abc         9b8d0f3ff48bf6627114eeace965cccb2d2266f01d44e475b074e2be3d19203f
+hash256_secure_empty       c0ad7f6981f2035e437058ffd0461c3a3e077cbbdd76d11a5252193c09f9b767
+seal128_secure             44c28948f18c37050af8cc5ece767a954c74546878cf40b5053c57
+seal128_fast               e0328e3fdecb1cfe6cc102e8fec37933606966d993cdecf8f20ea0
+seal256_secure             47bf9b0f05bf3c80d9596ab59b218b00fd0b6279b5e64a8cc1c43125ad3ec208b2bbdd4eec755665901758
+blind128_secure            15b058f9a3b1f5935899d03ac71ba415
+# QP permutation (state = all zeros, 12 rounds), first two 64-bit lanes little-endian:
+qp320_zero_12rounds        6c3d34cc09474fbb 4ad0c1e3cc099b31
