@@ -27,9 +27,11 @@ fn modes_cross_from_python() {
         }
     };
     let mut v: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut raw: HashMap<String, String> = HashMap::new();
     for line in s.lines() {
         if let Some((k, val)) = line.split_once('=') {
             v.insert(k.to_string(), unhex(val));
+            raw.insert(k.to_string(), val.to_string());
         }
     }
 
@@ -84,4 +86,27 @@ fn modes_cross_from_python() {
 
     // seekable
     assert_eq!(seek_chunk(&key, &v["seek"], 1).unwrap(), b"chunk one data".to_vec(), "seekable chunk 1");
+
+    // streaming
+    let mut srx = StreamRx::new(key, Profile::Fast);
+    assert_eq!(srx.open(b"rtp", &v["strm0"]).unwrap(), b"frame0".to_vec(), "stream0");
+    assert_eq!(srx.open(b"rtp", &v["strm1"]).unwrap(), b"frame1 longer".to_vec(), "stream1");
+    assert_eq!(srx.open(b"rtp", &v["strm2"]).unwrap(), b"f2".to_vec(), "stream2");
+    assert_eq!(StreamTx::new(key, Profile::Fast).seal(b"rtp", b"frame0"), v["strm0"], "stream reproduce");
+
+    // ratchet
+    let mut root = [0u8; 16];
+    for i in 0..16 {
+        root[i] = 0x40 + i as u8;
+    }
+    let mut rrx = RatchetRx::new(root);
+    assert_eq!(rrx.open(b"hdr", &v["rtc0"]).unwrap(), b"r0".to_vec(), "rtc0");
+    assert_eq!(rrx.open(b"hdr", &v["rtc1"]).unwrap(), b"r1 data".to_vec(), "rtc1");
+    assert_eq!(rrx.open(b"hdr", &v["rtc2"]).unwrap(), b"r2!".to_vec(), "rtc2");
+    assert_eq!(RatchetTx::new(root).seal(b"hdr", b"r0"), v["rtc0"], "rtc reproduce");
+
+    // FPE (fpe_card / fpe_ct are digit strings, not hex)
+    let tw = b"acct-42";
+    assert_eq!(fpe_encrypt(&key, tw, &raw["fpe_card"]), raw["fpe_ct"], "fpe encrypt");
+    assert_eq!(fpe_decrypt(&key, tw, &raw["fpe_ct"]), raw["fpe_card"], "fpe decrypt");
 }

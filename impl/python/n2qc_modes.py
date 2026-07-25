@@ -160,6 +160,130 @@ def seek_chunk(key, buf, index):
     return None
 
 
+# ---- streaming AEAD (seq -> nonce, sliding replay window) ----
+class StreamTx:
+    def __init__(self, key, profile=F):
+        self.key, self.p, self.seq = key, profile, 0
+
+    def seal(self, aad, pt):
+        nonce = struct.pack("<Q", self.seq) + b"\x00" * 8
+        out = struct.pack("<Q", self.seq) + n2qc.seal(128, self.p, self.key, nonce, aad, pt)
+        self.seq += 1
+        return out
+
+
+class StreamRx:
+    def __init__(self, key, profile=F):
+        self.key, self.p, self.max, self.win, self.started = key, profile, 0, 0, False
+
+    def open(self, aad, pkt):
+        seq = struct.unpack("<Q", pkt[:8])[0]
+        if self.started and seq <= self.max:
+            diff = self.max - seq
+            if diff >= 64 or (self.win >> diff) & 1:
+                return None
+        nonce = pkt[:8] + b"\x00" * 8
+        try:
+            pt = n2qc.open(128, self.p, self.key, nonce, aad, pkt[8:])
+        except Exception:
+            return None
+        if not self.started:
+            self.max, self.win, self.started = seq, 1, True
+        elif seq > self.max:
+            shift = seq - self.max
+            self.win = 1 if shift >= 64 else ((self.win << shift) | 1) & ((1 << 64) - 1)
+            self.max = seq
+        else:
+            self.win |= 1 << (self.max - seq)
+        return pt
+
+
+# ---- forward-secret ratchet ----
+def _rkdf(ck, dom):
+    return n2qc.hash(128, S, bytes([dom]) + ck, 16)
+
+
+class RatchetTx:
+    def __init__(self, root):
+        self.ck, self.seq = root, 0
+
+    def seal(self, aad, pt):
+        mk, ck2 = _rkdf(self.ck, 0x01), _rkdf(self.ck, 0x02)
+        nonce = struct.pack("<Q", self.seq) + b"\x00" * 8
+        out = struct.pack("<Q", self.seq) + n2qc.seal(128, F, mk, nonce, aad, pt)
+        self.ck, self.seq = ck2, self.seq + 1
+        return out
+
+
+class RatchetRx:
+    def __init__(self, root):
+        self.ck, self.next, self.skip = root, 0, {}
+
+    def open(self, aad, pkt):
+        seq = struct.unpack("<Q", pkt[:8])[0]
+        nonce = pkt[:8] + b"\x00" * 8
+        if seq < self.next:
+            mk = self.skip.get(seq)
+            if mk is None:
+                return None
+            try:
+                pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
+            except Exception:
+                return None
+            del self.skip[seq]
+            return pt
+        if seq - self.next > 64:
+            return None
+        ck, skipped = self.ck, {}
+        for i in range(self.next, seq):
+            skipped[i] = _rkdf(ck, 0x01)
+            ck = _rkdf(ck, 0x02)
+        mk, cn = _rkdf(ck, 0x01), _rkdf(ck, 0x02)
+        try:
+            pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
+        except Exception:
+            return None
+        self.skip.update(skipped)
+        self.ck, self.next = cn, seq + 1
+        return pt
+
+
+# ---- format-preserving encryption (FF1 Feistel, PRF = blind_index) ----
+# NOTE: uses the native blind_index MAC domain, so it is consistent across the
+# Python/Go/Rust ports but NOT byte-identical to the C n2q_fpe.c (which uses a
+# distinct MAC domain). Small domains (e.g. a 4-digit PIN) are tokenisation.
+def _fpe_round(key, tw, i, n, m, bval):
+    buf = bytes([i, n, m, len(tw)]) + tw + struct.pack(">Q", bval)
+    mac = n2qc.blind_index(128, S, key, buf)
+    mod, y = 10 ** m, 0
+    for b in mac:
+        y = (y * 256 + b) % mod
+    return y
+
+
+def fpe_encrypt(key, tw, s):
+    n = len(s)
+    u, v = n // 2, n - n // 2
+    a, b, al, bl = int(s[:u]), int(s[u:]), u, v
+    for i in range(10):
+        m = u if i % 2 == 0 else v
+        c = (a + _fpe_round(key, tw, i, n, m, b)) % (10 ** m)
+        a, al, b, bl = b, bl, c, m
+    return str(a).zfill(al) + str(b).zfill(bl)
+
+
+def fpe_decrypt(key, tw, s):
+    n = len(s)
+    u, v = n // 2, n - n // 2
+    a, b, al, bl = int(s[:u]), int(s[u:]), u, v
+    for i in range(9, -1, -1):
+        m = u if i % 2 == 0 else v
+        c, b, bl = b, a, al
+        p = 10 ** m
+        a, al = (c - _fpe_round(key, tw, i, n, m, b) % p) % p, m
+    return str(a).zfill(al) + str(b).zfill(bl)
+
+
 # ---- fixed test inputs (shared by the Go / Rust cross-check) ----
 KEY = bytes.fromhex("00112233445566778899aabbccddeeff")
 NONCE = b"\xa5" * 16
@@ -195,6 +319,16 @@ if __name__ == "__main__":
     assert _fmsg == b"the abusive message" and frank_report_verify(_fcf, _fop, _fmsg)
     _cont = n2qf_build(KEY, [b"chunk zero", b"chunk one data", b"third chunk!!"])
     assert seek_chunk(KEY, _cont, 1) == b"chunk one data"
+    _tx, _rx = StreamTx(KEY), StreamRx(KEY)
+    _sp = [_tx.seal(b"rtp", p) for p in [b"frame0", b"frame1 longer", b"f2"]]
+    assert [_rx.open(b"rtp", p) for p in _sp] == [b"frame0", b"frame1 longer", b"f2"]
+    _ROOT = bytes(0x40 + i for i in range(16))
+    _rtx, _rrx = RatchetTx(_ROOT), RatchetRx(_ROOT)
+    _rp = [_rtx.seal(b"hdr", p) for p in [b"r0", b"r1 data", b"r2!"]]
+    assert [_rrx.open(b"hdr", p) for p in _rp] == [b"r0", b"r1 data", b"r2!"]
+    _CARD, _TW = "4111111111111111", b"acct-42"
+    _fct = fpe_encrypt(KEY, _TW, _CARD)
+    assert len(_fct) == 16 and _fct.isdigit() and fpe_decrypt(KEY, _TW, _fct) == _CARD
     print("python n2qc_modes: round-trip ALL PASS")
 
     # emit shared vectors for the Go / Rust cross-check
@@ -211,6 +345,14 @@ if __name__ == "__main__":
         "log_head": _head.hex(),
         "franking": _ftok.hex(),
         "seek": _cont.hex(),
+        "strm0": _sp[0].hex(),
+        "strm1": _sp[1].hex(),
+        "strm2": _sp[2].hex(),
+        "rtc0": _rp[0].hex(),
+        "rtc1": _rp[1].hex(),
+        "rtc2": _rp[2].hex(),
+        "fpe_card": _CARD,
+        "fpe_ct": _fct,
     }
     os.makedirs("/tmp/modes", exist_ok=True)
     with open("/tmp/modes/vectors.txt", "w") as fh:

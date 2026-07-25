@@ -196,6 +196,202 @@ func SeekChunk(key, buf []byte, index int) ([]byte, bool) {
 	return nil, false
 }
 
+// streaming AEAD (seq -> nonce, sliding replay window)
+type StreamTx struct {
+	key []byte
+	p   int
+	seq uint64
+}
+
+func NewStreamTx(key []byte, profile int) *StreamTx { return &StreamTx{key, profile, 0} }
+func (s *StreamTx) Seal(aad, pt []byte) []byte {
+	nonce := make([]byte, 16)
+	binary.LittleEndian.PutUint64(nonce, s.seq)
+	out := make([]byte, 8)
+	binary.LittleEndian.PutUint64(out, s.seq)
+	out = append(out, Seal(s.p, s.key, nonce, aad, pt)...)
+	s.seq++
+	return out
+}
+
+type StreamRx struct {
+	key          []byte
+	p            int
+	max, win     uint64
+	started      bool
+}
+
+func NewStreamRx(key []byte, profile int) *StreamRx { return &StreamRx{key: key, p: profile} }
+func (r *StreamRx) Open(aad, pkt []byte) ([]byte, bool) {
+	seq := binary.LittleEndian.Uint64(pkt[:8])
+	if r.started && seq <= r.max {
+		diff := r.max - seq
+		if diff >= 64 || (r.win>>diff)&1 != 0 {
+			return nil, false
+		}
+	}
+	nonce := make([]byte, 16)
+	copy(nonce, pkt[:8])
+	pt, ok := Open(r.p, r.key, nonce, aad, pkt[8:])
+	if !ok {
+		return nil, false
+	}
+	if !r.started {
+		r.max, r.win, r.started = seq, 1, true
+	} else if seq > r.max {
+		shift := seq - r.max
+		if shift >= 64 {
+			r.win = 1
+		} else {
+			r.win = (r.win << shift) | 1
+		}
+		r.max = seq
+	} else {
+		r.win |= 1 << (r.max - seq)
+	}
+	return pt, true
+}
+
+// forward-secret ratchet
+func rkdf(ck []byte, dom byte) []byte { return Hash(Secure, append([]byte{dom}, ck...))[:16] }
+
+type RatchetTx struct {
+	ck  []byte
+	seq uint64
+}
+
+func NewRatchetTx(root []byte) *RatchetTx {
+	c := make([]byte, 16)
+	copy(c, root)
+	return &RatchetTx{ck: c}
+}
+func (t *RatchetTx) Seal(aad, pt []byte) []byte {
+	mk, ck2 := rkdf(t.ck, 0x01), rkdf(t.ck, 0x02)
+	nonce := make([]byte, 16)
+	binary.LittleEndian.PutUint64(nonce, t.seq)
+	out := make([]byte, 8)
+	binary.LittleEndian.PutUint64(out, t.seq)
+	out = append(out, Seal(Fast, mk, nonce, aad, pt)...)
+	t.ck, t.seq = ck2, t.seq+1
+	return out
+}
+
+type RatchetRx struct {
+	ck   []byte
+	next uint64
+	skip map[uint64][]byte
+}
+
+func NewRatchetRx(root []byte) *RatchetRx {
+	c := make([]byte, 16)
+	copy(c, root)
+	return &RatchetRx{ck: c, skip: map[uint64][]byte{}}
+}
+func (r *RatchetRx) Open(aad, pkt []byte) ([]byte, bool) {
+	seq := binary.LittleEndian.Uint64(pkt[:8])
+	nonce := make([]byte, 16)
+	binary.LittleEndian.PutUint64(nonce, seq)
+	if seq < r.next {
+		mk, has := r.skip[seq]
+		if !has {
+			return nil, false
+		}
+		pt, ok := Open(Fast, mk, nonce, aad, pkt[8:])
+		if !ok {
+			return nil, false
+		}
+		delete(r.skip, seq)
+		return pt, true
+	}
+	if seq-r.next > 64 {
+		return nil, false
+	}
+	ck := append([]byte{}, r.ck...)
+	skipped := map[uint64][]byte{}
+	for i := r.next; i < seq; i++ {
+		skipped[i] = rkdf(ck, 0x01)
+		ck = rkdf(ck, 0x02)
+	}
+	mk, cn := rkdf(ck, 0x01), rkdf(ck, 0x02)
+	pt, ok := Open(Fast, mk, nonce, aad, pkt[8:])
+	if !ok {
+		return nil, false
+	}
+	for k, val := range skipped {
+		r.skip[k] = val
+	}
+	r.ck, r.next = cn, seq+1
+	return pt, true
+}
+
+// format-preserving encryption (FF1 Feistel, PRF = blind_index; native-consistent)
+func fp10(m int) uint64 {
+	v := uint64(1)
+	for k := 0; k < m; k++ {
+		v *= 10
+	}
+	return v
+}
+func fpeRound(key, tw []byte, i, n, m int, bval uint64) uint64 {
+	buf := []byte{byte(i), byte(n), byte(m), byte(len(tw))}
+	buf = append(buf, tw...)
+	bb := make([]byte, 8)
+	binary.BigEndian.PutUint64(bb, bval)
+	buf = append(buf, bb...)
+	mac := BlindIndex(Secure, key, buf)
+	mod, y := fp10(m), uint64(0)
+	for _, b := range mac {
+		y = (y*256 + uint64(b)) % mod
+	}
+	return y
+}
+func fpAtoi(s string) uint64 {
+	var v uint64
+	for _, c := range s {
+		v = v*10 + uint64(c-'0')
+	}
+	return v
+}
+func fpFill(v uint64, l int) string {
+	b := make([]byte, l)
+	for i := l - 1; i >= 0; i-- {
+		b[i] = byte('0' + v%10)
+		v /= 10
+	}
+	return string(b)
+}
+func FpeEncrypt(key, tw []byte, s string) string {
+	n := len(s)
+	u, v := n/2, n-n/2
+	a, b, al, bl := fpAtoi(s[:u]), fpAtoi(s[u:]), u, v
+	for i := 0; i < 10; i++ {
+		m := u
+		if i%2 == 1 {
+			m = v
+		}
+		c := (a + fpeRound(key, tw, i, n, m, b)) % fp10(m)
+		a, al, b, bl = b, bl, c, m
+	}
+	return fpFill(a, al) + fpFill(b, bl)
+}
+func FpeDecrypt(key, tw []byte, s string) string {
+	n := len(s)
+	u, v := n/2, n-n/2
+	a, b, al, bl := fpAtoi(s[:u]), fpAtoi(s[u:]), u, v
+	for i := 9; i >= 0; i-- {
+		m := u
+		if i%2 == 1 {
+			m = v
+		}
+		c := b
+		b, bl = a, al
+		P := fp10(m)
+		y := fpeRound(key, tw, i, n, m, b)
+		a, al = (c+P-y%P)%P, m
+	}
+	return fpFill(a, al) + fpFill(b, bl)
+}
+
 // cross-check against the Python-produced /tmp/modes/vectors.txt; returns failures
 func modesCross() int {
 	f, err := os.Open("/tmp/modes/vectors.txt")
@@ -204,12 +400,15 @@ func modesCross() int {
 	}
 	defer f.Close()
 	v := map[string][]byte{}
+	vs := map[string]string{}
 	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 1<<20), 1<<20)
 	for sc.Scan() {
 		p := strings.SplitN(sc.Text(), "=", 2)
 		if len(p) == 2 {
 			b, _ := hex.DecodeString(p[1])
 			v[p[0]] = b
+			vs[p[0]] = p[1]
 		}
 	}
 	KEY, _ := hex.DecodeString("00112233445566778899aabbccddeeff")
@@ -266,6 +465,31 @@ func modesCross() int {
 	// seekable
 	seekPt, sok := SeekChunk(KEY, v["seek"], 1)
 	ck("seekable chunk 1", sok && bytes.Equal(seekPt, []byte("chunk one data")))
+
+	// streaming
+	srx := NewStreamRx(KEY, Fast)
+	s0, o0 := srx.Open([]byte("rtp"), v["strm0"])
+	s1, o1 := srx.Open([]byte("rtp"), v["strm1"])
+	s2, o2 := srx.Open([]byte("rtp"), v["strm2"])
+	ck("streaming open x3", o0 && o1 && o2 && bytes.Equal(s0, []byte("frame0")) && bytes.Equal(s1, []byte("frame1 longer")) && bytes.Equal(s2, []byte("f2")))
+	ck("streaming reproduce", bytes.Equal(NewStreamTx(KEY, Fast).Seal([]byte("rtp"), []byte("frame0")), v["strm0"]))
+
+	// ratchet
+	root := make([]byte, 16)
+	for i := 0; i < 16; i++ {
+		root[i] = byte(0x40 + i)
+	}
+	rrx := NewRatchetRx(root)
+	r0, ro0 := rrx.Open([]byte("hdr"), v["rtc0"])
+	r1, ro1 := rrx.Open([]byte("hdr"), v["rtc1"])
+	r2, ro2 := rrx.Open([]byte("hdr"), v["rtc2"])
+	ck("ratchet open x3", ro0 && ro1 && ro2 && bytes.Equal(r0, []byte("r0")) && bytes.Equal(r1, []byte("r1 data")) && bytes.Equal(r2, []byte("r2!")))
+	ck("ratchet reproduce", bytes.Equal(NewRatchetTx(root).Seal([]byte("hdr"), []byte("r0")), v["rtc0"]))
+
+	// FPE (native-consistent; fpe_ct / fpe_card are digit strings, not hex)
+	tw := []byte("acct-42")
+	ck("fpe encrypt matches python", FpeEncrypt(KEY, tw, vs["fpe_card"]) == vs["fpe_ct"])
+	ck("fpe decrypt round-trips", FpeDecrypt(KEY, tw, vs["fpe_ct"]) == vs["fpe_card"])
 
 	return fails
 }

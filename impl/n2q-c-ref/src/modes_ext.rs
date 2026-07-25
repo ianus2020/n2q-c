@@ -200,3 +200,192 @@ pub fn seek_chunk(key: &[u8; 16], buf: &[u8], index: usize) -> Option<Vec<u8>> {
     }
     None
 }
+
+// ---- streaming AEAD (seq -> nonce, sliding replay window) ----
+pub struct StreamTx {
+    key: [u8; 16],
+    p: Profile,
+    seq: u64,
+}
+impl StreamTx {
+    pub fn new(key: [u8; 16], p: Profile) -> Self {
+        Self { key, p, seq: 0 }
+    }
+    pub fn seal(&mut self, aad: &[u8], pt: &[u8]) -> Vec<u8> {
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&self.seq.to_le_bytes());
+        let mut out = self.seq.to_le_bytes().to_vec();
+        out.extend_from_slice(&n128::seal(self.p, &self.key, &nonce, aad, pt));
+        self.seq += 1;
+        out
+    }
+}
+pub struct StreamRx {
+    key: [u8; 16],
+    p: Profile,
+    max: u64,
+    win: u64,
+    started: bool,
+}
+impl StreamRx {
+    pub fn new(key: [u8; 16], p: Profile) -> Self {
+        Self { key, p, max: 0, win: 0, started: false }
+    }
+    pub fn open(&mut self, aad: &[u8], pkt: &[u8]) -> Option<Vec<u8>> {
+        if pkt.len() < 8 + 16 {
+            return None;
+        }
+        let seq = u64::from_le_bytes(pkt[..8].try_into().unwrap());
+        if self.started && seq <= self.max {
+            let diff = self.max - seq;
+            if diff >= 64 || (self.win >> diff) & 1 != 0 {
+                return None;
+            }
+        }
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&pkt[..8]);
+        let pt = n128::open(self.p, &self.key, &nonce, aad, &pkt[8..])?;
+        if !self.started {
+            self.max = seq;
+            self.win = 1;
+            self.started = true;
+        } else if seq > self.max {
+            let shift = seq - self.max;
+            self.win = if shift >= 64 { 1 } else { (self.win << shift) | 1 };
+            self.max = seq;
+        } else {
+            self.win |= 1 << (self.max - seq);
+        }
+        Some(pt)
+    }
+}
+
+// ---- forward-secret ratchet ----
+fn rkdf(ck: &[u8], dom: u8) -> [u8; 16] {
+    let mut b = vec![dom];
+    b.extend_from_slice(ck);
+    let h = n128::hash(Profile::Secure, &b);
+    let mut o = [0u8; 16];
+    o.copy_from_slice(&h[..16]);
+    o
+}
+pub struct RatchetTx {
+    ck: [u8; 16],
+    seq: u64,
+}
+impl RatchetTx {
+    pub fn new(root: [u8; 16]) -> Self {
+        Self { ck: root, seq: 0 }
+    }
+    pub fn seal(&mut self, aad: &[u8], pt: &[u8]) -> Vec<u8> {
+        let mk = rkdf(&self.ck, 0x01);
+        let ck2 = rkdf(&self.ck, 0x02);
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&self.seq.to_le_bytes());
+        let mut out = self.seq.to_le_bytes().to_vec();
+        out.extend_from_slice(&n128::seal(Profile::Fast, &mk, &nonce, aad, pt));
+        self.ck = ck2;
+        self.seq += 1;
+        out
+    }
+}
+pub struct RatchetRx {
+    ck: [u8; 16],
+    next: u64,
+    skip: std::collections::HashMap<u64, [u8; 16]>,
+}
+impl RatchetRx {
+    pub fn new(root: [u8; 16]) -> Self {
+        Self { ck: root, next: 0, skip: std::collections::HashMap::new() }
+    }
+    pub fn open(&mut self, aad: &[u8], pkt: &[u8]) -> Option<Vec<u8>> {
+        if pkt.len() < 8 + 16 {
+            return None;
+        }
+        let seq = u64::from_le_bytes(pkt[..8].try_into().unwrap());
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&pkt[..8]);
+        if seq < self.next {
+            let mk = *self.skip.get(&seq)?;
+            let pt = n128::open(Profile::Fast, &mk, &nonce, aad, &pkt[8..])?;
+            self.skip.remove(&seq);
+            return Some(pt);
+        }
+        if seq - self.next > 64 {
+            return None;
+        }
+        let mut ck = self.ck;
+        let mut skipped: Vec<(u64, [u8; 16])> = Vec::new();
+        for i in self.next..seq {
+            skipped.push((i, rkdf(&ck, 0x01)));
+            ck = rkdf(&ck, 0x02);
+        }
+        let mk = rkdf(&ck, 0x01);
+        let cn = rkdf(&ck, 0x02);
+        let pt = n128::open(Profile::Fast, &mk, &nonce, aad, &pkt[8..])?;
+        for (i, m) in skipped {
+            self.skip.insert(i, m);
+        }
+        self.ck = cn;
+        self.next = seq + 1;
+        Some(pt)
+    }
+}
+
+// ---- format-preserving encryption (FF1 Feistel, PRF = blind_index) ----
+fn fp10(m: u32) -> u64 {
+    10u64.pow(m)
+}
+fn fpe_round(key: &[u8; 16], tw: &[u8], i: usize, n: usize, m: usize, bval: u64) -> u64 {
+    let mut buf = vec![i as u8, n as u8, m as u8, tw.len() as u8];
+    buf.extend_from_slice(tw);
+    buf.extend_from_slice(&bval.to_be_bytes());
+    let mac = n128::blind_index(Profile::Secure, key, &buf);
+    let md = fp10(m as u32);
+    let mut y = 0u64;
+    for &b in mac.iter() {
+        y = (y * 256 + b as u64) % md;
+    }
+    y
+}
+fn fp_atoi(s: &str) -> u64 {
+    s.bytes().fold(0u64, |v, c| v * 10 + (c - b'0') as u64)
+}
+fn fp_fill(mut v: u64, l: usize) -> String {
+    let mut b = vec![b'0'; l];
+    for i in (0..l).rev() {
+        b[i] = b'0' + (v % 10) as u8;
+        v /= 10;
+    }
+    String::from_utf8(b).unwrap()
+}
+pub fn fpe_encrypt(key: &[u8; 16], tw: &[u8], s: &str) -> String {
+    let n = s.len();
+    let (u, v) = (n / 2, n - n / 2);
+    let (mut a, mut b, mut al, mut bl) = (fp_atoi(&s[..u]), fp_atoi(&s[u..]), u, v);
+    for i in 0..10 {
+        let m = if i % 2 == 0 { u } else { v };
+        let c = (a + fpe_round(key, tw, i, n, m, b)) % fp10(m as u32);
+        a = b;
+        al = bl;
+        b = c;
+        bl = m;
+    }
+    format!("{}{}", fp_fill(a, al), fp_fill(b, bl))
+}
+pub fn fpe_decrypt(key: &[u8; 16], tw: &[u8], s: &str) -> String {
+    let n = s.len();
+    let (u, v) = (n / 2, n - n / 2);
+    let (mut a, mut b, mut al, mut bl) = (fp_atoi(&s[..u]), fp_atoi(&s[u..]), u, v);
+    for i in (0..10).rev() {
+        let m = if i % 2 == 0 { u } else { v };
+        let c = b;
+        b = a;
+        bl = al;
+        let p = fp10(m as u32);
+        let y = fpe_round(key, tw, i, n, m, b);
+        a = (c + p - y % p) % p;
+        al = m;
+    }
+    format!("{}{}", fp_fill(a, al), fp_fill(b, bl))
+}
