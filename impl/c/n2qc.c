@@ -4,9 +4,9 @@
  * The S-box is applied from its algebraic normal form (no table lookup, no
  * branch, no secret-dependent memory access). The built-in self-test reproduces
  * the Appendix A known-answer vectors and cross-checks against the Rust/tool
- * references.  Research artifact — not for protecting real data yet.
- *
+ * references.   *
  * Build & self-test:  cc -O2 -Wall -Wextra n2qc.c -o n2qc && ./n2qc
+ * Audit status: see STATUS.md in the repository root.
  */
 #include <stdint.h>
 #include <stdio.h>

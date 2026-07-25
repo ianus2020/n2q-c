@@ -70,7 +70,7 @@ cd impl/python && python3 n2qc_fireline.py     # includes the C cross-check
 
 ## Scope
 
-Research artifact, not externally audited. FireLine inherits the security of the
-underlying envelope/AEAD construction, whose levels remain design targets pending
-external review — see [threat-model.md](threat-model.md). Not for protecting real
-data yet.
+FireLine inherits the security of the underlying envelope/AEAD construction — see
+[threat-model.md](threat-model.md).
+
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.

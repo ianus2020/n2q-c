@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_fpe — opt-in format-preserving encryption (FF1 construction) on N2Q-C.
  *
  * Encrypts a decimal string into another decimal string of the SAME length:
@@ -19,8 +20,7 @@
  *   int n2q_fpe_decrypt(key, tweak, tlen, in, out, n)
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_FPE_DEMO n2q_fpe.c -o n2q_fpe && ./n2q_fpe
- * Research artifact — not externally audited; not for protecting real data yet.
- * Note: small domains (e.g. a 4-digit PIN) are format-preserving *tokenisation*,
+ *  * Note: small domains (e.g. a 4-digit PIN) are format-preserving *tokenisation*,
  * not strong encryption — the domain itself is tiny.
  */
 #define N2Q_CORE_NO_MAIN

@@ -82,7 +82,8 @@ state to lose).
 
 ## Scope
 
-Research artifact, not externally audited. A signature proves **whose** key it
+A signature proves **whose** key it
 is; it does not by itself establish a shared secret — for confidentiality between
-strangers see stage 3 (hybrid ML-KEM) in [federation.md](federation.md). Not for
-protecting real data yet.
+strangers see stage 3 (hybrid ML-KEM) in [federation.md](federation.md).
+
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.

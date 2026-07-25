@@ -14,10 +14,7 @@ point for auditability is that the security of the entire library **reduces to a
 single question** — how close QP-w is to a random permutation (the sponge/duplex
 and SIV proofs guarantee the rest).
 
-**Honest status:** the algorithm has not yet survived public cryptanalysis, so
-**do not protect real data with it**. For production today, use a vetted library
-(libsodium / Ascon / AES-GCM). The goal of this stage is not to "prove security"
-(impossible alone) but to assemble a disciplined, clearly scoped object to attack.
+> **Status:** see [STATUS.md](STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
 
 ---
 
@@ -55,5 +52,3 @@ and SIV proofs guarantee the rest).
 | M6 | External audit / publication / public challenge | — |
 
 ---
-
-*Research artifact. Not externally audited. Not for protecting real data yet.*

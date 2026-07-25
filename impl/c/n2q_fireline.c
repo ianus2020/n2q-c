@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * N2Q-FireLine — federation between independent N2Q-C encryption nodes.
  *
  * The problem: every organisation runs its own node with its own master keys,
@@ -26,7 +27,6 @@
  *   - trunk keys never appear in the parcel bytes.
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_FIRELINE_DEMO n2q_fireline.c -o fl && ./fl
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

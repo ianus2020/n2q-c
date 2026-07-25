@@ -1,4 +1,5 @@
 """
+Audit status: see STATUS.md in the repository root.
 N2Q-FireLine — federation between independent N2Q-C nodes, in pure Python.
 
 Built only on the native n2qc core (seal / open / hash) — no C library, no FFI —
@@ -15,7 +16,6 @@ Wire format (see the C reference for the rationale):
     payload AD = H(0x0a | header) | caller AD
 
 No master/trunk key ever travels: only a wrap of a single-use data key.
-Research artifact — not externally audited; not for protecting real data yet.
 """
 import struct
 
@@ -28,29 +28,23 @@ ZERO = b"\x00" * 16
 
 OK, FORMAT, NOT_FOR_ME, AUTH = 0, -1, -2, -3
 
-
 def peer(name, seed):
     """A partner: public routing label + the pairwise trunk key (never sent)."""
     rid = name.encode()[:RID].ljust(RID, b"\x00")
     trunk = bytes((seed + i * 7) & 0xFF for i in range(16))
     return {"id": rid, "trunk": trunk}
 
-
 def _wrap(trunk, rid, dek):
     return n2qc.seal(128, S, trunk, ZERO, FL_AD + rid, dek)
-
 
 def _unwrap(trunk, rid, wrap):
     return n2qc.open(128, S, trunk, ZERO, FL_AD + rid, wrap)
 
-
 def _header_len(n):
     return 4 + 1 + 1 + 2 + n * (RID + WRAP)
 
-
 def _payload_ad(header, ad):
     return n2qc.hash(128, S, b"\x0a" + header, 32) + (ad or b"")
-
 
 def seal_parcel(rcpts, dek, nonce, ad, pt, fast=True):
     """Build a parcel for `rcpts` (list of peer dicts). Returns bytes."""
@@ -60,7 +54,6 @@ def seal_parcel(rcpts, dek, nonce, ad, pt, fast=True):
         hdr += r["id"] + _wrap(r["trunk"], r["id"], dek)
     body = n2qc.seal(128, F if fast else S, dek, nonce, _payload_ad(hdr, ad), pt)
     return hdr + nonce + struct.pack("<I", len(body)) + body
-
 
 def open_parcel(me, parcel, ad):
     """Open a parcel addressed to `me`. Returns (code, payload_or_None)."""
@@ -94,7 +87,6 @@ def open_parcel(me, parcel, ad):
         return FORMAT, None
     pt = n2qc.open(128, F if fast else S, dek, nonce, _payload_ad(parcel[:hlen], ad), body)
     return (OK, pt) if pt is not None else (AUTH, None)
-
 
 if __name__ == "__main__":
     import os

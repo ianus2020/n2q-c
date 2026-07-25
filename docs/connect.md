@@ -129,5 +129,4 @@ is deliberately *not* a place for an original design, unlike the symmetric core.
 
 ---
 
-*Research artifact. N2Q-C itself is not externally audited yet; N2Q-Connect is a
-design proposal on top of it.*
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.

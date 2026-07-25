@@ -3,11 +3,7 @@
 A practical manual: how to use N2Q-C in every scenario the library supports.
 All signatures are taken from the actual code in this repository.
 
-> ⚠️ **Status.** N2Q-C is a research artifact. It has **not** been externally
-> audited. The stated security levels are design targets backed by our own
-> measurements. **Do not protect real secrets with it** until external
-> cryptanalysis (milestone M6). For production today use libsodium / AES-GCM /
-> Ascon.
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
 
 Russian version: [guide.ru.md](guide.ru.md).
 

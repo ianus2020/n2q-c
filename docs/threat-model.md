@@ -2,8 +2,9 @@
 
 Scope of this document: what N2Q-C is meant to protect, against whom, under what
 assumptions, and what is explicitly out of scope. It frames the target for
-external review (SPEC §12-M6). **N2Q-C is a research artifact and has not been
-externally audited — do not use it to protect real secrets (SPEC §0).**
+external review (SPEC §12-M6).
+
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
 
 ## 1. Assets
 

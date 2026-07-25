@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_commit — key-committing AEAD on top of N2Q-C.
  *
  * A normal AEAD only promises "you can't decrypt without the key". It does NOT
@@ -15,9 +16,6 @@
  * commits to exactly one key: the partitioning-oracle class does not apply.
  *
  *   Wire token:  KC(32) | sealed( tag16 | ciphertext )     // +32 B vs plain AEAD
- *
- * Research artifact — committing by construction; a formal bound is an audit item.
- * Not externally audited; not for protecting real data yet.
  */
 #ifndef N2Q_COMMIT_H
 #define N2Q_COMMIT_H

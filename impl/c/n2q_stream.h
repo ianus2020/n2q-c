@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_stream — real-time audio/video streaming AEAD on top of N2Q-C.
  *
  * Model: one media packet -> one authenticated datagram. Each packet is sealed
@@ -13,8 +14,6 @@
  *   Overhead:     8 (seq) + 16 (tag) = 24 bytes per packet
  *   AAD:          authenticated-but-not-encrypted header (e.g. an RTP header),
  *                 optional; if given at seal it must match at open.
- *
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #ifndef N2Q_STREAM_H
 #define N2Q_STREAM_H

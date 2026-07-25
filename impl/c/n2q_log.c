@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_log — append-only, tamper-evident encrypted log on top of N2Q-C.
  *
  * Audit trails, supply-chain records and compliance logs need one property above
@@ -14,7 +15,6 @@
  * and check the recomputed head equals the trusted one.
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_LOG_DEMO n2q_log.c -o n2q_log && ./n2q_log
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

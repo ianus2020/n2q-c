@@ -6,7 +6,7 @@ table-based `tools/const-search` output (Appendix A). Three independent code
 paths agreeing byte-for-byte is the milestone-M3 evidence that the algorithm is
 unambiguously specified and correctly implemented.
 
-**Research artifact — not for protecting real data until external audit (SPEC §0).**
+> **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
 
 ## Layout
 

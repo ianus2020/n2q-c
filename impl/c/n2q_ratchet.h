@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_ratchet — forward-secret streaming channel on top of N2Q-C.
  *
  * A symmetric key ratchet (Signal-style chain): every packet is sealed under a
@@ -16,8 +17,6 @@
  * one-time keys are cached so late-but-recent packets still open, then erased on
  * use. A packet older than the window (or replayed) is dropped. Erasing consumed
  * keys is what makes the channel forward-secret AND replay-proof at once.
- *
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #ifndef N2Q_RATCHET_H
 #define N2Q_RATCHET_H

@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_envelope — envelope encryption & key rotation on top of N2Q-C.
  *
  * Bulk data is encrypted once under a random per-object data key (DEK); the DEK
@@ -9,8 +10,6 @@
  *
  *   wrap:    blob = SIV_seal(KEK, "n2q-envelope-v1", DEK)      // +16 B tag
  *   rotate:  blob' = wrap(KEK_new, unwrap(KEK_old, blob))      // data untouched
- *
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #ifndef N2Q_ENVELOPE_H
 #define N2Q_ENVELOPE_H

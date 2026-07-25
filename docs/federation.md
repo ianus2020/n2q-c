@@ -204,4 +204,3 @@ Nothing in this document is audited or deployed. Stage 1 relies on the shipped
 envelope/log/franking modules, whose security rests on the same unproven design
 targets as the rest of N2Q-C (see [threat-model.md](threat-model.md)). Stages 2–4
 are designs, not implementations. As everywhere else in this project: **a
-research artifact, not for protecting real data until external audit.**

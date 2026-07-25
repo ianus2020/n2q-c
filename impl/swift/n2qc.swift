@@ -5,8 +5,8 @@
 // PASS/FAIL. (Written to spec but not compiled in the authoring session — the
 // self-test is how you verify it before any use.)
 //
-// Research artifact — NOT audited, NOT for real data.
 
+// Audit status: see STATUS.md in the repository root.
 import Foundation
 
 let SBOX: [UInt8] = [

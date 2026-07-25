@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * N2Q-CoNe — Certificate Network: hash-based signatures for an N2Q-C federation.
  *
  * FireLine (docs/fireline.md) answers "how do two nodes exchange data" — but not
@@ -31,7 +32,6 @@
  * reference; a production version needs the full addressing scheme.
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_CONE_DEMO n2q_cone.c -o cone && ./cone
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

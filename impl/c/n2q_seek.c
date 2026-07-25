@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_seek — random-access (seekable) decryption for the N2QF container.
  *
  * N2QF stores a file as independent, individually-authenticated chunks, each
@@ -13,7 +14,6 @@
  *   int n2q_seek_chunk(key, buf, buflen, index, out, *outlen)  // 0 on success
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_SEEK_DEMO n2q_seek.c -o n2q_seek && ./n2q_seek
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_stego — opt-in "indistinguishable-from-random" framing on top of N2Q-C.
  *
  * The normal N2Q-C token is self-describing: it starts with "nqc." and carries a
@@ -18,7 +19,6 @@
  *   int    n2q_stego_open(key,keylen,ad,adlen,in,inlen,out,*outlen,fast)
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_STEGO_DEMO n2q_stego.c -o n2q_stego && ./n2q_stego
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

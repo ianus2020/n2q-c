@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_pad — length-hiding AEAD on top of N2Q-C.
  *
  * A normal AEAD leaks the exact plaintext length through the ciphertext length.
@@ -15,7 +16,6 @@
  *   int    n2q_open_padded(key,keylen,nonce,ad,adlen,token,tlen,pt,*ptlen,fast)
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_PAD_DEMO n2q_pad.c -o n2q_pad && ./n2q_pad
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

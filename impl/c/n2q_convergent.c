@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_convergent — convergent (dedup-friendly) encryption on top of N2Q-C.
  *
  * Cloud/backup storage wants to store identical blobs once, even when encrypted.
@@ -14,7 +15,6 @@
  *   (store `ct` once; each owner keeps the small `dek` to read it back)
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_CONV_DEMO n2q_convergent.c -o n2q_conv && ./n2q_conv
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"

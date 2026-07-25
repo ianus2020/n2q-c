@@ -2,7 +2,7 @@
 //
 // Byte-exact with the Rust, C, and Python references (see the self-test in
 // main()). The N2Q-256 suite (QP-640) follows the identical structure over a
-// 128-bit lane type. Research artifact — NOT audited, NOT for real data.
+// Audit status: see STATUS.md in the repository root.
 package main
 
 import (

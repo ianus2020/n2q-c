@@ -1,3 +1,4 @@
+ * Audit status: see STATUS.md in the repository root.
 <?php
 /**
  * N2Q-C reference implementation (PHP 8, 64-bit) — N2Q-128 suite (QP-320).
@@ -6,8 +7,6 @@
  * built-in self-test against the published KATs: run `php n2qc.php` and it
  * prints PASS/FAIL. (This port was written to spec but not executed in the
  * authoring session — the self-test is how you verify it before any use.)
- *
- * Research artifact — NOT audited, NOT for real data.
  */
 
 const N2Q_SBOX = [

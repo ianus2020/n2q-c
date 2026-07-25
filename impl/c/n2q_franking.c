@@ -1,4 +1,5 @@
 /*
+ * Audit status: see STATUS.md in the repository root.
  * n2q_franking — verifiable abuse reporting (message franking) on top of N2Q-C.
  *
  * In an end-to-end-encrypted messenger the platform cannot read messages, so how
@@ -19,7 +20,6 @@
  * framing; hiding stops the moderator learning un-reported messages.
  *
  *   cc -O2 -Wall -Wno-unused-function -DN2Q_FRANK_DEMO n2q_franking.c -o n2q_frank && ./n2q_frank
- * Research artifact — not externally audited; not for protecting real data yet.
  */
 #define N2Q_CORE_NO_MAIN
 #include "n2qc.c"
