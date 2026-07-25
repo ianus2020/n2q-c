@@ -404,6 +404,7 @@ static void check_hex(const char *name, const uint8_t *got, size_t n, const char
     }
 }
 
+#ifndef N2Q_CORE_NO_MAIN /* define to reuse this file as a core library (see n2q_stream.c) */
 int main(int argc, char **argv) {
     init_anf();
     /* CLI file mode:  ./n2qc encrypt|decrypt <in> <out>   (fixed demo key) */
@@ -540,3 +541,4 @@ int main(int argc, char **argv) {
     printf("%s (%d failures)\n", fails == 0 ? "ALL PASS" : "FAILURES", fails);
     return fails == 0 ? 0 : 1;
 }
+#endif /* N2Q_CORE_NO_MAIN */
