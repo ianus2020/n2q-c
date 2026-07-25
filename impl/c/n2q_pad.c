@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_pad — length-hiding AEAD on top of N2Q-C.
+ * n2q_pad — length-hiding AEAD on top of N2Q.
  *
  * A normal AEAD leaks the exact plaintext length through the ciphertext length.
  * On chat / VoIP / web traffic that length alone reveals a lot (which message,

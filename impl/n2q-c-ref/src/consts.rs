@@ -1,4 +1,4 @@
-//! Fixed N2Q-C constants (Appendix A, milestone M2). Do not edit by hand — these
+//! Fixed N2Q constants (Appendix A, milestone M2). Do not edit by hand — these
 //! are reproduced by `tools/const-search`.
 
 /// The 5-bit S-box: GF(2^5) inverse wrapped in an invertible affine bijection.

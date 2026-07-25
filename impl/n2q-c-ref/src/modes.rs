@@ -1,4 +1,4 @@
-//! N2Q-C modes built on QP, generic over lane width:
+//! N2Q modes built on QP, generic over lane width:
 //! **N2Q-128** (QP-320, [`n128`]) and **N2Q-256** (QP-640, [`n256`]).
 //!
 //! Sponge: rate = one lane (x0), capacity = x1..x4, sponge function `p^a`

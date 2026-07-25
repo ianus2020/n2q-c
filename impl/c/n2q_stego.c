@@ -1,8 +1,8 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_stego — opt-in "indistinguishable-from-random" framing on top of N2Q-C.
+ * n2q_stego — opt-in "indistinguishable-from-random" framing on top of N2Q.
  *
- * The normal N2Q-C token is self-describing: it starts with "nqc." and carries a
+ * The normal N2Q token is self-describing: it starts with "nqc." and carries a
  * version+suite byte so any decoder can read it. That convenience is also a
  * fingerprint — a censor's deep-packet-inspection can spot it. Stego framing is
  * the OPT-IN alternative: it drops every marker and emits raw bytes

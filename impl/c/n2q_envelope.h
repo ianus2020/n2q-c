@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_envelope — envelope encryption & key rotation on top of N2Q-C.
+ * n2q_envelope — envelope encryption & key rotation on top of N2Q.
  *
  * Bulk data is encrypted once under a random per-object data key (DEK); the DEK
  * is then wrapped (sealed) under a key-encryption key (KEK) and stored next to

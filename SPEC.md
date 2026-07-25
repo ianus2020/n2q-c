@@ -1,4 +1,4 @@
-# N2Q-C — Specification v0.1 (DRAFT)
+# N2Q — Specification v0.1 (DRAFT)
 
 **A sponge-based authenticated cipher, hash, KDF, and searchable index built on a
 single original SPN permutation.**
@@ -16,8 +16,8 @@ guarantee — external review is still required (§0, §12-M6).
 
 ## 0. Status, scope, and the honest warning
 
-N2Q-C is a **new** cipher. A cipher's security is not established by its designer
-but by sustained public cryptanalysis. Until N2Q-C has survived that:
+N2Q is a **new** cipher. A cipher's security is not established by its designer
+but by sustained public cryptanalysis. Until N2Q has survived that:
 
 - **Do not protect real, high-value data with it.** Treat it as a research
   artifact. For production today, use a vetted library (libsodium, Ascon, AES-GCM).
@@ -34,7 +34,7 @@ N2Q 2.5 toy and something an external cryptographer can actually review.
 
 ## 1. Heritage — which N2Q 2.5 ideas this matures
 
-| N2Q 2.5 idea | Matured form in N2Q-C |
+| N2Q 2.5 idea | Matured form in N2Q |
 |---|---|
 | Key-dependent substitution **table** | A fixed, public **S-box** chosen by differential/linear criteria (§7.1), applied bitsliced (constant-time). Secrecy comes from the key, never from the S-box. |
 | Position-dependent keystream (polyalphabet) | The **duplex** squeezes a position-dependent keystream by construction (§5.2). |
@@ -45,7 +45,7 @@ N2Q 2.5 toy and something an external cryptographer can actually review.
 | 186-symbol multilingual table | Removed from the core. Encoding is an application concern; the core is byte-oriented. |
 
 The through-line: substitution + diffusion + a keystream + randomization + an
-integrity check were the right instincts. N2Q-C keeps all of them and rebuilds
+integrity check were the right instincts. N2Q keeps all of them and rebuilds
 each on a construction with a security reduction.
 
 ---
@@ -55,7 +55,7 @@ each on a construction with a security reduction.
 - `⊕` XOR, `≫n` right-rotation within a 64-bit lane, `‖` concatenation.
 - The state `S` is **320 bits** as five 64-bit lanes `x0,x1,x2,x3,x4`
   (little-endian within a lane; lane index is big-endian in the state).
-- `b = 320` (state), a design parameter fixed for all of N2Q-C.
+- `b = 320` (state), a design parameter fixed for all of N2Q.
 - All named constants (S-box, rotations, round constants) are generated from a
   single public seed by the procedures in §7 — a **nothing-up-my-sleeve**
   guarantee that no value hides a backdoor.
@@ -109,7 +109,7 @@ are therefore final for v0.1.
 
 ## 4. Security targets — two suites
 
-N2Q-C ships **two parameter sets** sharing one design methodology:
+N2Q ships **two parameter sets** sharing one design methodology:
 
 - **N2Q-128** — permutation QP-320 (5×64), 128-bit security.
 - **N2Q-256** — permutation QP-640 (5×128), 256-bit security, for long-term /
@@ -261,7 +261,7 @@ still reduces to QP. Implemented in M5 ([`impl/.../pw.rs`](impl/n2q-c-ref/src/pw
 ## 7. Constant selection (nothing-up-my-sleeve)
 
 All constants derive deterministically from the ASCII seed
-`"N2Q-C/v0.1"` expanded by a public XOF (SHAKE256 for the *selection tooling
+`"N2Q/v0.1"` expanded by a public XOF (SHAKE256 for the *selection tooling
 only* — the resulting fixed tables are what ship). The procedures are normative;
 the resulting tables land in Appendix A after the §12-M2 run.
 
@@ -401,7 +401,7 @@ Appendix-A test vectors and are cross-validated in CI.
 - **M6 — Open the project.** Per the chosen "private first, then open" path,
   M1–M5 are developed privately; at M6 publish spec + tooling + dossier and
   invite public cryptanalysis (challenge/bounty). Only after surviving this does
-  N2Q-C leave "research" status.
+  N2Q leave "research" status.
 
 ---
 
@@ -420,5 +420,5 @@ All values are reproducible from the public seed via
 
 ---
 
-*N2Q-C v0.1 — design frozen for review. This is a target for cryptanalysis, not
+*N2Q v0.1 — design frozen for review. This is a target for cryptanalysis, not
 a security guarantee.*

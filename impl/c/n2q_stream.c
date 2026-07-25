@@ -1,5 +1,5 @@
 /*
- * n2q_stream — real-time audio/video streaming AEAD on top of N2Q-C.
+ * n2q_stream — real-time audio/video streaming AEAD on top of N2Q.
  * See n2q_stream.h for the wire format and API contract.
  *
  * Build the self-test:

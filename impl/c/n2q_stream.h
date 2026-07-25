@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_stream — real-time audio/video streaming AEAD on top of N2Q-C.
+ * n2q_stream — real-time audio/video streaming AEAD on top of N2Q.
  *
  * Model: one media packet -> one authenticated datagram. Each packet is sealed
  * under a nonce derived from a monotonically increasing sequence number, so no

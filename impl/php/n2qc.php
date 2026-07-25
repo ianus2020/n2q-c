@@ -1,7 +1,7 @@
  * Audit status: see STATUS.md in the repository root.
 <?php
 /**
- * N2Q-C reference implementation (PHP 8, 64-bit) — N2Q-128 suite (QP-320).
+ * N2Q reference implementation (PHP 8, 64-bit) — N2Q-128 suite (QP-320).
  *
  * Faithful port of the verified Rust/C/Go/Python references. It carries a
  * built-in self-test against the published KATs: run `php n2qc.php` and it
@@ -153,7 +153,7 @@ if (PHP_SAPI === 'cli' && realpath($argv[0]) === __FILE__) {
     };
     $key = hex2bin('00112233445566778899aabbccddeeff');
     $nonce = str_repeat("\xa5", 16);
-    echo "N2Q-C PHP reference — KAT cross-check\n";
+    echo "N2Q PHP reference — KAT cross-check\n";
     $s = permute([0,0,0,0,0], 12);
     $chk('QP-320 zero p^12', sprintf('%016x %016x', $s[0] & 0xFFFFFFFFFFFFFFFF, $s[1] & 0xFFFFFFFFFFFFFFFF),
          '6c3d34cc09474fbb 4ad0c1e3cc099b31');

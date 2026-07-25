@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_franking — verifiable abuse reporting (message franking) on top of N2Q-C.
+ * n2q_franking — verifiable abuse reporting (message franking) on top of N2Q.
  *
  * In an end-to-end-encrypted messenger the platform cannot read messages, so how
  * does a victim report abuse and have it *believed*? Message franking (the scheme

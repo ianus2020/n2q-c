@@ -1,5 +1,5 @@
 /*
- * N2Q-C reference implementation (C) — QP permutation, constant-time bitsliced.
+ * N2Q reference implementation (C) — QP permutation, constant-time bitsliced.
  *
  * The S-box is applied from its algebraic normal form (no table lookup, no
  * branch, no secret-dependent memory access). The built-in self-test reproduces
@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
         if (rc != 0) fprintf(stderr, "error %d\n", rc);
         return rc == 0 ? 0 : 1;
     }
-    printf("N2Q-C C reference — Appendix A known-answer self-test\n");
+    printf("N2Q C reference — Appendix A known-answer self-test\n");
 
     uint64_t zero[5] = {0, 0, 0, 0, 0};
     uint64_t z12[5] = {0x6c3d34cc09474fbb, 0x4ad0c1e3cc099b31, 0xe4493f2ea310ec56,

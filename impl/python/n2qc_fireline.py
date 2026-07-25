@@ -1,6 +1,6 @@
 """
 Audit status: see STATUS.md in the repository root.
-N2Q-FireLine — federation between independent N2Q-C nodes, in pure Python.
+N2Q-FireLine — federation between independent N2Q nodes, in pure Python.
 
 Built only on the native n2qc core (seal / open / hash) — no C library, no FFI —
 and byte-compatible with impl/c/n2q_fireline.c: a parcel built by either side

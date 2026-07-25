@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_convergent — convergent (dedup-friendly) encryption on top of N2Q-C.
+ * n2q_convergent — convergent (dedup-friendly) encryption on top of N2Q.
  *
  * Cloud/backup storage wants to store identical blobs once, even when encrypted.
  * Convergent encryption derives the data key deterministically from the content,

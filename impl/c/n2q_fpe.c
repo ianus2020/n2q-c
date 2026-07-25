@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_fpe — opt-in format-preserving encryption (FF1 construction) on N2Q-C.
+ * n2q_fpe — opt-in format-preserving encryption (FF1 construction) on N2Q.
  *
  * Encrypts a decimal string into another decimal string of the SAME length:
  * a 16-digit card number becomes a 16-digit number, a 9-digit SSN stays 9

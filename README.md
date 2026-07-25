@@ -1,6 +1,6 @@
-# N2Q-C — an original cryptographic algorithm (not a wrapper)
+# N2Q — an original cryptographic algorithm (not a wrapper)
 
-N2Q-C is a self-contained authenticated cipher, designed from scratch under real
+N2Q is a self-contained authenticated cipher, designed from scratch under real
 crypto-design discipline — an attempt to lift the ideas of the earlier N2Q work
 from a toy to an artifact ready for external audit.
 

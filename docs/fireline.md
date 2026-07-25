@@ -2,7 +2,7 @@
 
 *Stage 1 of [federation.md](federation.md), implemented.*
 
-Every organisation runs its own N2Q-C node with its own master keys, and nobody
+Every organisation runs its own N2Q node with its own master keys, and nobody
 will hand those to a partner. **FireLine** lets nodes exchange data so that **no
 master key ever leaves its node** — only a wrap of a single-use data key travels.
 

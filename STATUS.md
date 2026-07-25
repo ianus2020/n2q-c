@@ -1,17 +1,17 @@
 # Project status and security disclosure
 
-**Read this before using N2Q-C for anything that matters.** This is the single
+**Read this before using N2Q for anything that matters.** This is the single
 authoritative statement of what has been verified, what has not, and what that
 means in practice.
 
 ## Short version
 
-N2Q-C is an **original cipher under active development**. It has **not undergone
+N2Q is an **original cipher under active development**. It has **not undergone
 external cryptanalysis or a third-party security audit**. Every security level
 quoted anywhere in this project is a **design target supported by our own
 measurements** — not a proven or independently confirmed guarantee.
 
-**Do not use N2Q-C to protect real secrets or production data.** For production
+**Do not use N2Q to protect real secrets or production data.** For production
 today, use a vetted, widely reviewed library: libsodium, AES-GCM, or Ascon.
 
 ## What *is* verified
@@ -45,7 +45,7 @@ trustworthy when **skilled people who want it to fail** have attacked it in
 public for a long time and did not succeed. AES, ChaCha20 and Ascon all earned
 their standing that way, over years.
 
-N2Q-C has not been through that process. Our own measurements can only show the
+N2Q has not been through that process. Our own measurements can only show the
 absence of the weaknesses we thought to look for — they cannot show the absence
 of the ones we did not.
 

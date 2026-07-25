@@ -1,8 +1,8 @@
 """
 Audit status: see STATUS.md in the repository root.
-N2Q-C reference implementation (Python).
+N2Q reference implementation (Python).
 
-A pure-Python port of the N2Q-C cipher: the QP permutation, the N2Q-128 / N2Q-256
+A pure-Python port of the N2Q cipher: the QP permutation, the N2Q-128 / N2Q-256
 modes (hash, SIV-AEAD, streaming AEAD, blind index), the Secure/Fast profiles,
 the self-describing token frame, and a chunked file helper. Byte-exact with the
 Rust and C references (see self_test()).

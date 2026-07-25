@@ -1,4 +1,4 @@
-//! WebAssembly bindings for the N2Q-C reference — browser tester on the *own*
+//! WebAssembly bindings for the N2Q reference — browser tester on the *own*
 //! cipher, with the reliability/speed **profile** switch. Encryption returns a
 //! self-describing `nqc.` token; decryption reads the profile back from it, so a
 //! single `open` handles both Secure and Fast — the two are interoperable.

@@ -1,4 +1,4 @@
-// N2Q-C reference implementation (Go) — N2Q-128 suite (QP-320).
+// N2Q reference implementation (Go) — N2Q-128 suite (QP-320).
 //
 // Byte-exact with the Rust, C, and Python references (see the self-test in
 // main()). The N2Q-256 suite (QP-640) follows the identical structure over a
@@ -479,7 +479,7 @@ func main() {
 		nonce[i] = 0xa5
 	}
 
-	fmt.Println("N2Q-C Go reference — KAT cross-check (vs Rust/C/Python)")
+	fmt.Println("N2Q Go reference — KAT cross-check (vs Rust/C/Python)")
 	s := permute([5]uint64{}, 12)
 	check("QP-320 zero p^12", fmt.Sprintf("%016x %016x", s[0], s[1]), "6c3d34cc09474fbb 4ad0c1e3cc099b31")
 	check("hash(\"\") Secure", hx(Hash(Secure, []byte(""))), "5349a47ebb78bb4a403a518a28f86740ddfd96a880f72ea6ada15a1656072bed")

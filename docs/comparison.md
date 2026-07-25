@@ -1,13 +1,13 @@
-# N2Q-C vs. market algorithms — security (by design) & speed (as implemented)
+# N2Q vs. market algorithms — security (by design) & speed (as implemented)
 
-This compares N2Q-C's **designed** security and its **as-coded** speed against
-established AEADs. Audit status is deliberately set aside (N2Q-C is unaudited;
+This compares N2Q's **designed** security and its **as-coded** speed against
+established AEADs. Audit status is deliberately set aside (N2Q is unaudited;
 the others are standardized and analyzed for years) — this looks only at what is
 built into the construction and the code.
 
 ## 1. Speed (measured, same machine, single-threaded)
 
-Apples-to-apples: N2Q-C and the RustCrypto reference ciphers benchmarked in the
+Apples-to-apples: N2Q and the RustCrypto reference ciphers benchmarked in the
 same process on the same CPU (Apple Silicon, arm64), 1 MiB buffer, release+LTO.
 
 | Algorithm | Throughput | vs XChaCha |
@@ -24,7 +24,7 @@ The **Fast profile** (user-selectable, recorded in the token) roughly **doubles*
 throughput for a labelled margin trade — still ~2.4× above the M4 saturation
 point.
 
-### Why N2Q-C is slow *as implemented* (and the ceiling)
+### Why N2Q is slow *as implemented* (and the ceiling)
 The gap is implementation, not an inherent property of the design:
 
 1. **Rounds per block.** The reference runs the full `p^a = 16` rounds for every
@@ -38,15 +38,15 @@ The gap is implementation, not an inherent property of the design:
 4. **SIV is 2-pass** by nature (MAC then encrypt) → ~2× the streaming mode. Use
    streaming where nonce uniqueness holds.
 
-Realistic optimized ceiling: an Ascon-class implementation of N2Q-C (fewer data
+Realistic optimized ceiling: an Ascon-class implementation of N2Q (fewer data
 rounds, higher rate, SIMD) would plausibly land in the ~100–300 MB/s range —
 i.e. ~2–7× slower than vectorized ChaCha, comparable to software Ascon. It will
-**not** beat AES-NI/AEGIS on CPUs with AES hardware. N2Q-C trades speed for
+**not** beat AES-NI/AEGIS on CPUs with AES hardware. N2Q trades speed for
 margin and a table-free constant-time core.
 
 ## 2. Security by design
 
-| | **N2Q-C** | AES-256-GCM | (X)ChaCha20-Poly1305 | Ascon-128 |
+| | **N2Q** | AES-256-GCM | (X)ChaCha20-Poly1305 | Ascon-128 |
 |---|---|---|---|---|
 | Construction | SPN sponge/duplex | AES + GHASH | ARX stream + Poly1305 | SPN sponge/duplex |
 | Closest relative | **Ascon** | Rijndael | Salsa/ChaCha | Keccak/Ascon |
@@ -63,11 +63,11 @@ margin and a table-free constant-time core.
 | External analysis / standard | **None yet** | NIST, decades | RFC, decades | NIST LWC winner |
 
 ### Reading the table
-- **Structurally**, N2Q-C is an Ascon-family cipher. The design choices are sound
+- **Structurally**, N2Q is an Ascon-family cipher. The design choices are sound
   and mainstream: wide-trail SPN, bitsliced constant-time core, sponge reduction.
 - **Design edges over the market:**
   - *Misuse-resistant by default.* AES-GCM and ChaCha-Poly leak catastrophically
-    on nonce reuse; N2Q-C's primary mode (SIV) degrades to leaking only equality.
+    on nonce reuse; N2Q's primary mode (SIV) degrades to leaking only equality.
   - *Stronger S-box than Ascon* on paper: APN (differential uniformity 2) with
     algebraic degree 4, vs Ascon's degree-2 quadratic S-box (Ascon compensates
     with structure and proven bounds).
@@ -77,14 +77,14 @@ margin and a table-free constant-time core.
   - *Generous, measured margin* (~2.4–4×), comparable to ChaCha, better than
     AES-256's ~1.4×.
 - **Where it is behind (design-wise, audit aside):**
-  - Ascon's differential/linear resistance is **MILP-proven**; N2Q-C's is
+  - Ascon's differential/linear resistance is **MILP-proven**; N2Q's is
     empirical + a partial solver-free trail search (the one open rigorous item).
-  - AES/ChaCha/Ascon have enormous third-party cryptanalysis; N2Q-C has the
+  - AES/ChaCha/Ascon have enormous third-party cryptanalysis; N2Q has the
     designer's own only.
 
 ## 3. Honest verdict
 
-- **Security (by design):** N2Q-C sits in the same class as Ascon and ChaCha —
+- **Security (by design):** N2Q sits in the same class as Ascon and ChaCha —
   a well-structured, constant-time AEAD with a strong S-box and a healthy margin,
   and it adds misuse-resistance and a searchable index that the mainstream AEADs
   don't ship. The design is credible. Its gap to Ascon is a *proof* (MILP) and
@@ -94,7 +94,7 @@ margin and a table-free constant-time core.
   over optimization. The design can be sped up ~10–30× to Ascon-class, but will
   not match AES-NI/AEGIS on AES-capable hardware.
 - **Net:** as a *design*, competitive and feature-rich; as *shipped code*, a
-  correct, constant-time, but unoptimized reference. Pick N2Q-C for its features
+  correct, constant-time, but unoptimized reference. Pick N2Q for its features
   (misuse-resistance, searchable encryption, one-primitive toolkit) and margin,
   not for raw speed — and only after the external review the others already have.
 

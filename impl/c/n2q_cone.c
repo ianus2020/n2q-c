@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * N2Q-CoNe — Certificate Network: hash-based signatures for an N2Q-C federation.
+ * N2Q-CoNe — Certificate Network: hash-based signatures for an N2Q federation.
  *
  * FireLine (docs/fireline.md) answers "how do two nodes exchange data" — but not
  * "how do I know this trunk key really belongs to that partner". That is the job

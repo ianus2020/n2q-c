@@ -1,4 +1,4 @@
-//! Same-machine throughput benchmark: N2Q-C vs. RustCrypto AES-256-GCM and
+//! Same-machine throughput benchmark: N2Q vs. RustCrypto AES-256-GCM and
 //! XChaCha20-Poly1305. Measures MB/s of encryption/hashing on one buffer.
 //! Not a rigorous microbenchmark, but a fair apples-to-apples on this CPU.
 
@@ -36,12 +36,12 @@ fn main() {
     let k32 = [0x22u8; 32];
     let nonce16 = [0xa5u8; 16];
 
-    println!("=== N2Q-C throughput vs. reference AEADs (same machine) ===");
+    println!("=== N2Q throughput vs. reference AEADs (same machine) ===");
     println!("  buffer = {} MiB, {} iters, single-threaded\n", size / MB, iters);
 
     let sec = Profile::Secure;
     let fast = Profile::Fast;
-    println!("-- N2Q-C (this project) --");
+    println!("-- N2Q (this project) --");
     bench("N2Q-128 stream Secure (16 rnd)", size, iters, || {
         black_box(n128::stream_seal(sec, &k16, &nonce16, b"", black_box(&data)));
     });
@@ -73,7 +73,7 @@ fn main() {
         black_box(chacha.encrypt(xnonce, black_box(&data[..])).unwrap());
     });
 
-    println!("\n  Note: N2Q-C reference uses p^a=16 rounds per 8/16-byte block (clarity/");
+    println!("\n  Note: N2Q reference uses p^a=16 rounds per 8/16-byte block (clarity/");
     println!("  margin over speed) with no SIMD; the RustCrypto ciphers use AES-NI /");
     println!("  vectorized ChaCha. See analysis for the speed levers.");
 }

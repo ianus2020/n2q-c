@@ -1,9 +1,9 @@
-# Federating independent N2Q-C deployments
+# Federating independent N2Q deployments
 
 *How two organisations that each run their own encryption node can exchange data
 without ever handing over their secret keys.*
 
-Today every user installs N2Q-C on their own device or server — an **encryption
+Today every user installs N2Q on their own device or server — an **encryption
 node** — and holds its own key material. Two such nodes cannot read each other's
 ciphertext, and their owners will (rightly) refuse to swap master keys. This
 document lays out the architectures that solve that, what each costs, and what a
@@ -18,7 +18,7 @@ the reason asymmetric cryptography was invented in 1976.
 
 ### The constraint we must state up front
 
-N2Q-C is a **purely symmetric** primitive (a sponge over a permutation). Two
+N2Q is a **purely symmetric** primitive (a sponge over a permutation). Two
 nodes that have **never shared a secret** cannot agree on one over a public
 channel using symmetric cryptography alone. This is not a shortcoming of our
 design — it is a mathematical fact. (The one symmetric attempt, Merkle puzzles,
@@ -31,7 +31,7 @@ Therefore exactly **three** escapes exist, and no others:
 |---|---|---|
 | A | Share a key **once, out of band** | A one-time manual step per partner |
 | B | Introduce a **trusted party** | Someone else is in the trust path |
-| C | Add an **asymmetric key exchange** | A dependency outside N2Q-C |
+| C | Add an **asymmetric key exchange** | A dependency outside N2Q |
 
 Everything below is a concrete instance of A, B or C.
 
@@ -115,14 +115,14 @@ recommended compromise when a hub is wanted at all.
 
 ## 4. Architecture C — hybrid key exchange (open network)
 
-**Needs one primitive that is not N2Q-C.**
+**Needs one primitive that is not N2Q.**
 
 For strangers with no trusted party, an asymmetric key agreement is unavoidable:
 
 ```
 handshake:  X25519  or  ML-KEM (post-quantum, FIPS 203)  → shared secret
                      ↓ through the N2Q KDF
-bulk:       everything else is N2Q-C — AEAD, ratchet, search, files, streaming
+bulk:       everything else is N2Q — AEAD, ratchet, search, files, streaming
 ```
 
 This is how TLS, Signal, WireGuard and age are all built: asymmetric only for the
@@ -130,7 +130,7 @@ handshake (a fraction of a percent of the work), symmetric for all data.
 
 **Honesty note for positioning.** This introduces a dependency outside our own
 primitive. That is not a weakness — it is the correct architecture — but it must
-be described as **"N2Q-C + ML-KEM"**, never as "all ours". Choosing ML-KEM keeps
+be described as **"N2Q + ML-KEM"**, never as "all ours". Choosing ML-KEM keeps
 the post-quantum posture consistent with [post-quantum.md](post-quantum.md).
 
 ---
@@ -202,5 +202,5 @@ partner's master key at risk.
 
 Nothing in this document is audited or deployed. Stage 1 relies on the shipped
 envelope/log/franking modules, whose security rests on the same unproven design
-targets as the rest of N2Q-C (see [threat-model.md](threat-model.md)). Stages 2–4
+targets as the rest of N2Q (see [threat-model.md](threat-model.md)). Stages 2–4
 are designs, not implementations. As everywhere else in this project: **a

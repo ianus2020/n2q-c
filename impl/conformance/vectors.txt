@@ -1,4 +1,4 @@
-# N2Q-C conformance vectors (canonical KATs)
+# N2Q conformance vectors (canonical KATs)
 #
 # Any third-party port MUST reproduce every line below byte-for-byte. Values are
 # lowercase hex, produced by the C reference (impl/c/n2qc.c). Fixed inputs:

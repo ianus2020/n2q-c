@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * N2Q-FireLine — federation between independent N2Q-C encryption nodes.
+ * N2Q-FireLine — federation between independent N2Q encryption nodes.
  *
  * The problem: every organisation runs its own node with its own master keys,
  * and nobody will hand those keys to a partner. FireLine lets two (or many)

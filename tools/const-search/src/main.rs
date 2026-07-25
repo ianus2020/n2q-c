@@ -1,7 +1,7 @@
-//! N2Q-C — M2 constant selection tool.
+//! N2Q — M2 constant selection tool.
 //!
 //! Deterministically searches for the S-box (SPEC §7.1) and reports its
-//! cryptographic properties. Seeded from the public string "N2Q-C/v0.1" so the
+//! cryptographic properties. Seeded from the public string "N2Q/v0.1" so the
 //! result is reproducible (nothing-up-my-sleeve).
 
 mod diffusion;
@@ -17,9 +17,9 @@ const SBOX: [u8; SIZE] = [
 const ROTS_320: [(u32, u32); 5] = [(38, 55), (1, 23), (23, 36), (16, 14), (20, 46)];
 const ROTS_640: [(u32, u32); 5] = [(75, 7), (89, 21), (56, 111), (30, 54), (25, 52)];
 
-/// 16 distinct round constants derived from the public seed "N2Q-C/v0.1/rc".
+/// 16 distinct round constants derived from the public seed "N2Q/v0.1/rc".
 fn round_constants() -> Vec<u64> {
-    let mut rng = Rng(seed_from("N2Q-C/v0.1/rc"));
+    let mut rng = Rng(seed_from("N2Q/v0.1/rc"));
     let mut rc = Vec::new();
     while rc.len() < 16 {
         let v = rng.next() & 0xff;
@@ -32,7 +32,7 @@ fn round_constants() -> Vec<u64> {
 
 fn finalize() {
     let rc = round_constants();
-    println!("=== N2Q-C M2 — FINAL constants + test vectors ===\n");
+    println!("=== N2Q M2 — FINAL constants + test vectors ===\n");
     println!("S-box (inverse ∘ affine, APN / NL10 / deg4 / no fixed points):");
     print!("  [");
     for (i, v) in SBOX.iter().enumerate() {
@@ -172,13 +172,13 @@ fn main() {
     let arg = std::env::args().nth(1).unwrap_or_default();
 
     if arg == "construct" {
-        println!("=== N2Q-C M2 — algebraic S-box constructions ===\n");
+        println!("=== N2Q M2 — algebraic S-box constructions ===\n");
         report("GF(2^5) inverse  S(x)=x^-1", &gf::inverse_sbox());
         report("Gold             S(x)=x^3", &gf::gold3_sbox());
         // Inverse wrapped in a seeded INVERTIBLE affine bijection chosen to
         // remove fixed points (properties are affine-invariant). Deterministic.
         let inv = gf::inverse_sbox();
-        let mut rng = Rng(seed_from("N2Q-C/v0.1/affine"));
+        let mut rng = Rng(seed_from("N2Q/v0.1/affine"));
         let mut chosen = None;
         for _ in 0..2_000_000u64 {
             let rows = [
@@ -223,8 +223,8 @@ fn main() {
             .nth(3)
             .and_then(|a| a.parse().ok())
             .unwrap_or(1500);
-        println!("=== N2Q-C M2 — rotation-constant search (lane width {w}) ===");
-        let mut rng = Rng(seed_from(&format!("N2Q-C/v0.1/rot{w}")));
+        println!("=== N2Q M2 — rotation-constant search (lane width {w}) ===");
+        let mut rng = Rng(seed_from(&format!("N2Q/v0.1/rot{w}")));
         let mut best: Option<([(u32, u32); 5], usize)> = None;
         for _ in 0..sets {
             let mut rots = [(0u32, 0u32); 5];
@@ -260,11 +260,11 @@ fn main() {
     }
 
     let budget: u64 = arg.parse().unwrap_or(40_000_000);
-    let seed = seed_from("N2Q-C/v0.1");
+    let seed = seed_from("N2Q/v0.1");
     let mut rng = Rng(seed);
 
-    println!("=== N2Q-C M2 — S-box search ===");
-    println!("seed(\"N2Q-C/v0.1\") = 0x{:016x}", seed);
+    println!("=== N2Q M2 — S-box search ===");
+    println!("seed(\"N2Q/v0.1\") = 0x{:016x}", seed);
     println!("budget = {} candidates\n", budget);
 
     let mut best: Option<([u8; SIZE], Props)> = None;

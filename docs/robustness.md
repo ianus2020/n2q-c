@@ -1,4 +1,4 @@
-# N2Q-C robustness (release of unverified plaintext)
+# N2Q robustness (release of unverified plaintext)
 
 Most AEADs come with a footnote: **do not use any plaintext until the tag
 verifies.** In practice implementations break that rule — they decrypt a large
@@ -6,7 +6,7 @@ message in a streaming buffer, or a parser touches bytes early — and some mode
 degrade badly when that happens. The property that survives such mistakes is
 called **robustness under release of unverified plaintext (RUP)**.
 
-## Why N2Q-C's default mode is naturally robust
+## Why N2Q's default mode is naturally robust
 
 The primary mode is **SIV** and it is **two-pass**:
 
@@ -31,7 +31,7 @@ underwrite this; the reference `open` still returns nothing on a failed tag.
 ## Honest scope
 
 RUP-robustness here is a **design property inherited from the SIV/sponge
-construction**, argued above — not a machine-checked theorem for N2Q-C
+construction**, argued above — not a machine-checked theorem for N2Q
 specifically. Like every other security claim in this project it assumes the QP
 permutation is close to ideal and is pending external review (milestone M6).
 The practical guidance is unchanged: **still verify before you act on

@@ -1,7 +1,7 @@
 # N2Q-Connect — exchanging data between independent encryption centres
 
 **Status: design document. Nothing here is implemented yet.** It defines how two
-parties that each run their own N2Q-C deployment ("encryption centres") can
+parties that each run their own N2Q deployment ("encryption centres") can
 exchange data **without ever sharing a secret key**, and what a registry — a
 blockchain contract or a lighter transparency log — does and does not add.
 
@@ -9,13 +9,13 @@ blockchain contract or a lighter transparency log — does and does not add.
 
 ## 1. The problem
 
-Today each centre installs N2Q-C and holds its own secret key. Two centres that
+Today each centre installs N2Q and holds its own secret key. Two centres that
 never met cannot read each other's ciphertext, and nobody wants to hand over a
 master key to do it.
 
 **This is not a gap in our implementation — it is the definition of symmetric
 cryptography.** A symmetric cipher requires both sides to hold the *same* key.
-No amount of engineering on N2Q-C alone can remove that requirement.
+No amount of engineering on N2Q alone can remove that requirement.
 
 Therefore inter-centre exchange needs one genuinely new ingredient: **public-key
 key agreement**. That ingredient is well studied, and we will **use standard,
@@ -35,14 +35,14 @@ Sending from centre A to centre B:
 ```
 1. K            = random data key                       (per message/object)
 2. encapsulated = KEM.encap(pub_B, K)                   ← only priv_B can open it
-3. ciphertext   = N2Q-C.seal(K, data)                   ← our cipher does the bulk
+3. ciphertext   = N2Q.seal(K, data)                   ← our cipher does the bulk
 4. wire         = encapsulated ‖ ciphertext
 ```
 
 B receives it, runs `K = KEM.decap(priv_B, encapsulated)`, then
-`N2Q-C.open(K, ciphertext)`.
+`N2Q.open(K, ciphertext)`.
 
-**No shared secret is ever transmitted, and no private key ever moves.** N2Q-C
+**No shared secret is ever transmitted, and no private key ever moves.** N2Q
 stays the workhorse (the DEM); the KEM only agrees the key.
 
 ### Primitive choice
@@ -50,7 +50,7 @@ stays the workhorse (the DEM); the KEM only agrees the key.
 | Layer | Choice | Why |
 |---|---|---|
 | KEM | **X25519 + ML-KEM (Kyber) hybrid** | X25519 is battle-tested; ML-KEM adds post-quantum security. A hybrid is safe if either one holds. |
-| DEM | **N2Q-C SIV-AEAD** (`envelope`, `committing`) | Misuse-resistant, key-committing — exactly what a multi-party setting needs. |
+| DEM | **N2Q SIV-AEAD** (`envelope`, `committing`) | Misuse-resistant, key-committing — exactly what a multi-party setting needs. |
 | Identity | Signature over the published keys | So a centre's public key can be attributed and revoked. |
 
 This also keeps our post-quantum story coherent: ML-KEM for the handshake,
@@ -117,7 +117,7 @@ decentralisation. The cryptography is identical either way.
 
 | Stage | Deliverable |
 |---|---|
-| **C1** | KEM-envelope prototype: X25519 → N2Q-C; two centres exchange a message with no shared secret; KATs + cross-language check |
+| **C1** | KEM-envelope prototype: X25519 → N2Q; two centres exchange a message with no shared secret; KATs + cross-language check |
 | **C2** | Add ML-KEM (Kyber) as a hybrid; wire format with algorithm agility |
 | **C3** | Pluggable registry: signed key bundles + transparency log; revocation |
 | **C4** | Optional on-chain contract (identity, revocation, access policy) |

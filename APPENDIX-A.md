@@ -1,8 +1,8 @@
-# N2Q-C — Appendix A: Concrete constants (M2 output)
+# N2Q — Appendix A: Concrete constants (M2 output)
 
 All values below are produced deterministically by
 [`tools/const-search`](tools/const-search) from the public seed string
-`"N2Q-C/v0.1"` (and its documented sub-labels). Re-running the tool reproduces
+`"N2Q/v0.1"` (and its documented sub-labels). Re-running the tool reproduces
 them exactly — this is the nothing-up-my-sleeve guarantee of SPEC §7.
 
 Status: **provisional-final.** The S-box and rotation constants are fixed. The
@@ -63,7 +63,7 @@ diffusion (SPEC §7.2). Both widths reach **full linear diffusion in 4 rounds**.
 
 ## A.3 Round constants rc_i
 
-16 distinct bytes from seed `"N2Q-C/v0.1/rc"`, XORed into lane x2 at round i:
+16 distinct bytes from seed `"N2Q/v0.1/rc"`, XORed into lane x2 at round i:
 
 ```
 rc = [0x15, 0xe3, 0x2d, 0xa2, 0x5e, 0x5c, 0xab, 0xae,

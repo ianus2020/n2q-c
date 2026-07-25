@@ -1,4 +1,4 @@
-# cryptanalysis — N2Q-C M4 measurements
+# cryptanalysis — N2Q M4 measurements
 
 Runs cryptanalytic *measurements* on the real QP-320 permutation (from the
 reference crate) and reports honest results. Findings and margins are written up

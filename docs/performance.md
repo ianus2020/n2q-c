@@ -1,4 +1,4 @@
-# N2Q-C performance: baseline and optimisation roadmap
+# N2Q performance: baseline and optimisation roadmap
 
 **Honest framing:** the reference implementations are written for *clarity and
 constant-time correctness*, not speed. The numbers below are a **floor**. This
@@ -36,7 +36,7 @@ inner loop, executed every round.
 3. **Explicit SIMD.** NEON (Apple/ARM) and AVX2 intrinsics for the bitsliced round,
    processing several sponge states in parallel — the natural fit for a bitsliced
    design. Target: software-Ascon class.
-4. **Platform AEAD offload where honest.** Document that N2Q-C will not beat
+4. **Platform AEAD offload where honest.** Document that N2Q will not beat
    AES-NI on raw AES workloads; its value is the feature set and the misuse/
    committing/forward-secrecy guarantees, not out-racing a hardware instruction.
 

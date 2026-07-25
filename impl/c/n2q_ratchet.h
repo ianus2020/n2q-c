@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_ratchet — forward-secret streaming channel on top of N2Q-C.
+ * n2q_ratchet — forward-secret streaming channel on top of N2Q.
  *
  * A symmetric key ratchet (Signal-style chain): every packet is sealed under a
  * fresh one-time message key derived from a chain key, and the chain key is then

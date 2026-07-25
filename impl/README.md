@@ -1,4 +1,4 @@
-# N2Q-C reference implementations (M3)
+# N2Q reference implementations (M3)
 
 Two independent, constant-time implementations of N2Q-128 (permutation QP-320 /
 QP-640 + modes), cross-validated against each other **and** against the

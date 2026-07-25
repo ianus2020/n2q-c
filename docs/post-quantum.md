@@ -1,6 +1,6 @@
-# N2Q-C and post-quantum security
+# N2Q and post-quantum security
 
-**Short version:** use the **N2Q-256** suite and N2Q-C carries a **128-bit
+**Short version:** use the **N2Q-256** suite and N2Q carries a **128-bit
 post-quantum security level** — the same posture as AES-256, SHA-256 and Ascon-128a.
 This needs no new algorithm: it follows from how quantum computers do (and do not)
 help against symmetric, permutation-based cryptography.
@@ -9,7 +9,7 @@ help against symmetric, permutation-based cryptography.
 
 The headline quantum threat — Shor's algorithm — breaks **public-key** crypto
 (RSA, Diffie-Hellman, ECC) because those rest on structured problems (factoring,
-discrete logs). N2Q-C has **no such structure**: it is a keyed sponge over a
+discrete logs). N2Q has **no such structure**: it is a keyed sponge over a
 bit-sliced SPN permutation. There is nothing for Shor to factor or invert.
 
 The only generic quantum tool that applies is **Grover's algorithm**, a brute-force
@@ -39,10 +39,10 @@ search is astronomically beyond the classical `2^128` figure it nominally matche
 ## What this claim is, and is not
 
 - **It is:** the standard, well-understood argument that symmetric primitives with
-  256-bit keys are quantum-resistant. N2Q-C inherits exactly the post-quantum
+  256-bit keys are quantum-resistant. N2Q inherits exactly the post-quantum
   posture of AES-256 / SHA-256 / Ascon by using the same key sizes and a
   structure with no Shor-exploitable algebra.
-- **It is not:** a proof that N2Q-C is secure. The post-quantum margin is only as
+- **It is not:** a proof that N2Q is secure. The post-quantum margin is only as
   real as the *classical* security of the permutation, which is still a design
   target pending external cryptanalysis (see the roadmap, milestone M6). "Quantum
   security 128-bit" assumes the permutation is close to ideal — the same

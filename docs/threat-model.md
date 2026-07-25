@@ -1,6 +1,6 @@
-# N2Q-C — Threat model
+# N2Q — Threat model
 
-Scope of this document: what N2Q-C is meant to protect, against whom, under what
+Scope of this document: what N2Q is meant to protect, against whom, under what
 assumptions, and what is explicitly out of scope. It frames the target for
 external review (SPEC §12-M6).
 

@@ -1,6 +1,6 @@
-# N2Q-C — developer guide
+# N2Q — developer guide
 
-A practical manual: how to use N2Q-C in every scenario the library supports.
+A practical manual: how to use N2Q in every scenario the library supports.
 All signatures are taken from the actual code in this repository.
 
 > **Status:** see [STATUS.md](../STATUS.md) for what is verified, what is not, and where this project is appropriate to use.

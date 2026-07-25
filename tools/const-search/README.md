@@ -1,8 +1,8 @@
-# const-search — N2Q-C M2 constant selection
+# const-search — N2Q M2 constant selection
 
 Deterministic tooling that measures 5-bit S-box cryptographic properties and
-selects the N2Q-C constants (SPEC §7). All output is reproducible from the public
-seed `"N2Q-C/v0.1"` — no hidden values.
+selects the N2Q constants (SPEC §7). All output is reproducible from the public
+seed `"N2Q/v0.1"` — no hidden values.
 
 ## Commands
 

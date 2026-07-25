@@ -1,4 +1,4 @@
-// N2Q-C reference implementation (Swift) — N2Q-128 suite (QP-320).
+// N2Q reference implementation (Swift) — N2Q-128 suite (QP-320).
 //
 // Faithful port of the verified Rust/C/Go/Python references, with a built-in
 // self-test against the published KATs: run `swift n2qc.swift` and it prints
@@ -178,7 +178,7 @@ if CommandLine.arguments.count == 4,
     exit(0)
 }
 
-print("N2Q-C Swift reference — KAT cross-check")
+print("N2Q Swift reference — KAT cross-check")
 let s = permute([0,0,0,0,0], 12)
 check("QP-320 zero p^12", String(format: "%016llx %016llx", s[0], s[1]), "6c3d34cc09474fbb 4ad0c1e3cc099b31")
 check("hash(\"\") Secure", hx(hashN2Q(SECURE, [UInt8]("".utf8))), "5349a47ebb78bb4a403a518a28f86740ddfd96a880f72ea6ada15a1656072bed")

@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_commit — key-committing AEAD on top of N2Q-C.
+ * n2q_commit — key-committing AEAD on top of N2Q.
  *
  * A normal AEAD only promises "you can't decrypt without the key". It does NOT
  * promise that a ciphertext belongs to exactly one key. AES-GCM and ChaCha20-

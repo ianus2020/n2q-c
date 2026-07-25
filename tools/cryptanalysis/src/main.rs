@@ -1,4 +1,4 @@
-//! N2Q-C — M4 cryptanalysis harness.
+//! N2Q — M4 cryptanalysis harness.
 //!
 //! Runs *measurements* on the real QP-320 permutation (from the reference crate)
 //! and reports honest results. What is proven vs. empirical vs. extrapolated is
@@ -381,7 +381,7 @@ fn welch_t(a: &[f64], b: &[f64]) -> f64 {
 
 fn main() {
     let qp = Qp::qp320();
-    println!("=== N2Q-C - M4 cryptanalysis measurements (QP-320) ===\n");
+    println!("=== N2Q - M4 cryptanalysis measurements (QP-320) ===\n");
     let arg = std::env::args().nth(1).unwrap_or_else(|| "full".into());
     match arg.as_str() {
         "avalanche" => avalanche(&qp),

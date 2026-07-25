@@ -1,4 +1,4 @@
-# N2Q-C conformance & reproducible builds
+# N2Q conformance & reproducible builds
 
 Two promises make an implementation trustworthy: **any port computes the same
 answers**, and **you can rebuild the artifact from source and get the same bytes**.
@@ -22,7 +22,7 @@ swift impl/swift/n2qc.swift                        # Swift   → ALL PASS
 
 To validate a **new** port, print its `hash128("")`, `seal128` (Secure and Fast),
 etc. for the fixed inputs and diff against `vectors.txt`. If all lines match, the
-port is byte-compatible with every other N2Q-C implementation (a file sealed in
+port is byte-compatible with every other N2Q implementation (a file sealed in
 one decrypts in all — see the cross-language test on the media page).
 
 ## Reproducible constants

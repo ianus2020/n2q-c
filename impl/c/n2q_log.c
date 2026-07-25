@@ -1,6 +1,6 @@
 /*
  * Audit status: see STATUS.md in the repository root.
- * n2q_log — append-only, tamper-evident encrypted log on top of N2Q-C.
+ * n2q_log — append-only, tamper-evident encrypted log on top of N2Q.
  *
  * Audit trails, supply-chain records and compliance logs need one property above
  * all: you must not be able to alter, reorder or delete past entries without it

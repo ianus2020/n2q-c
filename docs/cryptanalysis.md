@@ -1,4 +1,4 @@
-# N2Q-C — Cryptanalysis dossier
+# N2Q — Cryptanalysis dossier
 
 Self-cryptanalysis of the QP permutation and modes. Each section states the
 model, the result, and the security margin. Measurements are reproducible with

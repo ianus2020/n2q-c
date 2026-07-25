@@ -14,7 +14,7 @@ KEY32 = bytes.fromhex("00112233445566778899aabbccddeeff0f1e2d3c4b5a6978"
                       "8796a5b4c3d2e1f0")
 NONCE = bytes([0xa5]) * 16
 
-print("N2Q-C Python reference — KAT cross-check (vs Rust/C)")
+print("N2Q Python reference — KAT cross-check (vs Rust/C)")
 
 # permutation
 s = n2qc.permute([0, 0, 0, 0, 0], 12, 64)
