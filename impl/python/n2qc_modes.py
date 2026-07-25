@@ -64,6 +64,8 @@ def seal_padded(key, nonce, ad, pt, profile=F, bucket=256):
 
 def open_padded(key, nonce, ad, token, profile=F):
     buf = n2qc.open(128, profile, key, nonce, ad, token)
+    if buf is None or len(buf) < 4:
+        return None
     n = struct.unpack("<I", buf[:4])[0]
     return buf[4 : 4 + n]
 
@@ -97,10 +99,8 @@ def log_verify(key, records, expected_head):
         if len(rec) < 8 + 16 or struct.unpack("<Q", rec[:8])[0] != i:
             return False
         nonce = rec[:8] + b"\x00" * 8
-        try:
-            n2qc.open(128, S, key, nonce, LOG_AD, rec[8:])
-        except Exception:
-            return False
+        if n2qc.open(128, S, key, nonce, LOG_AD, rec[8:]) is None:
+            return False   # record does not authenticate
         head = n2qc.hash(128, S, head + rec, 32)
     return head == expected_head
 
@@ -123,6 +123,8 @@ def frank_seal(key, nonce, msg):
 def frank_open(key, nonce, token):
     cf, sealed = token[:32], token[32:]
     msg = n2qc.open(128, S, key, nonce, cf, sealed)
+    if msg is None:
+        return None
     opening = _frank_opening(key, nonce)
     if _frank_commit(opening, msg) != cf:
         return None
@@ -183,10 +185,9 @@ class StreamRx:
             if diff >= 64 or (self.win >> diff) & 1:
                 return None
         nonce = pkt[:8] + b"\x00" * 8
-        try:
-            pt = n2qc.open(128, self.p, self.key, nonce, aad, pkt[8:])
-        except Exception:
-            return None
+        pt = n2qc.open(128, self.p, self.key, nonce, aad, pkt[8:])
+        if pt is None:
+            return None   # forged: leave the replay window untouched
         if not self.started:
             self.max, self.win, self.started = seq, 1, True
         elif seq > self.max:
@@ -226,10 +227,9 @@ class RatchetRx:
             mk = self.skip.get(seq)
             if mk is None:
                 return None
-            try:
-                pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
-            except Exception:
-                return None
+            pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
+            if pt is None:
+                return None   # forged: keep the cached key
             del self.skip[seq]
             return pt
         if seq - self.next > 64:
@@ -239,10 +239,9 @@ class RatchetRx:
             skipped[i] = _rkdf(ck, 0x01)
             ck = _rkdf(ck, 0x02)
         mk, cn = _rkdf(ck, 0x01), _rkdf(ck, 0x02)
-        try:
-            pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
-        except Exception:
-            return None
+        pt = n2qc.open(128, F, mk, nonce, aad, pkt[8:])
+        if pt is None:
+            return None   # forged: do NOT advance the chain (no DoS)
         self.skip.update(skipped)
         self.ck, self.next = cn, seq + 1
         return pt
