@@ -59,7 +59,7 @@ cd ../n2q-c-ref && cargo test
 
 ### Your first encryption
 
-<details open><summary><b>Python</b></summary>
+#### Python
 
 ```python
 import n2qc, os
@@ -70,18 +70,16 @@ nonce = os.urandom(16)
 tok = n2qc.seal_token(128, n2qc.FAST, key, nonce, b"ctx", b"secret")
 pt  = n2qc.open_token(128, key, b"ctx", tok)      # b"secret"
 ```
-</details>
 
-<details><summary><b>Go</b></summary>
+#### Go
 
 ```go
 tok := n2qc.SealToken(n2qc.Fast, key, nonce, []byte("ctx"), []byte("secret"))
 pt, ok := n2qc.OpenToken(key, []byte("ctx"), tok)
 if !ok { /* forgery, or wrong key/AAD */ }
 ```
-</details>
 
-<details><summary><b>Rust</b></summary>
+#### Rust
 
 ```rust
 use n2q_c_ref::modes::{capsule, Profile};
@@ -89,23 +87,27 @@ use n2q_c_ref::modes::{capsule, Profile};
 let tok = capsule::seal128(Profile::Fast, &key, &nonce, b"ctx", b"secret");
 let pt  = capsule::open128(&key, b"ctx", &tok).expect("auth failed");
 ```
-</details>
 
-<details><summary><b>PHP / Swift / JS (WASM)</b></summary>
+#### PHP
 
 ```php
 $tok = n2q_seal_token(N2Q_FAST, $key, $nonce, "ctx", "secret");
 $pt  = n2q_open_token($key, "ctx", $tok);
 ```
+
+#### Swift
+
 ```swift
 let tok = sealToken(FAST, key, nonce, [UInt8]("ctx".utf8), [UInt8]("secret".utf8))
 let pt  = openToken(key, [UInt8]("ctx".utf8), tok)
 ```
+
+#### JavaScript (WASM)
+
 ```js
 const tok = seal128(true /* fast */, keyHex, nonceHex, "ctx", "secret");
 const pt  = open128(keyHex, "ctx", tok);
 ```
-</details>
 
 ---
 
