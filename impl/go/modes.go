@@ -94,6 +94,108 @@ func StegoOpen(key, ad, blob []byte, profile int) ([]byte, bool) {
 	return Open(profile, key, blob[:16], ad, blob[16:])
 }
 
+// audit-log (hash chain)
+var logAD = []byte("n2q-log")
+
+func LogGenesis() []byte { return Hash(Secure, []byte("n2q-log-genesis")) }
+func LogAppend(head []byte, seq uint64, key, entry []byte) (record, newHead []byte) {
+	nonce := make([]byte, 16)
+	binary.LittleEndian.PutUint64(nonce, seq)
+	sealed := Seal(Secure, key, nonce, logAD, entry)
+	record = make([]byte, 8+len(sealed))
+	binary.LittleEndian.PutUint64(record, seq)
+	copy(record[8:], sealed)
+	return record, Hash(Secure, append(append([]byte{}, head...), record...))
+}
+func LogVerify(key []byte, records [][]byte, expectedHead []byte) bool {
+	head := LogGenesis()
+	for i, rec := range records {
+		if len(rec) < 8+16 || binary.LittleEndian.Uint64(rec[:8]) != uint64(i) {
+			return false
+		}
+		nonce := make([]byte, 16)
+		copy(nonce, rec[:8])
+		if _, ok := Open(Secure, key, nonce, logAD, rec[8:]); !ok {
+			return false
+		}
+		head = Hash(Secure, append(append([]byte{}, head...), rec...))
+	}
+	return bytes.Equal(head, expectedHead)
+}
+
+// message franking
+func frankOpening(key, nonce []byte) []byte {
+	b := append([]byte{0x08}, key...)
+	return Hash(Secure, append(b, nonce...))[:16]
+}
+func frankCommit(opening, msg []byte) []byte {
+	b := append([]byte{0x09}, opening...)
+	return Hash(Secure, append(b, msg...))[:32]
+}
+func FrankSeal(key, nonce, msg []byte) []byte {
+	cf := frankCommit(frankOpening(key, nonce), msg)
+	return append(cf, Seal(Secure, key, nonce, cf, msg)...)
+}
+func FrankOpen(key, nonce, token []byte) (msg, cf, opening []byte, ok bool) {
+	if len(token) < 32+16 {
+		return nil, nil, nil, false
+	}
+	cf = token[:32]
+	m, o := Open(Secure, key, nonce, cf, token[32:])
+	if !o {
+		return nil, nil, nil, false
+	}
+	op := frankOpening(key, nonce)
+	if !bytes.Equal(frankCommit(op, m), cf) {
+		return nil, nil, nil, false
+	}
+	return m, cf, op, true
+}
+func FrankReportVerify(cf, opening, msg []byte) bool {
+	return bytes.Equal(frankCommit(opening, msg), cf)
+}
+
+// seekable N2QF
+func N2qfBuild(key []byte, chunks [][]byte, profile int) []byte {
+	suite := byte(0x01)
+	if profile == Fast {
+		suite |= 0x20
+	}
+	out := append([]byte("N2QF"), 1, suite)
+	for i, ch := range chunks {
+		nonce := make([]byte, 16)
+		binary.LittleEndian.PutUint64(nonce, uint64(i))
+		sealed := Seal(profile, key, nonce, nil, ch)
+		l := make([]byte, 4)
+		binary.LittleEndian.PutUint32(l, uint32(len(sealed)))
+		out = append(out, l...)
+		out = append(out, sealed...)
+	}
+	return out
+}
+func SeekChunk(key, buf []byte, index int) ([]byte, bool) {
+	if len(buf) < 6 || !bytes.Equal(buf[:4], []byte("N2QF")) {
+		return nil, false
+	}
+	profile := Secure
+	if buf[5]&0x20 != 0 {
+		profile = Fast
+	}
+	p, i := 6, 0
+	for p+4 <= len(buf) {
+		l := int(binary.LittleEndian.Uint32(buf[p : p+4]))
+		p += 4
+		if i == index {
+			nonce := make([]byte, 16)
+			binary.LittleEndian.PutUint64(nonce, uint64(index))
+			return Open(profile, key, nonce, nil, buf[p:p+l])
+		}
+		p += l
+		i++
+	}
+	return nil, false
+}
+
 // cross-check against the Python-produced /tmp/modes/vectors.txt; returns failures
 func modesCross() int {
 	f, err := os.Open("/tmp/modes/vectors.txt")
@@ -143,5 +245,27 @@ func modesCross() int {
 	ck("length-hiding open", ok && bytes.Equal(pp, PT))
 	so, ok := StegoOpen(KEY, nil, v["stego"], Fast)
 	ck("stego open", ok && bytes.Equal(so, PT))
+
+	// audit-log
+	recs := [][]byte{v["log0"], v["log1"], v["log2"]}
+	ck("audit-log verify", LogVerify(KEY, recs, v["log_head"]))
+	head := LogGenesis()
+	var rr [][]byte
+	for i, e := range [][]byte{[]byte("login alice"), []byte("config change"), []byte("logout bob")} {
+		var r []byte
+		r, head = LogAppend(head, uint64(i), KEY, e)
+		rr = append(rr, r)
+	}
+	ck("audit-log reproduce", bytes.Equal(head, v["log_head"]) && bytes.Equal(rr[0], v["log0"]))
+
+	// franking
+	fm, fcf, fop, fok := FrankOpen(KEY, NONCE, v["franking"])
+	ck("franking open", fok && bytes.Equal(fm, []byte("the abusive message")) && FrankReportVerify(fcf, fop, fm))
+	ck("franking reproduce", bytes.Equal(FrankSeal(KEY, NONCE, []byte("the abusive message")), v["franking"]))
+
+	// seekable
+	seekPt, sok := SeekChunk(KEY, v["seek"], 1)
+	ck("seekable chunk 1", sok && bytes.Equal(seekPt, []byte("chunk one data")))
+
 	return fails
 }

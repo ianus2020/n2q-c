@@ -93,3 +93,110 @@ pub fn stego_open(key: &[u8; 16], ad: &[u8], blob: &[u8], p: Profile) -> Option<
     nonce.copy_from_slice(&blob[..16]);
     n128::open(p, key, &nonce, ad, &blob[16..])
 }
+
+// ---- append-only, tamper-evident log (hash chain) ----
+const LOG_AD: &[u8] = b"n2q-log";
+
+pub fn log_genesis() -> [u8; 32] {
+    n128::hash(Profile::Secure, b"n2q-log-genesis")
+}
+pub fn log_append(head: &[u8], seq: u64, key: &[u8; 16], entry: &[u8]) -> (Vec<u8>, [u8; 32]) {
+    let mut nonce = [0u8; 16];
+    nonce[..8].copy_from_slice(&seq.to_le_bytes());
+    let sealed = n128::seal(Profile::Secure, key, &nonce, LOG_AD, entry);
+    let mut record = seq.to_le_bytes().to_vec();
+    record.extend_from_slice(&sealed);
+    let mut hin = head.to_vec();
+    hin.extend_from_slice(&record);
+    (record, n128::hash(Profile::Secure, &hin))
+}
+pub fn log_verify(key: &[u8; 16], records: &[Vec<u8>], expected_head: &[u8]) -> bool {
+    let mut head = log_genesis();
+    for (i, rec) in records.iter().enumerate() {
+        if rec.len() < 8 + 16 || u64::from_le_bytes(rec[..8].try_into().unwrap()) != i as u64 {
+            return false;
+        }
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&rec[..8]);
+        if n128::open(Profile::Secure, key, &nonce, LOG_AD, &rec[8..]).is_none() {
+            return false;
+        }
+        let mut hin = head.to_vec();
+        hin.extend_from_slice(rec);
+        head = n128::hash(Profile::Secure, &hin);
+    }
+    &head[..] == expected_head
+}
+
+// ---- message franking ----
+fn frank_opening(key: &[u8; 16], nonce: &[u8; 16]) -> [u8; 16] {
+    let mut b = vec![0x08u8];
+    b.extend_from_slice(key);
+    b.extend_from_slice(nonce);
+    let h = n128::hash(Profile::Secure, &b);
+    let mut o = [0u8; 16];
+    o.copy_from_slice(&h[..16]);
+    o
+}
+fn frank_commit(opening: &[u8], msg: &[u8]) -> [u8; 32] {
+    let mut b = vec![0x09u8];
+    b.extend_from_slice(opening);
+    b.extend_from_slice(msg);
+    n128::hash(Profile::Secure, &b)
+}
+pub fn frank_seal(key: &[u8; 16], nonce: &[u8; 16], msg: &[u8]) -> Vec<u8> {
+    let cf = frank_commit(&frank_opening(key, nonce), msg);
+    let mut out = cf.to_vec();
+    out.extend_from_slice(&n128::seal(Profile::Secure, key, nonce, &cf, msg));
+    out
+}
+pub fn frank_open(key: &[u8; 16], nonce: &[u8; 16], token: &[u8]) -> Option<(Vec<u8>, [u8; 32], [u8; 16])> {
+    if token.len() < 32 + 16 {
+        return None;
+    }
+    let cf: [u8; 32] = token[..32].try_into().unwrap();
+    let msg = n128::open(Profile::Secure, key, nonce, &cf, &token[32..])?;
+    let op = frank_opening(key, nonce);
+    if frank_commit(&op, &msg) != cf {
+        return None;
+    }
+    Some((msg, cf, op))
+}
+pub fn frank_report_verify(cf: &[u8; 32], opening: &[u8; 16], msg: &[u8]) -> bool {
+    &frank_commit(opening, msg) == cf
+}
+
+// ---- seekable N2QF ----
+pub fn n2qf_build(key: &[u8; 16], chunks: &[&[u8]], p: Profile) -> Vec<u8> {
+    let suite = 0x01u8 | if p == Profile::Fast { 0x20 } else { 0 };
+    let mut out = b"N2QF".to_vec();
+    out.push(1);
+    out.push(suite);
+    for (i, ch) in chunks.iter().enumerate() {
+        let mut nonce = [0u8; 16];
+        nonce[..8].copy_from_slice(&(i as u64).to_le_bytes());
+        let sealed = n128::seal(p, key, &nonce, b"", ch);
+        out.extend_from_slice(&(sealed.len() as u32).to_le_bytes());
+        out.extend_from_slice(&sealed);
+    }
+    out
+}
+pub fn seek_chunk(key: &[u8; 16], buf: &[u8], index: usize) -> Option<Vec<u8>> {
+    if buf.len() < 6 || &buf[..4] != b"N2QF" {
+        return None;
+    }
+    let p = if buf[5] & 0x20 != 0 { Profile::Fast } else { Profile::Secure };
+    let (mut pos, mut i) = (6usize, 0usize);
+    while pos + 4 <= buf.len() {
+        let l = u32::from_le_bytes(buf[pos..pos + 4].try_into().unwrap()) as usize;
+        pos += 4;
+        if i == index {
+            let mut nonce = [0u8; 16];
+            nonce[..8].copy_from_slice(&(index as u64).to_le_bytes());
+            return n128::open(p, key, &nonce, b"", &buf[pos..pos + l]);
+        }
+        pos += l;
+        i += 1;
+    }
+    None
+}

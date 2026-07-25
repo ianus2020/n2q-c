@@ -62,4 +62,26 @@ fn modes_cross_from_python() {
 
     // stego
     assert_eq!(stego_open(&key, b"", &v["stego"], Profile::Fast).unwrap(), pt, "stego open");
+
+    // audit-log
+    let recs = vec![v["log0"].clone(), v["log1"].clone(), v["log2"].clone()];
+    assert!(log_verify(&key, &recs, &v["log_head"]), "audit-log verify");
+    let mut head = log_genesis();
+    let mut rr: Vec<Vec<u8>> = Vec::new();
+    for (i, &e) in [&b"login alice"[..], &b"config change"[..], &b"logout bob"[..]].iter().enumerate() {
+        let (r, h) = log_append(&head, i as u64, &key, e);
+        head = h;
+        rr.push(r);
+    }
+    assert_eq!(&head[..], &v["log_head"][..], "audit-log reproduce head");
+    assert_eq!(rr[0], v["log0"], "audit-log reproduce rec0");
+
+    // franking
+    let (fm, fcf, fop) = frank_open(&key, &nonce, &v["franking"]).unwrap();
+    assert_eq!(fm, b"the abusive message".to_vec(), "franking open");
+    assert!(frank_report_verify(&fcf, &fop, &fm), "franking report verify");
+    assert_eq!(frank_seal(&key, &nonce, b"the abusive message"), v["franking"], "franking reproduce");
+
+    // seekable
+    assert_eq!(seek_chunk(&key, &v["seek"], 1).unwrap(), b"chunk one data".to_vec(), "seekable chunk 1");
 }
