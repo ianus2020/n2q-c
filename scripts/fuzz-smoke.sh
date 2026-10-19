@@ -19,7 +19,7 @@ for target in fireline n2qf siv; do
 done
 cargo +"$n2q_fuzz_toolchain" metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
 for target in frames n2qf; do
-    cargo +"$n2q_fuzz_toolchain" fuzz run "$target" -- \
+    cargo +"$n2q_fuzz_toolchain" fuzz run --fuzz-dir fuzz "$target" -- \
         "-max_total_time=$n2q_fuzz_seconds" "-runs=$n2q_fuzz_runs" \
         -max_len=4096 -rss_limit_mb=512 -timeout=5 -seed=20261019
 done
