@@ -3,6 +3,7 @@
 //! the others. Envelope, key-committing AEAD, convergent, length-hiding, stego.
 
 use crate::modes::{Profile, n128};
+use zeroize::Zeroizing;
 
 const ENV_AD: &[u8] = b"n2q-envelope-v1";
 const CONV_AD: &[u8] = b"n2q-conv";
@@ -50,17 +51,23 @@ pub fn open_committing(
         return None;
     }
     let (kc, sealed) = token.split_at(32);
-    if &commit(key, &sealed[..16])[..] != kc {
+    if !crate::modes::ct_eq(&commit(key, &sealed[..16]), kc) {
         return None;
     }
     n128::open(p, key, nonce, ad, sealed)
 }
 
 // ---- convergent (dedup) ----
-pub fn conv_seal(mk: &[u8], content: &[u8], p: Profile) -> ([u8; 16], Vec<u8>) {
-    let mut m = mk.to_vec();
+/// Fixed 16-byte master key makes `master_key || content` unambiguous.
+///
+/// ```compile_fail
+/// use n2q_c_ref::{modes::Profile, modes_ext::conv_seal};
+/// conv_seal(&[0u8; 17], b"content", Profile::Secure);
+/// ```
+pub fn conv_seal(mk: &[u8; 16], content: &[u8], p: Profile) -> ([u8; 16], Vec<u8>) {
+    let mut m = Zeroizing::new(mk.to_vec());
     m.extend_from_slice(content);
-    let h = n128::hash(Profile::Secure, &m);
+    let h = Zeroizing::new(n128::hash(Profile::Secure, &m));
     let mut dek = [0u8; 16];
     dek.copy_from_slice(&h[..16]);
     let ct = n128::seal(p, &dek, &ZERO, CONV_AD, content);

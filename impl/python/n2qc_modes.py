@@ -7,6 +7,7 @@ Modes: envelope (+rotation), key-committing AEAD, convergent (dedup),
 length-hiding, stego framing.
 """
 import struct
+import hmac
 import n2qc
 
 S, F = n2qc.SECURE, n2qc.FAST
@@ -39,13 +40,15 @@ def seal_committing(key, nonce, ad, pt, profile=F):
 
 def open_committing(key, nonce, ad, token, profile=F):
     kc, sealed = token[:32], token[32:]
-    if _commit(key, sealed[:16]) != kc:
+    if not hmac.compare_digest(_commit(key, sealed[:16]), kc):
         return None
     return n2qc.open(128, profile, key, nonce, ad, sealed)
 
 
 # ---- convergent (dedup-friendly) encryption ----
 def conv_seal(mk, content, profile=F):
+    if len(mk) != 16:
+        raise ValueError("convergent master key must be exactly 16 bytes")
     dek = n2qc.hash(128, S, mk + content, 16)
     return dek, n2qc.seal(128, profile, dek, ZERO, CONV_AD, content)
 

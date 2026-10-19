@@ -148,7 +148,7 @@ fn open_g<L: Lane>(
 }
 
 /// Constant-time byte-slice comparison.
-fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+pub(crate) fn ct_eq(a: &[u8], b: &[u8]) -> bool {
     if a.len() != b.len() {
         return false;
     }

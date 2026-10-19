@@ -21,6 +21,8 @@ cc -O1 -g -fsanitize=address,undefined -DN2Q_FPE_DEMO impl/c/n2q_fpe.c -o "$buil
 "$build/fpe"
 cc -O1 -g -fsanitize=address,undefined tests/fpe_security.c -o "$build/fpe-security"
 "$build/fpe-security"
+cc -O1 -g -fsanitize=address,undefined tests/convergent_security.c -o "$build/convergent-security"
+"$build/convergent-security"
 cc -O1 -g -fsanitize=address,undefined tests/fireline_security.c -o "$build/fireline-security"
 "$build/fireline-security"
 cc -O1 -g -fsanitize=address,undefined -DN2Q_FIRELINE_DEMO impl/c/n2q_fireline.c -o "$build/fireline"

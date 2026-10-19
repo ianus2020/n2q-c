@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/subtle"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -45,7 +46,7 @@ func OpenCommitting(key, nonce, ad, token []byte, profile int) ([]byte, bool) {
 		return nil, false
 	}
 	kc, sealed := token[:32], token[32:]
-	if !bytes.Equal(commit(key, sealed[:16]), kc) {
+	if subtle.ConstantTimeCompare(commit(key, sealed[:16]), kc) != 1 {
 		return nil, false
 	}
 	return Open(profile, key, nonce, ad, sealed)
@@ -53,9 +54,15 @@ func OpenCommitting(key, nonce, ad, token []byte, profile int) ([]byte, bool) {
 
 // convergent (dedup)
 func ConvSeal(mk, content []byte, profile int) (dek, ct []byte) {
+	if !valid(profile, mk, 16) {
+		return nil, nil
+	}
 	m := make([]byte, 0, len(mk)+len(content))
 	m = append(append(m, mk...), content...)
-	dek = Hash(Secure, m)[:16]
+	h := Hash(Secure, m)
+	dek = append([]byte(nil), h[:16]...)
+	clear(m)
+	clear(h)
 	return dek, Seal(profile, dek, zero16, convAD, content)
 }
 func ConvOpen(dek, ct []byte, profile int) ([]byte, bool) {
