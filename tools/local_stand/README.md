@@ -19,7 +19,10 @@ python3 tools/local_stand/run.py --state .local-stand
 ```
 
 It listens on `https://localhost:9443/` and mTLS `localhost:9444` only. The CA is
-not installed into system trust. For explicit verification:
+not installed into system trust. The generator uses its own complete CA/CSR
+configuration and validates all generated certificates with strict X.509 checks.
+Ambient OpenSSL configuration cannot append CA extensions or constraints.
+For explicit verification:
 
 ```sh
 curl --cacert .local-stand/pki/ca.pem --location https://localhost:9443/

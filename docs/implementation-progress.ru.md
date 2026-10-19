@@ -22,7 +22,8 @@
 | 14: offline-миграция и PW recovery | c1d7cbe + validation 80595e0 | 10 Python + 2 Rust теста PASS; inventory, trusted-evidence recovery/rekey, private no-replace output, Argon2id new/restore и isolated legacy PW; реальных данных не переносили |
 | 15: итог локальных проверок | 80595e0 + docs f937866 | Полный native PASS (6 портов), HTTPS browser PASS, strict SSL/LibreSSL compatibility PASS; последний GitHub CI queued, не объявлен успешным; подробности stage-15-local-verification.ru.md |
 | 16: исправления по фактическому CI | 7988f1e | Установлены libcurl headers для web, проверено точечное исключение source SHA-256; устранён reverse DNS startup delay, native локально PASS (39 Python + 6 портов); повтор CI 39287720266 всё ещё выявляет issuer validation на macOS |
-| 17: общий TLS request deadline | отдельный коммит этого этапа | slow headers/saturation/recovery и handshake PASS; контроль на старом коде FAIL, 41 Python и новый HTTPS стенд/Chromium PASS |
+| 17: общий TLS request deadline | f3b43bc | slow headers/saturation/recovery и handshake PASS; контроль на старом коде FAIL, 41 Python и новый HTTPS стенд/Chromium PASS |
+| 18: конфигурация PKI и совместимость CLI | отдельный коммит этого этапа | Дубликаты CA расширений воспроизведены с OpenSSL 1.1.1w и устранены; strict chains, 6 anchor tests с legacy PKI, 42 Python и HTTPS/C signer PASS; повтор CI ожидается |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная
