@@ -70,11 +70,13 @@ const assert = require('node:assert/strict');
     }
     // Real worker failure while a request is pending must reject it and unlock
     // Clear. No response is allowed to revive the crashed worker.
+    console.log('Browser normal flows, headers, UTF-8 limits and mixed assets PASS');
+    const stubWorker=body=>async route=>{
+      const response=await route.fetch();
+      await route.fulfill({response,body,contentType:'text/javascript'});
+    };
     const crash=await browser.newPage();
-    await crash.route('**/crypto-worker.js',route=>route.fulfill({
-      contentType:'text/javascript',
-      body:"self.postMessage({ready:true});self.onmessage=()=>{throw new Error('injected worker failure')}"
-    }));
+    await crash.route('**/crypto-worker.js',stubWorker("self.postMessage({ready:true});self.onmessage=()=>{throw new Error('injected worker failure')}"));
     await crash.goto(base);await crash.waitForFunction(()=>document.querySelector('#engine').textContent==='WASM готов');
     await crash.fill('#hval','data');await crash.click('#btn-hash');
     await crash.waitForFunction(()=>document.querySelector('#out-h').textContent.startsWith('Ошибка:'));
@@ -82,13 +84,13 @@ const assert = require('node:assert/strict');
     assert.equal(await crash.isDisabled('#btn-clear'),false);await crash.close();
     // Virtual clock exercises deadlines without sleeping for 30 seconds.
     const hung=await browser.newPage();await hung.clock.install();
-    await hung.route('**/crypto-worker.js',route=>route.fulfill({contentType:'text/javascript',body:'self.postMessage({ready:true})'}));
+    await hung.route('**/crypto-worker.js',stubWorker('self.postMessage({ready:true})'));
     await hung.goto(base);await hung.waitForFunction(()=>document.querySelector('#engine').textContent==='WASM готов');
     await hung.fill('#hval','data');await hung.click('#btn-hash');await hung.clock.fastForward(31000);
     await hung.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Превышено время операции'));
     assert.equal(await hung.isDisabled('#btn-key'),true);await hung.close();
     const startup=await browser.newPage();await startup.clock.install();
-    await startup.route('**/crypto-worker.js',route=>route.fulfill({contentType:'text/javascript',body:'// intentionally never ready'}));
+    await startup.route('**/crypto-worker.js',stubWorker('// intentionally never ready'));
     await startup.goto(base);await startup.clock.fastForward(16000);
     await startup.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Превышено время загрузки'));
     await startup.close();
