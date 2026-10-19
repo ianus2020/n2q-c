@@ -59,7 +59,7 @@ def publish(source,destination):
         raise ValueError('source must be a real directory')
     data = {name:read_public(source,name) for name in FILES}
     manifest = json.loads(data['pkg/build-manifest.json'],object_pairs_hook=unique_object)
-    if manifest.get('version') != 1 or set(manifest) != {'version','js','wasm'}:
+    if type(manifest.get('version')) is not int or manifest.get('version') != 1 or set(manifest) != {'version','js','wasm'}:
         raise ValueError('unknown build manifest')
     for key,name in [('js','pkg/n2q_c_wasm.js'),('wasm','pkg/n2q_c_wasm_bg.wasm')]:
         entry = manifest[key]

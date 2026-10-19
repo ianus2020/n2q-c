@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.request
 
@@ -72,6 +73,16 @@ class LocalWeb(unittest.TestCase):
     def test_symlinked_artifacts_are_rejected(self):
         path=self.source/'app.js';path.unlink();path.symlink_to(self.pki/'server.key')
         with self.assertRaises(ValueError):publish(self.source,self.dest)
+    def test_manifest_type_and_release_quota_preserve_current(self):
+        pointer=(self.dest/'current.json').read_bytes()
+        manifest=json.loads((self.source/'pkg/build-manifest.json').read_text())
+        manifest['version']=True
+        (self.source/'pkg/build-manifest.json').write_text(json.dumps(manifest))
+        with self.assertRaises(ValueError):publish(self.source,self.dest)
+        self.write_manifest();(self.source/'app.js').write_bytes(b'new release')
+        with mock.patch('tools.local_stand.web.MAX_PUBLIC_BYTES',1):
+            with self.assertRaises(ValueError):publish(self.source,self.dest)
+        self.assertEqual((self.dest/'current.json').read_bytes(),pointer)
 
 
 if __name__=='__main__':unittest.main()

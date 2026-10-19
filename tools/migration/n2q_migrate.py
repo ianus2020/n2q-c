@@ -51,6 +51,19 @@ def key_file(path,for_output=False):
         raise ValueError('unsupported private key bundle')
     if for_output and bundle['algorithm'] != 'argon2id-v19':
         raise ValueError('legacy password derivation is recovery-only')
+    salt,costs=bundle['salt_hex'],bundle['costs']
+    if not isinstance(salt,str) or re.fullmatch(r'(?:[0-9a-f]{2}){0,64}',salt) is None or not isinstance(costs,dict):
+        raise ValueError('invalid public KDF metadata')
+    if bundle['algorithm']=='argon2id-v19':
+        if (set(costs)!={'memory_kib','passes','lanes'} or any(type(v) is not int for v in costs.values())
+                or not 32<=len(salt)<=128 or not 19456<=costs['memory_kib']<=65536
+                or not 2<=costs['passes']<=6 or not 1<=costs['lanes']<=4
+                or costs['memory_kib']*costs['passes']>196608):
+            raise ValueError('invalid Argon2id metadata budget')
+    elif (set(costs)!={'s_cost','t_cost'} or any(type(v) is not int for v in costs.values())
+          or not 1<=costs['s_cost']<=32768 or not 0<=costs['t_cost']<=6
+          or costs['s_cost']*max(costs['t_cost'],1)>98304):
+        raise ValueError('invalid legacy metadata budget')
     text=bundle['key_hex']
     if not isinstance(text,str) or re.fullmatch('[0-9a-f]{%d}'%(bundle['key_bits']//4),text) is None:
         raise ValueError('invalid private key encoding')
@@ -185,7 +198,7 @@ def inventory(directory,max_bytes=DEFAULT_LIMIT):
                         if (isinstance(bundle,dict) and bundle.get('format')=='n2q-offline-key-v1'
                                 and bundle.get('algorithm') in ('argon2id-v19','legacy-n2q-pw-v1')):
                             result.append(dict(path=str(path),kind='private-key-metadata',algorithm=bundle['algorithm'],
-                                               key_bits=bundle.get('key_bits') if bundle.get('key_bits') in (128,256) else None,
+                                               key_bits=bundle.get('key_bits') if type(bundle.get('key_bits')) is int and bundle.get('key_bits') in (128,256) else None,
                                                status='metadata only; secret key omitted'))
                     except (ValueError,UnicodeError):pass
                 continue

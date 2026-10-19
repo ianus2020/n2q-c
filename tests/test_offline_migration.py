@@ -105,13 +105,15 @@ class OfflineMigration(unittest.TestCase):
             with self.assertRaises(OSError):self.migrate()
         self.assert_clean()
         original=m.rename_new_directory
+        inode=[]
         def raced(source,destination):
             destination.mkdir(mode=0o700)
-            (destination/'keep').write_bytes(b'keep')
+            inode.append(destination.stat().st_ino)
             original(source,destination)
         with mock.patch.object(m,'rename_new_directory',side_effect=raced):
             with self.assertRaises(OSError):self.migrate()
-        self.assertEqual((self.destination/'keep').read_bytes(),b'keep')
+        self.assertEqual(self.destination.stat().st_ino,inode[0])
+        self.assertEqual(list(self.destination.iterdir()),[])
         self.assertFalse(list(self.root.glob('.n2q-migrate-*')))
     def test_inventory_never_claims_trust(self):
         report=m.inventory(self.root)
@@ -119,6 +121,25 @@ class OfflineMigration(unittest.TestCase):
         self.assertEqual(report['files'][0]['observed_sha256'],sha(self.original))
         self.assertEqual(report['files'][0]['status'],'untrusted observation')
         self.assertNotIn(self.new.read_bytes().hex(),json.dumps(report))
+    def test_legacy_large_record_is_explicitly_bounded_and_split(self):
+        plain=b'a'*65537
+        original=legacy(128,q.FAST,self.old.read_bytes(),[plain]);self.source.write_bytes(original)
+        evidence=dict(trusted_container_hash=sha(original),trusted_plaintext_hash=sha(plain),trusted_plaintext_bytes=len(plain))
+        with self.assertRaises(ValueError):self.migrate(**evidence)
+        self.assert_clean()
+        self.migrate(legacy_record_limit=131072,**evidence)
+        with (self.destination/'data.n2qf').open('rb') as source:
+            chunks=list(q._decrypt_chunks(256,self.new.read_bytes(),source))
+        self.assertEqual([len(c) for c in chunks],[65536,1]);self.assertEqual(b''.join(chunks),plain)
+    def test_secret_metadata_is_rejected_and_inventory_redacts_keys(self):
+        bundle=dict(format='n2q-offline-key-v1',algorithm='argon2id-v19',key_bits=256,
+                    key_hex=self.new.read_bytes().hex(),salt_hex='00'*16,
+                    costs=dict(memory_kib=65536,passes=3,lanes=1,password='must not be copied'))
+        path=self.root/'bundle.json';path.write_text(json.dumps(bundle));path.chmod(0o600)
+        with self.assertRaises(ValueError):m.key_file(path)
+        report=m.inventory(self.root)
+        self.assertNotIn(bundle['key_hex'],json.dumps(report))
+        self.assertNotIn('must not be copied',json.dumps(report))
 
 
 @unittest.skipUnless(os.environ.get('N2Q_MIGRATION_KEYS_BINARY'),'offline Rust CLI not configured')

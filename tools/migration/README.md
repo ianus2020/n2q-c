@@ -103,3 +103,7 @@ Linux/macOS. A racing existing destination is preserved. Unsupported filesystems
 or no-replace APIs fail closed. Normal errors clean staging; crashes can leave
 private staged ciphertext requiring explicit cleanup. fsync/process tests are
 not physical power-loss proof. Do not delete originals/backups after a smoke run.
+
+If the parent-directory fsync fails after rename, a complete verified destination
+may already exist despite a failure result. Preserve it for inspection; retry
+will refuse that name. Do not automatically delete it or the original.
