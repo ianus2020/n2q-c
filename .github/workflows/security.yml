@@ -1,7 +1,11 @@
 name: Security regressions
 on:
   push:
+    branches: [main]
   pull_request:
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
