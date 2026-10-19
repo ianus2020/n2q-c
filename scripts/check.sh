@@ -22,6 +22,10 @@ cc -O1 -g -fsanitize=address,undefined tests/fireline_security.c -o "$build/fire
 cc -O1 -g -fsanitize=address,undefined -DN2Q_FIRELINE_DEMO impl/c/n2q_fireline.c -o "$build/fireline"
 "$build/fireline"
 python3 impl/python/n2qc_fireline.py
+cc -O1 -g -pthread -fsanitize=address,undefined tests/cone_security.c -o "$build/cone-security"
+"$build/cone-security"
+cc -O1 -g -pthread -fsanitize=thread tests/cone_security.c -o "$build/cone-thread"
+"$build/cone-thread" --threads
 cargo test --locked --manifest-path impl/n2q-c-ref/Cargo.toml
 cargo test --locked --manifest-path impl/n2q-c-wasm/Cargo.toml
 cargo build --locked --release --example file --manifest-path impl/n2q-c-ref/Cargo.toml

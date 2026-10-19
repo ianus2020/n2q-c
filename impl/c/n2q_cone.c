@@ -10,9 +10,9 @@
  * CoNe takes the other road: **signatures built from a hash function and nothing
  * else** — the WOTS+ / Merkle construction behind XMSS and SLH-DSA. Instantiated
  * on the N2Q hash it gives a certificate system with no number theory and
- * post-quantum security by construction (Grover only halves the hash margin).
+ * experimental security targets; it is not a standards-compliant signature scheme.
  *
- *   WOTS+   one-time signature: len=67 chains of a 32-byte hash, Winternitz w=16
+ *   WOTS-style one-time signature: len=67 chains of a 32-byte hash, Winternitz w=16
  *   Merkle  a tree over 2^h one-time keys -> ONE 32-byte public root = the identity
  *   sign    index | WOTS+ signature | authentication path
  *   verify  recompute the WOTS+ public key -> leaf -> walk the path -> compare root
@@ -24,8 +24,9 @@
  * !! STATEFUL — READ THIS !!  Each leaf index is a ONE-TIME key. Signing two
  * different messages under the same index breaks the scheme (an attacker can
  * forge). A real deployment MUST persist the last used index durably. This
- * reference takes the index as a parameter so misuse is visible in the API, and
- * the self-test demonstrates what leaks if you ignore it.
+ * low-level demo exposes the index only to demonstrate this hazard. Integrators
+ * should use n2q_cone_state.h: durable reservations plus a required external
+ * monotonic anchor. A local file alone cannot prevent snapshot rollback.
  *
  * Simplified vs RFC 8391 / FIPS 205: no bitmask/tweakable-hash addressing, so
  * multi-target attack resistance is weaker than the standards. Fine for a
@@ -44,18 +45,35 @@
 #define CN_LEN   (CN_LEN1 + CN_LEN2)   /* 67 chains                        */
 #define CN_H      4          /* tree height -> 16 one-time keys            */
 #define CN_LEAVES (1 << CN_H)
+#define CN_MAX_MESSAGE (1U << 20) /* reference API resource ceiling */
 #define CN_SIG   (4 + CN_LEN * CN_N + CN_H * CN_N)   /* 2276 bytes         */
 
-/* domain-separated hash: H(dom | data) */
+/* Domain-separated hash of three spans without unchecked heap allocation.
+ * Streaming absorption preserves H(dom || a || b), including split boundaries. */
+static void cn_feed(uint64_t s[5], uint8_t block[8], size_t *used,
+                    const uint8_t *data, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        block[(*used)++] = data[i];
+        if (*used == 8) {
+            s[0] ^= rd_128(block);
+            f_128(s, 16);
+            *used = 0;
+        }
+    }
+}
 static void cn_h(uint8_t dom, const uint8_t *a, size_t alen, const uint8_t *b, size_t blen,
                  uint8_t out[CN_N]) {
-    uint8_t *buf = malloc(1 + alen + blen);
-    buf[0] = dom;
-    if (alen) memcpy(buf + 1, a, alen);
-    if (blen) memcpy(buf + 1 + alen, b, blen);
-    hash_128(buf, 1 + alen + blen, out, CN_N, 16);
-    memset(buf, 0, 1 + alen + blen);
-    free(buf);
+    uint64_t s[5] = {0};
+    uint8_t block[8] = {0}; size_t used = 0;
+    s[4] ^= DOM_HASH; f_128(s, 16);
+    cn_feed(s, block, &used, &dom, 1);
+    cn_feed(s, block, &used, a, alen);
+    cn_feed(s, block, &used, b, blen);
+    memset(block + used, 0, 8 - used);
+    block[used] = 1; block[7] |= 0x80;
+    s[0] ^= rd_128(block); f_128(s, 16);
+    squeeze_128(s, out, CN_N, 16);
+    secure_wipe(s, sizeof s); secure_wipe(block, sizeof block);
 }
 
 /* secret chain start i of leaf: PRF(seed, leaf, i) — never leaves the signer */
@@ -71,6 +89,7 @@ static void cn_chain(const uint8_t in[CN_N], int steps, uint8_t out[CN_N]) {
     memcpy(t, in, CN_N);
     for (int s = 0; s < steps; s++) cn_h(0x02, t, CN_N, NULL, 0, t);
     memcpy(out, t, CN_N);
+    secure_wipe(t, CN_N);
 }
 
 /* message digest -> 67 base-16 digits (64 message + 3 checksum) */
@@ -91,7 +110,7 @@ static void cn_wots_pk(const uint8_t seed[CN_N], uint32_t leaf, uint8_t pk[CN_LE
         cn_sk(seed, leaf, i, sk);
         cn_chain(sk, CN_W - 1, pk[i]);
     }
-    memset(sk, 0, CN_N);
+    secure_wipe(sk, CN_N);
 }
 
 /* compress a WOTS+ public key into one leaf node */
@@ -122,8 +141,9 @@ static void cn_root(const uint8_t seed[CN_N], uint8_t root[CN_N]) {
  * The SAME leaf must never sign two different messages.
  */
 static size_t n2q_cone_sign(const uint8_t seed[CN_N], uint32_t leaf, const uint8_t *msg,
-                            size_t mlen, uint8_t *sig) {
-    if (leaf >= CN_LEAVES) return 0;
+                            size_t mlen, uint8_t *sig, size_t sigcap) {
+    if (!seed || !sig || sigcap < CN_SIG || leaf >= CN_LEAVES ||
+        mlen > CN_MAX_MESSAGE || (mlen && !msg)) return 0;
     uint8_t d[CN_N], dig[CN_LEN], sk[CN_N];
     cn_h(0x05, msg, mlen, NULL, 0, d);
     cn_digits(d, dig);
@@ -135,7 +155,7 @@ static size_t n2q_cone_sign(const uint8_t seed[CN_N], uint32_t leaf, const uint8
         cn_sk(seed, leaf, i, sk);
         cn_chain(sk, dig[i], p + (size_t)i * CN_N); /* reveal only dig[i] steps */
     }
-    memset(sk, 0, CN_N);
+    secure_wipe(sk, CN_N);
     p += (size_t)CN_LEN * CN_N;
 
     /* authentication path: the sibling at each level */
@@ -160,7 +180,7 @@ static size_t n2q_cone_sign(const uint8_t seed[CN_N], uint32_t leaf, const uint8
 /* Verify a certificate against an identity root. Returns 1 on success. */
 static int n2q_cone_verify(const uint8_t root[CN_N], const uint8_t *msg, size_t mlen,
                            const uint8_t *sig, size_t slen) {
-    if (slen != CN_SIG) return 0;
+    if (!root || !sig || slen != CN_SIG || mlen > CN_MAX_MESSAGE || (mlen && !msg)) return 0;
     uint32_t leaf = (uint32_t)sig[0] | ((uint32_t)sig[1] << 8) | ((uint32_t)sig[2] << 16) |
                     ((uint32_t)sig[3] << 24);
     if (leaf >= CN_LEAVES) return 0;
@@ -170,7 +190,7 @@ static int n2q_cone_verify(const uint8_t root[CN_N], const uint8_t *msg, size_t 
     cn_digits(d, dig);
 
     /* finish each chain to recover the WOTS+ public key */
-    static uint8_t pk[CN_LEN][CN_N];
+    uint8_t pk[CN_LEN][CN_N]; /* private per verification: concurrent calls are independent */
     const uint8_t *p = sig + 4;
     for (int i = 0; i < CN_LEN; i++)
         cn_chain(p + (size_t)i * CN_N, CN_W - 1 - dig[i], pk[i]);
@@ -215,12 +235,12 @@ int main(void) {
     static uint8_t sig1[CN_SIG], sig2[CN_SIG];
 
     ex("issue certificate for bank-b (leaf 0)",
-       n2q_cone_sign(seed, 0, cert1, sizeof cert1 - 1, sig1) == CN_SIG);
+       n2q_cone_sign(seed, 0, cert1, sizeof cert1 - 1, sig1, sizeof sig1) == CN_SIG);
     ex("verify with the public root only",
        n2q_cone_verify(root, cert1, sizeof cert1 - 1, sig1, CN_SIG) == 1);
 
     ex("issue certificate for corp-c (leaf 1)",
-       n2q_cone_sign(seed, 1, cert2, sizeof cert2 - 1, sig2) == CN_SIG);
+       n2q_cone_sign(seed, 1, cert2, sizeof cert2 - 1, sig2, sizeof sig2) == CN_SIG);
     ex("verify the second certificate",
        n2q_cone_verify(root, cert2, sizeof cert2 - 1, sig2, CN_SIG) == 1);
 
@@ -250,7 +270,7 @@ int main(void) {
     {
         const uint8_t other[] = "bank-b : trunk fingerprint DIFFERENT";
         static uint8_t reuse[CN_SIG];
-        n2q_cone_sign(seed, 0, other, sizeof other - 1, reuse); /* leaf 0 AGAIN */
+        n2q_cone_sign(seed, 0, other, sizeof other - 1, reuse, sizeof reuse); /* leaf 0 AGAIN */
         int both_valid = n2q_cone_verify(root, cert1, sizeof cert1 - 1, sig1, CN_SIG) &&
                          n2q_cone_verify(root, other, sizeof other - 1, reuse, CN_SIG);
         int differs = memcmp(sig1 + 4, reuse + 4, CN_LEN * CN_N) != 0;
