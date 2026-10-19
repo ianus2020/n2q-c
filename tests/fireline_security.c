@@ -41,6 +41,15 @@ int main(void) {
     assert(!n2q_fireline_seal(&me,1,dek,nonce,NULL,SIZE_MAX,NULL,0,parcel,sizeof parcel,0));
     n2q_fl_peer duplicate[2] = {me,me};
     assert(!n2q_fireline_seal(duplicate,2,dek,nonce,NULL,0,NULL,0,parcel,sizeof parcel,0));
+    assert(!n2q_fireline_seal(&me,1,dek,nonce,NULL,0,(uint8_t *)"x",N2Q_FL_MAX_PAYLOAD+1,parcel,sizeof parcel,0));
+    assert(!n2q_fireline_seal(&me,1,dek,nonce,(uint8_t *)"x",N2Q_FL_MAX_AAD+1,NULL,0,parcel,sizeof parcel,0));
+    n2q_fl_peer fresh;
+    assert(n2q_fireline_peer_generate(&fresh,me.id));
+    size_t freshlen=n2q_fireline_seal_fresh(&fresh,1,NULL,0,(uint8_t *)"fresh",5,parcel,sizeof parcel), olen=0;
+    assert(freshlen && parcel[5]==1);
+    assert(n2q_fireline_open(&fresh,parcel,freshlen,NULL,0,out,sizeof out,&olen)==N2Q_FL_OK);
+    assert(olen==5 && !memcmp(out,"fresh",5));
+    secure_wipe(&fresh,sizeof fresh);
     puts("FireLine capacity/framing security regressions PASS");
     return 0;
 }

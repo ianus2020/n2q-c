@@ -9,6 +9,7 @@
 pub mod consts;
 pub mod file;
 pub mod frame;
+pub mod keys;
 pub mod modes;
 pub mod modes_ext;
 pub mod perm;

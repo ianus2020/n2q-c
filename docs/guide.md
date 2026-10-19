@@ -148,18 +148,24 @@ PHP: `n2q_blind_index(N2Q_SECURE, $key, $v)` · Swift: `blindIndex(SECURE, key, 
 - **Exact match only.** Range queries are deliberately unsupported (see §5).
 - Index a normalised value (`lower(trim(email))`), or lookups will miss.
 
-### 3.3. Passwords → keys (Balloon KDF)
-
-**When:** the key is derived from a user password.
+### 3.3. Passwords → keys (Argon2id v19)
 
 ```rust
-use n2q_c_ref::pw;
-let key32 = pw::derive(password, salt, s_cost, t_cost);   // [u8; 32]
+use n2q_c_ref::pw::{self, Costs};
+let key32 = pw::derive(password, salt, Costs::default())?; // SecretKey256
+// n256::seal(profile, key32.expose(), nonce, ad, plaintext)
 ```
 
-**Pitfalls:** the salt is per-user, ≥16 bytes, stored in the clear. Tune
-`s_cost`/`t_cost` so derivation takes ~100–500 ms on your hardware. **Never** use
-a password directly as a key.
+Generate a fresh 16–64-byte salt with a CSPRNG. Store it with `argon2id-v19`
+and the costs. Defaults: 64 MiB, 3 passes, 1 lane. Validate per-call limits
+before allocation; servers must also bound concurrency. Password length:
+1 byte – 1 MiB. Invalid inputs and allocation failure return `Result`.
+
+This **replaces** the experimental custom N2Q-PW/Balloon KDF and changes
+derived keys. Old encrypted data requires an explicit trusted offline migration;
+see [stage 4](stage-4-keys-kdf.ru.md). Owned keys have no Copy/Clone/Serialize,
+redact Debug and wipe their buffer on Drop. Caller/OS copies remain outside
+their control.
 
 ### 3.4. Files of any format (the N2QF container)
 

@@ -50,7 +50,7 @@ General sponge or SIV results do not certify this implementation or its extensio
 | M2 | Constant selection: S-box, rotations, round constants + KAT | ✅ done |
 | M3 | Reference implementations: Rust, C, Python, Go, PHP, Swift + WASM tester, KAT cross-check | ✅ done |
 | M4 | In-house cryptanalysis (avalanche / degree / differential / timing), round finalization | ◐ measurements done; a certified MILP bound is open |
-| M5 | Wire format, password KDF (Balloon), threat model | ✅ done |
+| M5 | Wire format, password KDF (Argon2id), threat model | ✅ done |
 | M6 | External audit / publication / public challenge | — |
 
 ---

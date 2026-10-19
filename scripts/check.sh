@@ -26,6 +26,8 @@ cc -O1 -g -pthread -fsanitize=address,undefined tests/cone_security.c -o "$build
 "$build/cone-security"
 cc -O1 -g -pthread -fsanitize=thread tests/cone_security.c -o "$build/cone-thread"
 "$build/cone-thread" --threads
+cargo metadata --locked --format-version 1 --manifest-path tools/bench/Cargo.toml >/dev/null
+cargo metadata --locked --format-version 1 --manifest-path tools/cryptanalysis/Cargo.toml >/dev/null
 cargo test --locked --manifest-path impl/n2q-c-ref/Cargo.toml
 cargo test --locked --manifest-path impl/n2q-c-wasm/Cargo.toml
 cargo build --locked --release --example file --manifest-path impl/n2q-c-ref/Cargo.toml

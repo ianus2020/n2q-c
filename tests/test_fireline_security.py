@@ -4,6 +4,7 @@ from pathlib import Path
 import struct
 import sys
 import unittest
+from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "impl/python"))
 import n2qc_fireline as fl
 
@@ -49,6 +50,34 @@ class FireLineSecurity(unittest.TestCase):
         for flag in (0, 1, "fast"):
             with self.assertRaises(ValueError):
                 fl.seal_parcel([self.me], self.dek, self.nonce, b"", b"x", fast=flag)
+    def test_key_creation_and_secure_default(self):
+        for name in ("", "123456789", "a\x00", "🚀🚀🚀"):
+            with self.assertRaises(ValueError):
+                fl.peer(name, bytes(16))
+        with self.assertRaises(ValueError):
+            fl.peer("node", 17) # removed 256-key generator
+        with mock.patch.object(fl.os, "urandom", return_value=bytes(range(16))):
+            self.assertEqual(fl.new_peer("node")["trunk"], bytes(range(16)))
+        with mock.patch.object(fl.os, "urandom", side_effect=[self.dek, self.nonce]) as rng:
+            packet = fl.seal_fresh_parcel([self.me], b"ctx", b"secret")
+            self.assertEqual(rng.call_args_list, [mock.call(16), mock.call(16)])
+        self.assertEqual(packet[5], 0x01)
+        self.assertEqual(fl.open_parcel(self.me,packet,b"ctx"),(fl.OK,b"secret"))
+        with mock.patch.object(fl.os,"urandom",side_effect=OSError("RNG unavailable")):
+            with self.assertRaises(OSError):
+                fl.seal_fresh_parcel([self.me],b"",b"secret")
+    def test_resource_budgets(self):
+        with mock.patch.object(fl,"MAX_PAYLOAD",6):
+            with self.assertRaises(ValueError):
+                self.parcel(payload=b"payload")
+            self.assertEqual(fl.open_parcel(self.me,self.parcel(payload=b"small")+b"",b"ctx")[0],fl.OK)
+        packet=self.parcel()
+        with mock.patch.object(fl,"MAX_PAYLOAD",6):
+            self.assertEqual(fl.open_parcel(self.me,packet,b"ctx"),(fl.FORMAT,None))
+        with mock.patch.object(fl,"MAX_AAD",2):
+            self.assertEqual(fl.open_parcel(self.me,packet,b"ctx"),(fl.ARG,None))
+            with self.assertRaises(ValueError):
+                self.parcel()
     def test_deterministic_mutation_smoke(self):
         packet = self.parcel()
         for offset in range(len(packet)):

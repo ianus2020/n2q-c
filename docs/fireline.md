@@ -55,9 +55,15 @@ cd impl/python && python3 n2qc_fireline.py     # includes the C cross-check
 
 ## Operational notes
 
-- **Randomness.** The reference takes the DEK and nonce as parameters so tests
-  are reproducible. In production both MUST come from a CSPRNG, and a DEK must
-  never be reused across parcels.
+- **Randomness.** Prefer Python `new_peer(name)` / `seal_fresh_parcel(peers,ad,pt)`
+  or C `n2q_fireline_peer_generate` / `n2q_fireline_seal_fresh`. These use the
+  OS CSPRNG and the Secure profile. The low-level API accepts explicit randomness
+  for reproducible tests and integrations that supply a CSPRNG. Never reuse a DEK.
+  Python `peer(name,trunk)` imports exactly 16 random bytes; the former integer
+  seed API was insecure and has been removed.
+- **Resource limits.** At most 32 recipients, 16 MiB payload and 1 MiB associated
+  data per parcel. Use N2QF for larger inputs. Routing labels must be distinct;
+  Python labels contain 1–8 UTF-8 bytes without NUL and are never truncated.
 - **Routing labels are public.** `rcpt_id` is metadata, not a secret — it says
   who a parcel is for. If that matters, pad the recipient list or use per-epoch
   pseudonymous labels.

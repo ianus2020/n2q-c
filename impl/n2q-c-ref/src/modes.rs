@@ -9,6 +9,7 @@
 //! N2Q-256).
 
 use crate::perm::{Lane, Qp};
+use zeroize::{Zeroize, Zeroizing};
 
 const DOM_HASH: u8 = 0x01;
 const DOM_MAC: u8 = 0x02;
@@ -40,23 +41,20 @@ fn f<L: Lane>(qp: &Qp, s: &mut [L; 5], r: usize) {
     qp.permute(s, r);
 }
 
-/// pad10*1 over bytes at rate `rate`.
-fn pad(msg: &[u8], rate: usize) -> Vec<u8> {
-    let mut m = msg.to_vec();
-    m.push(0x01);
-    while !m.len().is_multiple_of(rate) {
-        m.push(0x00);
-    }
-    let last = m.len() - 1;
-    m[last] |= 0x80;
-    m
-}
-
+/// Absorb pad10*1 with one fixed-size final block, without copying the input.
 fn absorb<L: Lane>(qp: &Qp, s: &mut [L; 5], msg: &[u8], r: usize) {
-    for chunk in pad(msg, L::BYTES).chunks_exact(L::BYTES) {
+    let mut chunks = msg.chunks_exact(L::BYTES);
+    for chunk in &mut chunks {
         s[0] = s[0].xor(L::read_le(chunk));
         f(qp, s, r);
     }
+    let rem = chunks.remainder();
+    let mut block = Zeroizing::new([0u8; 16]);
+    block[..rem.len()].copy_from_slice(rem);
+    block[rem.len()] = 0x01;
+    block[L::BYTES - 1] |= 0x80;
+    s[0] = s[0].xor(L::read_le(&block[..L::BYTES]));
+    f(qp, s, r);
 }
 
 fn squeeze<L: Lane>(qp: &Qp, s: &mut [L; 5], n: usize, r: usize) -> Vec<u8> {
@@ -100,8 +98,8 @@ fn keystream_g<L: Lane>(qp: &Qp, key: &[u8], v: &[u8], n: usize, r: usize) -> Ve
 }
 
 /// nonce ‖ le64(|ad|) ‖ ad ‖ le64(|pt|) ‖ pt
-fn siv_input(nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
-    let mut v = Vec::with_capacity(32 + ad.len() + pt.len());
+fn siv_input(nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Zeroizing<Vec<u8>> {
+    let mut v = Zeroizing::new(Vec::with_capacity(32 + ad.len() + pt.len()));
     v.extend_from_slice(nonce);
     v.extend_from_slice(&(ad.len() as u64).to_le_bytes());
     v.extend_from_slice(ad);
@@ -110,9 +108,16 @@ fn siv_input(nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
     v
 }
 
-fn seal_g<L: Lane>(qp: &Qp, key: &[u8], nonce: &[u8; 16], ad: &[u8], pt: &[u8], r: usize) -> Vec<u8> {
+fn seal_g<L: Lane>(
+    qp: &Qp,
+    key: &[u8],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    pt: &[u8],
+    r: usize,
+) -> Vec<u8> {
     let v = mac_g::<L>(qp, key, &siv_input(nonce, ad, pt), DOM_MAC, r);
-    let ks = keystream_g::<L>(qp, key, &v, pt.len(), r);
+    let ks = Zeroizing::new(keystream_g::<L>(qp, key, &v, pt.len(), r));
     let mut out = v;
     out.extend(pt.iter().zip(ks.iter()).map(|(p, k)| p ^ k));
     out
@@ -131,12 +136,13 @@ fn open_g<L: Lane>(
         return None;
     }
     let (v, ct) = sealed.split_at(tag);
-    let ks = keystream_g::<L>(qp, key, v, ct.len(), r);
-    let pt: Vec<u8> = ct.iter().zip(ks.iter()).map(|(c, k)| c ^ k).collect();
+    let ks = Zeroizing::new(keystream_g::<L>(qp, key, v, ct.len(), r));
+    let mut pt: Vec<u8> = ct.iter().zip(ks.iter()).map(|(c, k)| c ^ k).collect();
     let v2 = mac_g::<L>(qp, key, &siv_input(nonce, ad, &pt), DOM_MAC, r);
     if ct_eq(v, &v2) {
         Some(pt)
     } else {
+        pt.zeroize();
         None
     }
 }
@@ -177,10 +183,7 @@ fn stream_init<L: Lane>(qp: &Qp, key: &[u8], nonce: &[u8; 16], r: usize) -> [L; 
 }
 
 fn stream_ad<L: Lane>(qp: &Qp, s: &mut [L; 5], ad: &[u8], r: usize) {
-    for chunk in pad(ad, L::BYTES).chunks_exact(L::BYTES) {
-        s[0] = s[0].xor(L::read_le(chunk));
-        qp.permute(s, r);
-    }
+    absorb(qp, s, ad, r);
     s[4] = s[4].xor(L::from_u8(1)); // domain separation AD | message
 }
 
@@ -195,7 +198,14 @@ fn stream_finalize<L: Lane>(qp: &Qp, s: &mut [L; 5], key: &[u8], r: usize) -> Ve
 }
 
 /// Returns ciphertext ‖ tag(2 lanes).
-fn stream_seal<L: Lane>(qp: &Qp, key: &[u8], nonce: &[u8; 16], ad: &[u8], pt: &[u8], r: usize) -> Vec<u8> {
+fn stream_seal<L: Lane>(
+    qp: &Qp,
+    key: &[u8],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    pt: &[u8],
+    r: usize,
+) -> Vec<u8> {
     let b = L::BYTES;
     let mut s = stream_init::<L>(qp, key, nonce, r);
     stream_ad::<L>(qp, &mut s, ad, r);
@@ -261,6 +271,7 @@ fn stream_open<L: Lane>(
     if ct_eq(tag, &tag2) {
         Some(pt)
     } else {
+        pt.zeroize();
         None
     }
 }
@@ -271,22 +282,44 @@ pub mod n128 {
     use super::*;
 
     pub fn hash(p: Profile, msg: &[u8]) -> [u8; 32] {
-        hash_g::<u64>(&Qp::qp320(), msg, 32, p.rounds()).try_into().unwrap()
+        hash_g::<u64>(&Qp::qp320(), msg, 32, p.rounds())
+            .try_into()
+            .unwrap()
     }
     pub fn seal(p: Profile, key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
         seal_g::<u64>(&Qp::qp320(), key, nonce, ad, pt, p.rounds())
     }
-    pub fn open(p: Profile, key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], sealed: &[u8]) -> Option<Vec<u8>> {
+    pub fn open(
+        p: Profile,
+        key: &[u8; 16],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        sealed: &[u8],
+    ) -> Option<Vec<u8>> {
         open_g::<u64>(&Qp::qp320(), key, nonce, ad, sealed, p.rounds())
     }
     pub fn blind_index(p: Profile, key: &[u8; 16], value: &[u8]) -> [u8; 16] {
-        mac_g::<u64>(&Qp::qp320(), key, value, DOM_BI, p.rounds()).try_into().unwrap()
+        mac_g::<u64>(&Qp::qp320(), key, value, DOM_BI, p.rounds())
+            .try_into()
+            .unwrap()
     }
     /// Streaming AEAD (online, nonce-respecting): ciphertext ‖ tag.
-    pub fn stream_seal(p: Profile, key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
+    pub fn stream_seal(
+        p: Profile,
+        key: &[u8; 16],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        pt: &[u8],
+    ) -> Vec<u8> {
         super::stream_seal::<u64>(&Qp::qp320(), key, nonce, ad, pt, p.rounds())
     }
-    pub fn stream_open(p: Profile, key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], sealed: &[u8]) -> Option<Vec<u8>> {
+    pub fn stream_open(
+        p: Profile,
+        key: &[u8; 16],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        sealed: &[u8],
+    ) -> Option<Vec<u8>> {
         super::stream_open::<u64>(&Qp::qp320(), key, nonce, ad, sealed, p.rounds())
     }
 }
@@ -296,21 +329,43 @@ pub mod n256 {
     use super::*;
 
     pub fn hash(p: Profile, msg: &[u8]) -> [u8; 64] {
-        hash_g::<u128>(&Qp::qp640(), msg, 64, p.rounds()).try_into().unwrap()
+        hash_g::<u128>(&Qp::qp640(), msg, 64, p.rounds())
+            .try_into()
+            .unwrap()
     }
     pub fn seal(p: Profile, key: &[u8; 32], nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
         seal_g::<u128>(&Qp::qp640(), key, nonce, ad, pt, p.rounds())
     }
-    pub fn open(p: Profile, key: &[u8; 32], nonce: &[u8; 16], ad: &[u8], sealed: &[u8]) -> Option<Vec<u8>> {
+    pub fn open(
+        p: Profile,
+        key: &[u8; 32],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        sealed: &[u8],
+    ) -> Option<Vec<u8>> {
         open_g::<u128>(&Qp::qp640(), key, nonce, ad, sealed, p.rounds())
     }
     pub fn blind_index(p: Profile, key: &[u8; 32], value: &[u8]) -> [u8; 32] {
-        mac_g::<u128>(&Qp::qp640(), key, value, DOM_BI, p.rounds()).try_into().unwrap()
+        mac_g::<u128>(&Qp::qp640(), key, value, DOM_BI, p.rounds())
+            .try_into()
+            .unwrap()
     }
-    pub fn stream_seal(p: Profile, key: &[u8; 32], nonce: &[u8; 16], ad: &[u8], pt: &[u8]) -> Vec<u8> {
+    pub fn stream_seal(
+        p: Profile,
+        key: &[u8; 32],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        pt: &[u8],
+    ) -> Vec<u8> {
         super::stream_seal::<u128>(&Qp::qp640(), key, nonce, ad, pt, p.rounds())
     }
-    pub fn stream_open(p: Profile, key: &[u8; 32], nonce: &[u8; 16], ad: &[u8], sealed: &[u8]) -> Option<Vec<u8>> {
+    pub fn stream_open(
+        p: Profile,
+        key: &[u8; 32],
+        nonce: &[u8; 16],
+        ad: &[u8],
+        sealed: &[u8],
+    ) -> Option<Vec<u8>> {
         super::stream_open::<u128>(&Qp::qp640(), key, nonce, ad, sealed, p.rounds())
     }
 }
@@ -319,7 +374,7 @@ pub mod n256 {
 /// token whose suite byte records mode + size + profile, so a single `open*`
 /// reads both Secure and Fast tokens — the two profiles are interoperable.
 pub mod capsule {
-    use super::{n128, n256, Profile};
+    use super::{Profile, n128, n256};
     use crate::frame;
 
     // suite byte: low nibble = size (1=128, 2=256); bit 0x10 = streaming;
@@ -327,11 +382,7 @@ pub mod capsule {
     const FAST_BIT: u8 = 0x20;
 
     fn is_fast(p: Profile) -> u8 {
-        if p == Profile::Fast {
-            FAST_BIT
-        } else {
-            0
-        }
+        if p == Profile::Fast { FAST_BIT } else { 0 }
     }
     fn profile_of(suite: u8) -> Profile {
         if suite & FAST_BIT != 0 {
@@ -394,7 +445,10 @@ mod tests {
     fn aead_roundtrip_both_profiles() {
         for p in [SEC, FAST] {
             let sealed = n128::seal(p, &KEY, &NONCE, b"header", b"hello n2q-c");
-            assert_eq!(n128::open(p, &KEY, &NONCE, b"header", &sealed).unwrap(), b"hello n2q-c");
+            assert_eq!(
+                n128::open(p, &KEY, &NONCE, b"header", &sealed).unwrap(),
+                b"hello n2q-c"
+            );
         }
     }
 
@@ -440,14 +494,23 @@ mod tests {
 
     #[test]
     fn blind_index_matches_and_separates() {
-        assert_eq!(n128::blind_index(SEC, &KEY, b"alice@x.com"), n128::blind_index(SEC, &KEY, b"alice@x.com"));
-        assert_ne!(n128::blind_index(SEC, &KEY, b"alice@x.com"), n128::blind_index(SEC, &KEY, b"bob@x.com"));
+        assert_eq!(
+            n128::blind_index(SEC, &KEY, b"alice@x.com"),
+            n128::blind_index(SEC, &KEY, b"alice@x.com")
+        );
+        assert_ne!(
+            n128::blind_index(SEC, &KEY, b"alice@x.com"),
+            n128::blind_index(SEC, &KEY, b"bob@x.com")
+        );
     }
 
     #[test]
     fn aead_roundtrip_256() {
         let sealed = n256::seal(SEC, &KEY32, &NONCE, b"header", b"hello n2q-c-256");
-        assert_eq!(n256::open(SEC, &KEY32, &NONCE, b"header", &sealed).unwrap(), b"hello n2q-c-256");
+        assert_eq!(
+            n256::open(SEC, &KEY32, &NONCE, b"header", &sealed).unwrap(),
+            b"hello n2q-c-256"
+        );
         assert_eq!(sealed.len(), 32 + 15);
     }
 
@@ -464,12 +527,18 @@ mod tests {
                 let pt: Vec<u8> = (0..len).map(|i| i as u8).collect();
                 let sealed = n128::stream_seal(p, &KEY, &NONCE, b"ad", &pt);
                 assert_eq!(sealed.len(), pt.len() + 16);
-                assert_eq!(n128::stream_open(p, &KEY, &NONCE, b"ad", &sealed).unwrap(), pt);
+                assert_eq!(
+                    n128::stream_open(p, &KEY, &NONCE, b"ad", &sealed).unwrap(),
+                    pt
+                );
             }
             for len in [0usize, 15, 16, 17, 100] {
                 let pt: Vec<u8> = (0..len).map(|i| (i * 3) as u8).collect();
                 let sealed = n256::stream_seal(p, &KEY32, &NONCE, b"", &pt);
-                assert_eq!(n256::stream_open(p, &KEY32, &NONCE, b"", &sealed).unwrap(), pt);
+                assert_eq!(
+                    n256::stream_open(p, &KEY32, &NONCE, b"", &sealed).unwrap(),
+                    pt
+                );
             }
         }
     }

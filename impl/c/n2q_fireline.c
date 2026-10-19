@@ -34,6 +34,8 @@
 
 #define N2Q_FL_RID   8  /* public routing label of a recipient */
 #define N2Q_FL_WRAP 32  /* SIV wrap of a 16-byte DEK: 16 tag + 16 ct */
+#define N2Q_FL_MAX_PAYLOAD (16U << 20)
+#define N2Q_FL_MAX_AAD (1U << 20)
 #define N2Q_FL_MAXR 32  /* recipients per parcel (reference limit) */
 
 enum { N2Q_FL_OK = 0, N2Q_FL_FORMAT = -1, N2Q_FL_NOT_FOR_ME = -2,
@@ -92,7 +94,7 @@ static size_t n2q_fireline_seal(const n2q_fl_peer *rcpts, size_t n, const uint8_
                                 size_t outcap, int fast) {
     if (!rcpts || !dek || !nonce || !out || n == 0 || n > N2Q_FL_MAXR ||
         (fast != 0 && fast != 1) || (adlen && !ad) || (ptlen && !pt) ||
-        adlen > SIZE_MAX - 32 || ptlen > UINT32_MAX - 16) return 0;
+        adlen > N2Q_FL_MAX_AAD || ptlen > N2Q_FL_MAX_PAYLOAD) return 0;
     size_t hlen = fl_header_len(n), overhead = hlen + 36;
     if (ptlen > SIZE_MAX - overhead || outcap < overhead + ptlen ||
         !fl_ids_unique(rcpts[0].id, n, sizeof *rcpts)) return 0;
@@ -125,7 +127,7 @@ static int n2q_fireline_open(const n2q_fl_peer *me, const uint8_t *parcel, size_
                              size_t outcap, size_t *outlen) {
     if (!outlen) return N2Q_FL_ARG;
     *outlen = 0;
-    if (!me || !parcel || (adlen && !ad) || adlen > SIZE_MAX - 32) return N2Q_FL_ARG;
+    if (!me || !parcel || (adlen && !ad) || adlen > N2Q_FL_MAX_AAD) return N2Q_FL_ARG;
     if (plen < 8 || memcmp(parcel, "N2QL", 4) || parcel[4] != 1 ||
         (parcel[5] != 0x01 && parcel[5] != 0x21)) return N2Q_FL_FORMAT;
     int r = parcel[5] == 0x21 ? 8 : 16;
@@ -136,7 +138,7 @@ static int n2q_fireline_open(const n2q_fl_peer *me, const uint8_t *parcel, size_
     const uint8_t *nonce = parcel + hlen, *lenp = nonce + 16;
     size_t sn = (size_t)lenp[0] | (size_t)lenp[1] << 8 |
                 (size_t)lenp[2] << 16 | (size_t)lenp[3] << 24;
-    if (sn < 16 || sn != plen - hlen - 20 ||
+    if (sn < 16 || sn > N2Q_FL_MAX_PAYLOAD + 16 || sn != plen - hlen - 20 ||
         !fl_ids_unique(parcel + 8, n, N2Q_FL_RID + N2Q_FL_WRAP)) return N2Q_FL_FORMAT;
     if (sn - 16 > outcap || (sn > 16 && !out)) return N2Q_FL_ARG;
 
@@ -157,6 +159,26 @@ static int n2q_fireline_open(const n2q_fl_peer *me, const uint8_t *parcel, size_
     free(pad);
     secure_wipe(dek, sizeof dek);
     return ok ? N2Q_FL_OK : N2Q_FL_AUTH;
+}
+
+/* Preferred creation APIs: no deterministic keys or caller-chosen data keys. */
+static int n2q_fireline_peer_generate(n2q_fl_peer *peer, const uint8_t id[N2Q_FL_RID]) {
+    if (!peer || !id) return 0;
+    uint8_t trunk[16] = {0};
+    if (!file_random(trunk,sizeof trunk)) { secure_wipe(trunk,sizeof trunk); return 0; }
+    memmove(peer->id,id,N2Q_FL_RID); memcpy(peer->trunk,trunk,sizeof trunk);
+    secure_wipe(trunk,sizeof trunk); return 1;
+}
+static size_t n2q_fireline_seal_fresh(const n2q_fl_peer *recipients, size_t count,
+                                      const uint8_t *ad, size_t adlen,
+                                      const uint8_t *pt, size_t ptlen,
+                                      uint8_t *out, size_t outcap) {
+    uint8_t dek[16] = {0}, nonce[16] = {0}; size_t size=0;
+    if (!file_random(dek,sizeof dek) || !file_random(nonce,sizeof nonce)) goto done;
+    size=n2q_fireline_seal(recipients,count,dek,nonce,ad,adlen,pt,ptlen,out,outcap,0);
+done:
+    secure_wipe(dek,sizeof dek); secure_wipe(nonce,sizeof nonce);
+    return size;
 }
 
 /* -------------------------------------------------------------------------- */
