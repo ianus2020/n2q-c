@@ -29,6 +29,9 @@ backend is validated. A persistent [local reference anchor](tools/anchor/README.
 and C mTLS callback are provided; separate deployment rollback/storage domains
 remain an operator responsibility. C core ANF constants require no runtime initialization.
 The browser verifies its JS/WASM pair and handles worker failure/deadlines.
+The loopback TLS stand enforces an absolute request deadline and isolates its
+test CA configuration; all seven security CI jobs are required on main.
+[Recorded source CI](docs/stage-20-ci-verification.ru.md) passed all seven jobs.
 No RUP robustness is claimed ([correction](docs/robustness.md)).
 Convergent master keys are fixed at 16 bytes; C convergent APIs require output
 capacities. The [closed additional AI-assisted audit](docs/cryptographic-audit-2026-10-19.ru.md)

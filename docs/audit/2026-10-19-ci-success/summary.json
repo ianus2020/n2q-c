@@ -1,0 +1,78 @@
+{
+  "source_commit": "c5564365002b9675c17e6f8c61ac219d35f7bc48",
+  "run_url": "https://github.com/ianus2020/n2q-c/actions/runs/39289459101",
+  "jobs": {
+    "migration": "success",
+    "web": "success",
+    "cryptanalysis": "success",
+    "anchor": "success",
+    "dependencies": "success",
+    "fuzz": "success",
+    "native": "success"
+  },
+  "native_tls_tools": {
+    "openssl": {
+      "exit_code": 0,
+      "first_line": "OpenSSL 1.1.1w  11 Sep 2023"
+    },
+    "python": {
+      "exit_code": 0,
+      "first_line": "Python 3.14.7"
+    },
+    "python-ssl": {
+      "exit_code": 0,
+      "first_line": "OpenSSL 3.6.4 25 Aug 2026"
+    }
+  },
+  "cargo_audit": {
+    "wasm.json": {
+      "count": 0,
+      "database": {
+        "advisory-count": 1338,
+        "last-commit": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+        "last-updated": "2026-10-17T17:23:59+02:00"
+      }
+    },
+    "bench.json": {
+      "count": 0,
+      "database": {
+        "advisory-count": 1338,
+        "last-commit": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+        "last-updated": "2026-10-17T17:23:59+02:00"
+      }
+    },
+    "native.json": {
+      "count": 0,
+      "database": {
+        "advisory-count": 1338,
+        "last-commit": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+        "last-updated": "2026-10-17T17:23:59+02:00"
+      }
+    },
+    "cryptanalysis.json": {
+      "count": 0,
+      "database": {
+        "advisory-count": 1338,
+        "last-commit": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+        "last-updated": "2026-10-17T17:23:59+02:00"
+      }
+    },
+    "fuzz.json": {
+      "count": 0,
+      "database": {
+        "advisory-count": 1338,
+        "last-commit": "999ec89d5d3f10f20be14750ec8c2d8b44e0ac9b",
+        "last-updated": "2026-10-17T17:23:59+02:00"
+      }
+    }
+  },
+  "npm_vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "gitleaks_findings": 0
+}
