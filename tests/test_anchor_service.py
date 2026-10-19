@@ -36,7 +36,7 @@ class AnchorService(unittest.TestCase):
         cls.root = Path(cls.temp.name)
         cls.pki = create(cls.root/'pki')
         cls.client = cls.root/'client'
-        subprocess.run(['cc','-O1','-g','-pthread','-fsanitize=address,undefined',
+        subprocess.run(['cc','-O1','-g','-pthread','-fsanitize=address,undefined','-fno-sanitize-recover=all',
                         str(ROOT/'tests/anchor_http_client.c'),str(ROOT/'impl/c/n2q_cone_anchor_http.c'),
                         '-lcurl','-o',str(cls.client)],check=True)
 

@@ -4,34 +4,35 @@ set -eu
 cd "$(dirname "$0")/.."
 build=$(mktemp -d)
 trap 'rm -rf "$build"' EXIT HUP INT TERM
+scripts/check-sanitizers.sh cc
 cargo test --locked --manifest-path impl/n2q-c-ref/Cargo.toml --example migration_keys
 cargo build --release --locked --manifest-path impl/n2q-c-ref/Cargo.toml --example migration_keys
 export N2Q_MIGRATION_KEYS_BINARY="$PWD/impl/n2q-c-ref/target/release/examples/migration_keys"
 python3 -m unittest discover -s tests -v
 python3 impl/python/test_kat.py
 python3 impl/python/n2qc_modes.py
-cc -O1 -g -fsanitize=address,undefined impl/c/n2qc.c -o "$build/n2qc"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all impl/c/n2qc.c -o "$build/n2qc"
 "$build/n2qc"
-cc -O1 -g -pthread -fsanitize=address,undefined tests/core_init.c -o "$build/core-init"
+cc -O1 -g -pthread -fsanitize=address,undefined -fno-sanitize-recover=all tests/core_init.c -o "$build/core-init"
 "$build/core-init"
 cc -O1 -g -pthread -fsanitize=thread tests/core_init.c -o "$build/core-init-thread"
 "$build/core-init-thread"
-cc -O1 -g -fsanitize=address,undefined tests/security.c -o "$build/security"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all tests/security.c -o "$build/security"
 "$build/security"
-cc -O1 -g -fsanitize=address,undefined -DN2Q_SEEK_DEMO impl/c/n2q_seek.c -o "$build/seek"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -DN2Q_SEEK_DEMO impl/c/n2q_seek.c -o "$build/seek"
 "$build/seek"
-cc -O1 -g -fsanitize=address,undefined -DN2Q_FPE_DEMO impl/c/n2q_fpe.c -o "$build/fpe"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -DN2Q_FPE_DEMO impl/c/n2q_fpe.c -o "$build/fpe"
 "$build/fpe"
-cc -O1 -g -fsanitize=address,undefined tests/fpe_security.c -o "$build/fpe-security"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all tests/fpe_security.c -o "$build/fpe-security"
 "$build/fpe-security"
-cc -O1 -g -fsanitize=address,undefined tests/convergent_security.c -o "$build/convergent-security"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all tests/convergent_security.c -o "$build/convergent-security"
 "$build/convergent-security"
-cc -O1 -g -fsanitize=address,undefined tests/fireline_security.c -o "$build/fireline-security"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all tests/fireline_security.c -o "$build/fireline-security"
 "$build/fireline-security"
-cc -O1 -g -fsanitize=address,undefined -DN2Q_FIRELINE_DEMO impl/c/n2q_fireline.c -o "$build/fireline"
+cc -O1 -g -fsanitize=address,undefined -fno-sanitize-recover=all -DN2Q_FIRELINE_DEMO impl/c/n2q_fireline.c -o "$build/fireline"
 "$build/fireline"
 python3 impl/python/n2qc_fireline.py
-cc -O1 -g -pthread -fsanitize=address,undefined tests/cone_security.c -o "$build/cone-security"
+cc -O1 -g -pthread -fsanitize=address,undefined -fno-sanitize-recover=all tests/cone_security.c -o "$build/cone-security"
 "$build/cone-security"
 cc -O1 -g -pthread -fsanitize=thread tests/cone_security.c -o "$build/cone-thread"
 "$build/cone-thread" --threads

@@ -9,9 +9,10 @@ case "$n2q_fuzz_seconds:$n2q_fuzz_runs" in *[!0-9:]*|:*) echo "invalid fuzz budg
 [ "$n2q_fuzz_seconds" -gt 0 ] && [ "$n2q_fuzz_runs" -gt 0 ]
 n2q_fuzz_build=$(mktemp -d)
 trap 'rm -rf "$n2q_fuzz_build"' EXIT HUP INT TERM
+scripts/check-sanitizers.sh clang
 python3 scripts/fuzz-seeds.py
 for target in fireline n2qf siv; do
-    clang -O1 -g -fsanitize=fuzzer,address,undefined "fuzz/c/$target.c" -o "$n2q_fuzz_build/$target"
+    clang -O1 -g -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=all "fuzz/c/$target.c" -o "$n2q_fuzz_build/$target"
     mkdir -p "fuzz/artifacts/c/$target"
     "$n2q_fuzz_build/$target" "fuzz/corpus/$target" "-max_total_time=$n2q_fuzz_seconds" \
         "-runs=$n2q_fuzz_runs" -max_len=4096 -rss_limit_mb=512 -timeout=5 -seed=20261019 \
