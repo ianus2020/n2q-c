@@ -33,7 +33,11 @@ dependencies FAIL. Эти результаты заменяют прежний �
 - До исправления в той же комбинации anchor: все 6 startup FAIL; web 37.148 с.
 - После точечного исключения Gitleaks 8.30.1: 46 коммитов, 0 находок.
 - Regression bind без DNS и тесты публичных verification records PASS.
-- Полный native и повтор GitHub фиксируются в журнале после завершения.
+- Полный `scripts/check.sh` на Homebrew Python 3.14.8 / OpenSSL 4.0.3: PASS,
+  39 Python-тестов, C ASan/UBSan/TSan, Rust, WASM bindings, Go race, PHP/Swift
+  и межъязыковые файловые проверки всех шести портов.
+- Повтор GitHub: [39287720266](https://github.com/ianus2020/n2q-c/actions/runs/39287720266),
+  исходный коммит `7988f1e`; окончательный результат записывается в журнале.
 - [Сохранённые логи и SHA-256](audit/2026-10-19-ci-repair/) включают CI FAIL,
   локальный startup FAIL до исправления и успешные повторные проверки.
 

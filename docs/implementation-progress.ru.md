@@ -20,9 +20,9 @@
 | 12: локальный backend CoNe | 2d99cb1 + PKI fix 4864be0 | mTLS, SQLite WAL/FULL, C callback, concurrency/restart/rollback/network-failure tests PASS локально; первый native CI FAIL на PKI, причина воспроизведена/исправлена, повтор в очереди |
 | 13: локальный HTTPS-стенд и конфигурации | 0ec3a89 + cleanup 086afd4 | Versioned atomic releases, private test PKI, allowlist/headers/quota; TLS/C signer/Chromium PASS; Linux templates не запускались |
 | 14: offline-миграция и PW recovery | c1d7cbe + validation 80595e0 | 10 Python + 2 Rust теста PASS; inventory, trusted-evidence recovery/rekey, private no-replace output, Argon2id new/restore и isolated legacy PW; реальных данных не переносили |
-| 15: итог локальных проверок | проверен код 80595e0; отдельный docs commit | Полный native PASS (6 портов), HTTPS browser PASS, strict SSL/LibreSSL compatibility PASS; последний GitHub CI queued, не объявлен успешным; подробности stage-15-local-verification.ru.md |
-
-| 16: исправления по фактическому CI | отдельный коммит этого этапа | Установлены libcurl headers для web, проверено точечное исключение source SHA-256; устранён reverse DNS startup delay, anchor 6 / web 4 PASS на Python 3.14 + OpenSSL 4; повтор GitHub ожидается |
+| 15: итог локальных проверок | 80595e0 + docs f937866 | Полный native PASS (6 портов), HTTPS browser PASS, strict SSL/LibreSSL compatibility PASS; последний GitHub CI queued, не объявлен успешным; подробности stage-15-local-verification.ru.md |
+| 16: исправления по фактическому CI | 7988f1e | Установлены libcurl headers для web, проверено точечное исключение source SHA-256; устранён reverse DNS startup delay, native локально PASS (39 Python + 6 портов); повтор CI 39287720266 всё ещё выявляет issuer validation на macOS |
+| 17: общий TLS request deadline | отдельный коммит этого этапа | slow headers/saturation/recovery и handshake PASS; контроль на старом коде FAIL, 41 Python и новый HTTPS стенд/Chromium PASS |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная

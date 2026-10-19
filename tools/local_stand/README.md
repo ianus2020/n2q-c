@@ -67,8 +67,14 @@ python3 tools/local_stand/web.py publish --source impl/n2q-c-wasm/web --destinat
 The HTTPS host applies CSP, COOP/COEP/CORP, nosniff, frame denial, no-referrer,
 permissions policy and no-store to static responses. WASM has its proper MIME.
 Only allowlisted public paths are served; no listing, source tree, PKI or state
-is exposed. Socket/handshake timeouts, bounded workers and response sizes bound
-this local reference host. CPU/disk quotas of a real OS/service still need
+is exposed. At most 16 workers admit connections; excess connections close.
+Each admitted connection has a three-second deadline covering TLS handshake,
+headers, body and response, as well as socket idle timeouts. A watchdog shuts
+down the TCP connection even if the peer keeps sending individual bytes. The
+deadline covers one HTTP/1.0 request; it does not roll back a committed anchor
+reservation. A client receiving no confirmed success must still burn its index.
+Deadline watchdog threads and duplicate descriptors are released with the worker.
+These bounds belong to the local reference host. CPU/disk quotas of a real OS/service still need
 operational enforcement. Linux systemd resource/sandbox examples are in
 `ops/local-stand/`; they have not been executed on this macOS host.
 

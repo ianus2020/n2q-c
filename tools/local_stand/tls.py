@@ -11,9 +11,10 @@ class TLSHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     allow_reuse_address = True
     request_queue_size = 16
 
-    def __init__(self, address, handler, context, workers=16):
+    def __init__(self, address, handler, context, workers=16, request_timeout=3):
         self.context = context
         self.slots = threading.BoundedSemaphore(workers)
+        self.request_timeout = request_timeout
         super().__init__(address, handler)
 
     def server_bind(self):
@@ -34,14 +35,37 @@ class TLSHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
     def process_request_thread(self, request, address):
         wrapped = None
+        deadline_socket = None
+        timer = None
+        timer_started = False
         try:
-            request.settimeout(3)
+            request.settimeout(self.request_timeout)
+            # A socket timeout alone restarts on each successful read. A peer
+            # can otherwise keep a worker forever by slowly dripping headers.
+            # The duplicate keeps access to the TCP connection after wrap_socket
+            # transfers ownership of the original descriptor to SSLSocket.
+            deadline_socket = request.dup()
+            def expire():
+                try:
+                    deadline_socket.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+            timer = threading.Timer(self.request_timeout, expire)
+            timer.daemon = True
+            timer.start()
+            timer_started = True
             wrapped = self.context.wrap_socket(request, server_side=True)
             self.finish_request(wrapped, address)
         except (ssl.SSLError, OSError, ValueError):
             pass
         finally:
+            if timer is not None:
+                timer.cancel()
+                if timer_started:
+                    timer.join()
             self.shutdown_request(wrapped if wrapped is not None else request)
+            if deadline_socket is not None:
+                deadline_socket.close()
             self.slots.release()
 
 
