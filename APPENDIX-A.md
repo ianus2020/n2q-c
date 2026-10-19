@@ -70,16 +70,13 @@ rc = [0x15, 0xe3, 0x2d, 0xa2, 0x5e, 0x5c, 0xab, 0xae,
       0xc8, 0x9b, 0xb6, 0xb3, 0xeb, 0xbf, 0xd9, 0xf2]
 ```
 
-## A.4 Round counts (FINAL for v0.1)
+## A.4 Implemented profiles
 
-- `p^b` (data rounds) = **12**
-- `p^a` (init / final) = **16**
-
-Confirmed in M4: every measured property (full diffusion 4 rounds, ideal
-avalanche 5, degree saturation 3, differential collapse 3) leaves a ≥2.4×
-cushion ([docs/cryptanalysis.md](docs/cryptanalysis.md)). A MILP active-S-box
-*proof* is the one open item and could only justify fewer rounds, which the
-margin preference declines — so these counts, and the KATs below, are final.
+Secure uses 16 rounds uniformly; Fast uses 8 uniformly. The previous 12/16
+schedule did not describe the implemented modes. Twelve-round vectors below
+exercise the permutation only. Diffusion/avalanche saturation is empirical and
+does not establish a security margin. Open cryptanalysis may require more
+rounds or a different design; neither profile is independently approved.
 
 ## A.5 Known-answer test vectors
 

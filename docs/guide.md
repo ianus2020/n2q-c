@@ -170,27 +170,26 @@ a password directly as a key.
 | Python | `encrypt_file(bits, profile, key, in, out)` / `decrypt_file(bits, key, in, out)` |
 | Go | `EncryptFile(profile, key, in, out) error` / `DecryptFile(key, in, out) error` |
 | Rust | `file::encrypt_file(profile, &key, in, out)` / `file::decrypt_file(&key, in, out)` |
-| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, in, out)` |
+| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, bits, in, out)` |
 | PHP | `n2q_encrypt_file($profile,$key,$in,$out)` / `n2q_decrypt_file($key,$in,$out)` |
 | Swift | `encryptFile(profile, key, in, out)` / `decryptFile(key, in, out)` |
 
-Format: `"N2QF" | ver | suite | { le32(len) | sealed }*`, 64 KB blocks, overhead
-≈ **0.07 %**. The profile and suite live in the header, so decryption does not
-need them passed in.
-
-**Verified:** a file encrypted in one language opens in all the others
-(Python ↔ Rust ↔ Go ↔ C ↔ Swift, byte-for-byte).
+**N2QF v2** includes a fresh file identity, records of at most 64 KiB and a
+mandatory authenticated final record. v1 is rejected. Output is published
+atomically after full validation. Rust/PHP/Swift file helpers support N2Q-128;
+C/Go/Python support both sizes. See [format, limits and migration](n2qf.md).
 
 ### 3.5. Seeking inside encrypted media
 
-**When:** a player must jump into the middle of an encrypted video.
+**Scope:** reference chunk selection validates the entire file first; it is
+not currently an efficient random-access media API.
 
 ```python
 cont = m.n2qf_build(key, [chunk0, chunk1, chunk2])
-data = m.seek_chunk(key, cont, 1)        # only the chunk you need
+data = m.seek_chunk(key, cont, 1)        # validates all records before returning the selected chunk
 ```
 Go: `SeekChunk(key, buf, index)` · Rust: `seek_chunk(&key, &buf, i)` ·
-C: `n2q_seek_chunk(key, buf, buflen, index, out, &outlen)`
+C: `n2q_seek_chunk(key, buf, buflen, index, out, outcap, &outlen)`
 
 **Pitfall:** the index is a **chunk number**, not a byte offset. Mapping
 "seconds → chunk" is your container's job.

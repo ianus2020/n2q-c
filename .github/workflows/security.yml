@@ -1,0 +1,41 @@
+name: Security regressions
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.26'
+      - run: rustup toolchain install 1.96.1 --profile minimal && rustup default 1.96.1
+      - run: brew install php
+      - run: scripts/check.sh
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: rustup toolchain install 1.96.1 --profile minimal --target wasm32-unknown-unknown && rustup default 1.96.1
+      - run: cargo install wasm-pack --version 0.13.1 --locked
+      - run: scripts/build-web.sh
+      - run: npm ci && npx playwright install --with-deps chromium
+      - name: Browser regressions
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory impl/n2q-c-wasm/web > /tmp/n2q-http.log 2>&1 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:web

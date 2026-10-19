@@ -136,30 +136,17 @@ def frank_report_verify(cf, opening, msg):
 
 
 # ---- seekable N2QF: build a container and decrypt one chunk ----
-def n2qf_build(key, chunks, profile=F):
-    suite = 0x01 | (0x20 if profile == F else 0)
-    out = b"N2QF" + bytes([1, suite])
-    for i, ch in enumerate(chunks):
-        nonce = struct.pack("<Q", i) + b"\x00" * 8
-        sealed = n2qc.seal(128, profile, key, nonce, b"", ch)
-        out += struct.pack("<I", len(sealed)) + sealed
-    return out
+def n2qf_build(key, chunks, profile=S):
+    return b"".join(n2qc._encrypt_chunks(128, profile, key, chunks))
 
 
 def seek_chunk(key, buf, index):
-    if buf[:4] != b"N2QF":
+    import io
+    try:
+        chunks = list(n2qc._decrypt_chunks(128, key, io.BytesIO(buf)))
+        return chunks[index] if 0 <= index < len(chunks) else None
+    except ValueError:
         return None
-    profile = F if (buf[5] & 0x20) else S
-    p, i = 6, 0
-    while p + 4 <= len(buf):
-        (l,) = struct.unpack("<I", buf[p : p + 4])
-        p += 4
-        if i == index:
-            nonce = struct.pack("<Q", index) + b"\x00" * 8
-            return n2qc.open(128, profile, key, nonce, b"", buf[p : p + l])
-        p += l
-        i += 1
-    return None
 
 
 # ---- streaming AEAD (seq -> nonce, sliding replay window) ----
@@ -179,6 +166,8 @@ class StreamRx:
         self.key, self.p, self.max, self.win, self.started = key, profile, 0, 0, False
 
     def open(self, aad, pkt):
+        if len(pkt) < 24:
+            return None
         seq = struct.unpack("<Q", pkt[:8])[0]
         if self.started and seq <= self.max:
             diff = self.max - seq
@@ -221,6 +210,8 @@ class RatchetRx:
         self.ck, self.next, self.skip = root, 0, {}
 
     def open(self, aad, pkt):
+        if len(pkt) < 24:
+            return None
         seq = struct.unpack("<Q", pkt[:8])[0]
         nonce = pkt[:8] + b"\x00" * 8
         if seq < self.next:
@@ -243,6 +234,8 @@ class RatchetRx:
         if pt is None:
             return None   # forged: do NOT advance the chain (no DoS)
         self.skip.update(skipped)
+        while len(self.skip) > 64:
+            del self.skip[min(self.skip)]
         self.ck, self.next = cn, seq + 1
         return pt
 
@@ -260,7 +253,14 @@ def _fpe_round(key, tw, i, n, m, bval):
     return y
 
 
+def _fpe_validate(key, tw, value):
+    n2qc._validate(128, S, key)
+    if not 2 <= len(value) <= 18 or not value.isascii() or not value.isdigit() or len(tw) > 255:
+        raise ValueError("FPE requires 2–18 ASCII digits and a tweak of at most 255 bytes")
+
+
 def fpe_encrypt(key, tw, s):
+    _fpe_validate(key, tw, s)
     n = len(s)
     u, v = n // 2, n - n // 2
     a, b, al, bl = int(s[:u]), int(s[u:]), u, v
@@ -272,6 +272,7 @@ def fpe_encrypt(key, tw, s):
 
 
 def fpe_decrypt(key, tw, s):
+    _fpe_validate(key, tw, s)
     n = len(s)
     u, v = n // 2, n - n // 2
     a, b, al, bl = int(s[:u]), int(s[u:]), u, v

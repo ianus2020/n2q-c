@@ -1,3 +1,8 @@
+**/target/
+**/__pycache__/
+impl/n2q-c-wasm/web/pkg/
+node_modules/
+test-results/
 # Rust build output
 target/
 **/target/
@@ -15,3 +20,6 @@ impl/c/n2qc
 
 # Site source (published as an Artifact, not part of the library)
 site/
+
+impl/go/n2qc
+.interop-*/

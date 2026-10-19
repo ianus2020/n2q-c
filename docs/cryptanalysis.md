@@ -9,27 +9,18 @@ Legend: ☑ done · ◐ partial · ☐ open. Result type: **[P]** proven · **[E
 empirical/measured · **[X]** extrapolated.
 
 ## Target
-QP permutation (SPEC §3): 5×64 (QP-320) / 5×128 (QP-640), Ascon-lineage SPN
-sponge. Security of the whole library reduces to QP behaving like a random
-permutation (SPEC §5.4). Provisional round counts entering M4: p^b = 12,
-p^a = 16.
+QP permutation and correct mode composition. The historical experiments below
+studied round counts including 12 and 16. The actual high-level profiles use
+uniform **16 (Secure) / 8 (Fast)** rounds.
 
-## Summary of measured margins
+## Scope of the historical measurements
 
-| Property | Saturates at | Full rounds (p^b / p^a) | Margin |
-|---|---|---|---|
-| Full bit diffusion (avalanche) **[E]** | 4 rounds | 12 / 16 | ~3× |
-| Ideal flip prob (SAC ≈ 0.5) **[E]** | 5 rounds | 12 / 16 | ~2.4× |
-| Algebraic degree (no zero-sum, dim ≤16) **[E]** | 3 rounds | 12 / 16 | ~4× |
-| 1-bit differential < 2⁻¹⁶ **[E]** | 3 rounds | 12 / 16 | ~4× |
-| Rotational relation broken **[E]** | 1 round | 12 / 16 | — |
-| Constant-time (dudect) **[E]** | — | — | \|t\|=0.48 |
-
-Every measured property saturates within 3–5 rounds; p^b = 12 keeps a ≥2.4×
-cushion. **Round counts are kept at p^b = 12 / p^a = 16** (the "prioritise
-margin" choice). The one outstanding item — a *proven* differential/linear lower
-bound via MILP — can only justify *reducing* rounds, which we decline; so the
-counts and the Appendix-A KATs are final for v0.1.
+Diffusion at 4 rounds, SAC near 0.5 at 5, and the reported degree/differential
+sampling results do not establish an attack bound or a multiplicative security
+margin. The previous “12/16 confirmed, only fewer rounds could be needed”
+conclusion is withdrawn. MILP/SAT work and external review may require more
+rounds or construction changes. The reported dudect result applies to the
+historical tested binary and platform, not all ports or the current build.
 
 ## 1. Differential cryptanalysis ◐
 - S-box max differential probability = 2/32 = **2⁻⁴** (APN) **[P]**.

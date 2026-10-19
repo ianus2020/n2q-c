@@ -96,7 +96,9 @@ decentralisation. The cryptography is identical either way.
   separate design task, not solved by KEM.
 - **Endpoint compromise.** If a centre's device is owned, its private key and its
   plaintext are owned. Forward secrecy (our ratchet) limits the damage to
-  *future* traffic; it cannot protect data the attacker can already read.
+  *past* traffic whose keys have been erased. A symmetric ratchet alone does
+  not restore secrecy of future traffic after state compromise; recovery needs
+  fresh secret entropy, normally from an authenticated key agreement.
 - **Revocation latency.** Between compromise and a published revocation there is
   a window. Short key validity narrows it.
 - **Trust in the registry.** Whoever controls the registry can attempt to publish

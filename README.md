@@ -10,11 +10,13 @@ QP-320 (5×64, the **N2Q-128** suite) and QP-640 (5×128, the **N2Q-256** suite)
 sharing the same S-box. One permutation yields the whole library: authenticated
 encryption (the default mode is the **misuse-resistant SIV**, plus a fast
 streaming mode), hashing, a password KDF, and a searchable **blind index**. The
-point for auditability is that the security of the entire library **reduces to a
-single question** — how close QP-w is to a random permutation (the sponge/duplex
-and SIV proofs guarantee the rest).
+design must be assessed at both the permutation and mode-composition levels.
+General sponge or SIV results do not certify this implementation or its extensions.
 
 > **Status:** see [STATUS.md](STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
+
+> **Security fixes and compatibility:** [remediation record](docs/security-fixes.md),
+> [N2QF v2 and migration](docs/n2qf.md), [web build and tests](impl/n2q-c-wasm/README.md).
 
 ---
 

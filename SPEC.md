@@ -97,13 +97,16 @@ diffusion ≤ 3.5 rounds, to be confirmed by the branch-number/diffusion test of
 §7.2).
 
 ### 3.4 Round counts
-**`p^a` = 16 rounds** (initialization, finalization). **`p^b` = 12 rounds** (data
-processing). Confirmed in M4: every measured property (full diffusion, ideal
-avalanche, degree saturation, differential collapse) saturates within 3–5 rounds
-(see [docs/cryptanalysis.md](docs/cryptanalysis.md)), so p^b = 12 keeps a ≥2.4×
-margin. The one outstanding proof — a MILP active-S-box lower bound — could only
-justify *fewer* rounds, which the "prioritise margin" choice declines; the counts
-are therefore final for v0.1.
+The implemented modes use a **uniform** round count for initialization,
+absorption, squeezing and finalization: **Secure = 16**, **Fast = 8**.
+Earlier text specifying a 16/12 split did not describe the shipped modes.
+The 12-round permutation vectors remain primitive test vectors, not a third
+AEAD profile. Only 16 and 8 are accepted by high-level mode APIs.
+
+Empirical diffusion and avalanche results are not certified cryptographic
+margins. A full differential/linear analysis or external cryptanalysis may
+require **more** rounds or changes to the construction. Neither profile has
+an independently established security level.
 
 ---
 
@@ -261,9 +264,10 @@ still reduces to QP. Implemented in M5 ([`impl/.../pw.rs`](impl/n2q-c-ref/src/pw
 ## 7. Constant selection (nothing-up-my-sleeve)
 
 All constants derive deterministically from the ASCII seed
-`"N2Q/v0.1"` expanded by a public XOF (SHAKE256 for the *selection tooling
-only* — the resulting fixed tables are what ship). The procedures are normative;
-the resulting tables land in Appendix A after the §12-M2 run.
+`"N2Q/v0.1"` using the FNV-1a seed hash and SplitMix64 generator in
+`tools/const-search`. This deterministic public selection tooling is not a
+cryptographic random-number generator and must never generate keys or nonces.
+The fixed resulting tables are recorded in Appendix A.
 
 ### 7.1 S-box S5 — selection criteria (all mandatory)
 5-bit bijection with:
@@ -305,12 +309,10 @@ compute the minimal rounds `R*` such that the best single-characteristic
 probability < 2⁻¹²⁸ (differential) and correlation < 2⁻⁶⁴ (linear); set
 `p^b ≥ 2·R*`, `p^a ≥ p^b + 4`.
 
-**Confirmed (M4).** Full linear diffusion is 4 rounds (A.2); `p^b = 12`,
-`p^a = 16` (see [Appendix A.4](APPENDIX-A.md#a4-round-counts)). M4 measured every
-security-relevant property saturating within 3–5 rounds, giving a ≥2.4× margin
-([docs/cryptanalysis.md](docs/cryptanalysis.md)). The exact minimum active-S-box
-count (a MILP *proof*) is the one remaining rigorous item; it can only justify
-reducing rounds, so the margin preference keeps these numbers final for v0.1.
+Full linear diffusion was measured at 4 rounds (A.2). This observation and the
+other measurements in [docs/cryptanalysis.md](docs/cryptanalysis.md) do not
+establish a differential/linear security bound. The implemented profiles are
+uniform 16/8 rounds; rigorous bounds and independent review remain open.
 
 ---
 
@@ -341,15 +343,18 @@ reproducible tooling.
 ## 9. Wire format (self-describing, versioned)
 
 ```
-n2q-c token = "nqc." ‖ base64url( version(1) ‖ suite(1) ‖ nonce(16) ‖ ct ‖ tag(16) )
+n2q-c token = "nqc." ‖ base64url( version(1) ‖ suite(1) ‖ nonce(16) ‖ sealed )
 ```
+`sealed` is `tag || ciphertext` for SIV, and `ciphertext || tag` for streaming.
+Tags are 16 bytes for N2Q-128 and 32 for N2Q-256.
 `version` = 1. The `suite` byte packs mode + size + **profile**:
 low nibble = size (`1`=128, `2`=256); bit `0x10` = streaming (else SIV);
 bit `0x20` = **Fast** profile (else Secure). So `0x01` = SIV-128-Secure,
 `0x21` = SIV-128-Fast, `0x11` = Stream-128-Secure, `0x02`/`0x22` = SIV-256-…, etc.
-Crypto-agility: a future suite can be added without breaking parsers, and decode
-reads mode+profile from the token (matured `!Z/!X` auto-mode) — so Secure and
-Fast tokens are mutually interoperable under one decoder. **Finalized and
+Decoders accept only the eight explicitly assigned suite bytes, reject reserved
+bits and unknown versions, and require canonical unpadded base64url with the
+exact `nqc.` prefix. The parser caps encoded bodies at 24 MiB.
+File containers have a separate authenticated format: [N2QF v2](docs/n2qf.md). **Finalized and
 implemented** ([`frame.rs`](impl/n2q-c-ref/src/frame.rs) + `capsule`, M5) with
 base64url (no padding); the textual prefix is `nqc.`.
 
@@ -412,7 +417,7 @@ Populated in **M2** and kept in a separate file: **[APPENDIX-A.md](APPENDIX-A.md
 - A.1 S-box S5 (table + measured properties) — **fixed** (APN, NL 10, deg 4).
 - A.2 Rotation constants, QP-320 & QP-640 — **fixed** (4-round diffusion).
 - A.3 Round constants rc_i — **fixed**.
-- A.4 Round counts a, b — **final** (12 / 16), confirmed in M4.
+- A.4 Implemented profiles — uniform Secure 16 / Fast 8; security margins unproven.
 - A.5 Known-answer vectors for QP — **fixed** (AEAD/hash KATs in M3).
 
 All values are reproducible from the public seed via

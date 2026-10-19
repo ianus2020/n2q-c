@@ -170,27 +170,26 @@ let key32 = pw::derive(password, salt, s_cost, t_cost);   // [u8; 32]
 | Python | `encrypt_file(bits, profile, key, in, out)` / `decrypt_file(bits, key, in, out)` |
 | Go | `EncryptFile(profile, key, in, out) error` / `DecryptFile(key, in, out) error` |
 | Rust | `file::encrypt_file(profile, &key, in, out)` / `file::decrypt_file(&key, in, out)` |
-| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, in, out)` |
+| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, bits, in, out)` |
 | PHP | `n2q_encrypt_file($profile,$key,$in,$out)` / `n2q_decrypt_file($key,$in,$out)` |
 | Swift | `encryptFile(profile, key, in, out)` / `decryptFile(key, in, out)` |
 
-Формат: `"N2QF" | ver | suite | { le32(len) | sealed }*`, блок 64 КБ,
-оверхед ≈ **0.07 %**. Профиль и комплект пишутся в заголовок → при расшифровке
-передавать их не нужно.
-
-**Проверено:** файл, зашифрованный на одном языке, открывается на всех
-остальных (Python ↔ Rust ↔ Go ↔ C ↔ Swift, побайтово).
+Формат **N2QF v2** содержит случайный идентификатор файла, блоки до 64 КиБ
+и обязательную метку конца. v1 отклоняется. Выход публикуется атомарно после
+полной проверки. Rust/PHP/Swift поддерживают файлы N2Q-128; C/Go/Python — оба
+размера. См. [формат, ограничения и перенос старых файлов](n2qf.md).
 
 ### 3.5. Перемотка зашифрованного медиа (seekable)
 
-**Когда:** плеер должен прыгнуть на середину зашифрованного видео.
+**Ограничение:** выбор блока сейчас проверяет весь файл. Это эталонный
+проверяющий код; для быстрой перемотки нужна отдельная проверенная схема.
 
 ```python
 cont = m.n2qf_build(key, [chunk0, chunk1, chunk2])
-data = m.seek_chunk(key, cont, 1)        # только нужный блок
+data = m.seek_chunk(key, cont, 1)        # проверяет весь контейнер до выдачи выбранного блока
 ```
 Go: `SeekChunk(key, buf, index)` · Rust: `seek_chunk(&key, &buf, i)` ·
-C: `n2q_seek_chunk(key, buf, buflen, index, out, &outlen)`
+C: `n2q_seek_chunk(key, buf, buflen, index, out, outcap, &outlen)`
 
 **Подводный камень:** индекс — номер **блока**, а не байтовое смещение.
 Позиция в секундах → номер блока считает ваш контейнер/плеер.

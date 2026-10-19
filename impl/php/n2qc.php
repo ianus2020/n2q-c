@@ -1,5 +1,5 @@
- * Audit status: see STATUS.md in the repository root.
 <?php
+// Audit status: see STATUS.md in the repository root.
 /**
  * N2Q reference implementation (PHP 8, 64-bit) — N2Q-128 suite (QP-320).
  *
@@ -31,18 +31,28 @@ function rotr(int $x, int $r): int {
 function le64(string $b): int { return unpack('P', $b)[1]; }
 function put64(int $x): string { return pack('P', $x); }
 
+function n2q_validate(int $r, ?string $key=null, ?string $nonce=null): void {
+    if (!in_array($r,[N2Q_SECURE,N2Q_FAST],true) || ($key!==null && strlen($key)!==16) || ($nonce!==null && strlen($nonce)!==16))
+        throw new InvalidArgumentException('invalid profile, key or nonce');
+}
+function n2q_anf(): array {
+    static $out=null;
+    if ($out!==null) return $out;
+    $out=[];
+    for ($k=0;$k<5;$k++) {
+        $a=[]; foreach(N2Q_SBOX as $v) $a[]=($v>>$k)&1;
+        for($bit=1;$bit<32;$bit<<=1) for($m=0;$m<32;$m++) if($m&$bit) $a[$m]^=$a[$m^$bit];
+        $out[$k]=[];for($m=0;$m<32;$m++) if($a[$m]) $out[$k][]=$m;
+    }
+    return $out;
+}
 function permute(array $s, int $rounds): array {
     for ($i = 0; $i < $rounds; $i++) {
         $s[2] ^= N2Q_RC[$i];                        // pC
         $out = [0,0,0,0,0];                          // pS
-        for ($j = 0; $j < 64; $j++) {
-            $col = (lshr($s[0],$j) & 1)
-                 | ((lshr($s[1],$j) & 1) << 1)
-                 | ((lshr($s[2],$j) & 1) << 2)
-                 | ((lshr($s[3],$j) & 1) << 3)
-                 | ((lshr($s[4],$j) & 1) << 4);
-            $o = N2Q_SBOX[$col];
-            for ($k = 0; $k < 5; $k++) $out[$k] |= (($o >> $k) & 1) << $j;
+        foreach(n2q_anf() as $k=>$terms) foreach($terms as $m) {
+            $t=-1;for($lane=0;$lane<5;$lane++) if($m&(1<<$lane)) $t&=$s[$lane];
+            $out[$k]^=$t;
         }
         $s = $out;
         for ($k = 0; $k < 5; $k++)                   // pL
@@ -69,15 +79,19 @@ function squeeze(array $s, int $n, int $r): string {
 }
 
 function n2q_hash(int $r, string $msg): string {
+    n2q_validate($r);
     $s = [0,0,0,0,0]; $s[4] ^= DOM_HASH; $s = permute($s,$r);
     return squeeze(absorb($s,$msg,$r), 32, $r);
 }
 function n2q_mac(int $r, string $key, string $data, int $dom): string {
+    n2q_validate($r,$key);
     $s = [0,0,0,0,0]; $s[1]=le64(substr($key,0,8)); $s[2]=le64(substr($key,8,8)); $s[4]^=$dom;
     $s = permute($s,$r);
     return squeeze(absorb($s,$data,$r), 16, $r);
 }
 function n2q_keystream(int $r, string $key, string $v, int $n): string {
+    n2q_validate($r,$key);
+    if(strlen($v)!==16 || $n<0) throw new InvalidArgumentException("invalid keystream parameters");
     $s=[0,0,0,0,0]; $s[1]=le64(substr($key,0,8)); $s[2]=le64(substr($key,8,8));
     $s[3]=le64(substr($v,0,8)); $s[4]=le64(substr($v,8,8)) ^ DOM_ENC; $s=permute($s,$r);
     return squeeze($s,$n,$r);
@@ -86,11 +100,13 @@ function siv_input(string $nonce, string $ad, string $pt): string {
     return $nonce . pack('P',strlen($ad)) . $ad . pack('P',strlen($pt)) . $pt;
 }
 function n2q_seal(int $profile, string $key, string $nonce, string $ad, string $pt): string {
+    n2q_validate($profile,$key,$nonce);
     $v = n2q_mac($profile,$key,siv_input($nonce,$ad,$pt),DOM_MAC);
     $ks = n2q_keystream($profile,$key,$v,strlen($pt));
     return $v . ($pt ^ substr($ks,0,strlen($pt)));
 }
 function n2q_open(int $profile, string $key, string $nonce, string $ad, string $sealed): ?string {
+    n2q_validate($profile,$key,$nonce);
     if (strlen($sealed) < 16) return null;
     $v = substr($sealed,0,16); $ct = substr($sealed,16);
     $ks = n2q_keystream($profile,$key,$v,strlen($ct));
@@ -106,41 +122,59 @@ function n2q_seal_token(int $profile, string $key, string $nonce, string $ad, st
     return 'nqc.' . rtrim(strtr(base64_encode($raw), '+/', '-_'), '=');
 }
 function n2q_open_token(string $key, string $ad, string $token): ?string {
-    $raw = base64_decode(strtr(substr($token,4), '-_', '+/'));
-    if (strlen($raw) < 18) return null;
+    if(strlen($token)>24*1024*1024 || !preg_match('/^nqc\.[A-Za-z0-9_-]+$/D',$token)) return null;
+    $body=substr($token,4); $raw=base64_decode(strtr($body,'-_','+/'),true);
+    if($raw===false || strlen($raw)<34 || ord($raw[0])!==1 || !in_array(ord($raw[1]),[1,0x21],true)
+        || rtrim(strtr(base64_encode($raw),'+/','-_'),'=')!==$body || strlen($key)!==16) return null;
     $profile = (ord($raw[1]) & 0x20) ? N2Q_FAST : N2Q_SECURE;
     return n2q_open($profile,$key,substr($raw,2,16),$ad,substr($raw,18));
 }
 
-// ---- N2QF binary file container (N2Q-128): "N2QF"|ver|suite|{le32|sealed}* ----
-function n2q_encrypt_file(int $profile, string $key, string $in, string $out): void {
-    $suite = 0x01 | ($profile === N2Q_FAST ? 0x20 : 0);        // 128-bit suite
-    $fi = fopen($in, 'rb'); $fo = fopen($out, 'wb');
-    fwrite($fo, "N2QF" . chr(1) . chr($suite));
-    $idx = 0;
-    while (($chunk = fread($fi, 65536)) !== '' && $chunk !== false) {
-        $nonce  = pack('P', $idx) . str_repeat("\0", 8);       // 16-byte LE index
-        $sealed = n2q_seal($profile, $key, $nonce, "", $chunk); // raw tag||ct
-        fwrite($fo, pack('V', strlen($sealed)) . $sealed);     // le32 length ‖ sealed
-        $idx++;
-    }
-    fclose($fi); fclose($fo);
+// N2QF v2; whole-file validation before atomic output publication.
+function n2q_file_ad(string $hdr,int $kind,int $index,int $total): string {
+    return 'N2QF/v2'.$hdr.chr($kind).pack('P',$index).pack('P',$total);
 }
-function n2q_decrypt_file(string $key, string $in, string $out): void {
-    $fi = fopen($in, 'rb'); $fo = fopen($out, 'wb');
-    $hdr = fread($fi, 6);
-    if (substr($hdr, 0, 4) !== "N2QF") throw new Exception("not an N2QF file");
-    $profile = (ord($hdr[5]) & 0x20) ? N2Q_FAST : N2Q_SECURE;
-    $idx = 0;
-    while (strlen($ln = fread($fi, 4)) === 4) {
-        $sealed = fread($fi, unpack('V', $ln)[1]);
-        $nonce  = pack('P', $idx) . str_repeat("\0", 8);
-        $pt = n2q_open($profile, $key, $nonce, "", $sealed);
-        if ($pt === null) throw new Exception("authentication failed (chunk $idx)");
-        fwrite($fo, $pt);
-        $idx++;
+function n2q_atomic(string $path,string $data): void {
+    $tmp=tempnam(dirname($path),'.n2q-'); if($tmp===false) throw new RuntimeException('temporary file failed');
+    $f=null;
+    try {
+        if(!chmod($tmp,0600)) throw new RuntimeException('file permissions');
+        $f=fopen($tmp,'wb');if($f===false) throw new RuntimeException('file open');
+        $offset=0;$len=strlen($data);
+        while($offset<$len) {$n=fwrite($f,substr($data,$offset));if($n===false || $n===0) throw new RuntimeException('write failed');$offset+=$n;}
+        if(!fflush($f) || (function_exists('fsync') && !fsync($f))) throw new RuntimeException('flush failed');
+        if(!fclose($f)) throw new RuntimeException('close failed');$f=null;
+        if(!rename($tmp,$path)) throw new RuntimeException('rename failed');
+    } finally {if(is_resource($f)) fclose($f);if(file_exists($tmp)) unlink($tmp);}
+}
+function n2q_encrypt_file(int $profile,string $key,string $in,string $out): void {
+    n2q_validate($profile,$key);
+    $data=file_get_contents($in);if($data===false) throw new RuntimeException('read failed');
+    $hdr='N2QF'.chr(2).chr($profile===N2Q_FAST?0x21:1).random_bytes(16);$buf=$hdr;$idx=0;$total=0;
+    for($off=0;;$off+=65536) {
+        $pt=substr($data,$off,65536);$kind=$pt===''?1:0;
+        $sealed=n2q_seal($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),$pt);
+        $buf.=chr($kind).pack('V',strlen($sealed)).$sealed;
+        if($kind) break;$idx++;$total+=strlen($pt);
     }
-    fclose($fi); fclose($fo);
+    n2q_atomic($out,$buf);
+}
+function n2q_decrypt_file(string $key,string $in,string $out): void {
+    n2q_validate(N2Q_SECURE,$key);
+    $data=file_get_contents($in);if($data===false) throw new RuntimeException('read failed');
+    $hdr=substr($data,0,22);$size=strlen($data);
+    if(strlen($hdr)!==22 || substr($hdr,0,5)!=="N2QF\2" || !in_array(ord($hdr[5]),[1,0x21],true)) throw new RuntimeException('N2QF v2 required');
+    $profile=ord($hdr[5])===0x21?N2Q_FAST:N2Q_SECURE;$p=22;$idx=0;$total=0;$buf='';
+    for(;;) {
+        if($size-$p<5) throw new RuntimeException('missing final record');
+        $kind=ord($data[$p]);$len=unpack('V',substr($data,$p+1,4))[1];$p+=5;
+        if(!(($kind===0 && $len>16 && $len<=65552)||($kind===1 && $len===16)) || $len>$size-$p) throw new RuntimeException('record length/type');
+        $pt=n2q_open($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),substr($data,$p,$len));$p+=$len;
+        if($pt===null) throw new RuntimeException('authentication failed');
+        if($kind===1) {if($p!==$size) throw new RuntimeException('trailing data');break;}
+        $buf.=$pt;$total+=strlen($pt);$idx++;
+    }
+    n2q_atomic($out,$buf);
 }
 
 // ---- self-test (run: php n2qc.php) ----
@@ -155,7 +189,7 @@ if (PHP_SAPI === 'cli' && realpath($argv[0]) === __FILE__) {
     $nonce = str_repeat("\xa5", 16);
     echo "N2Q PHP reference — KAT cross-check\n";
     $s = permute([0,0,0,0,0], 12);
-    $chk('QP-320 zero p^12', sprintf('%016x %016x', $s[0] & 0xFFFFFFFFFFFFFFFF, $s[1] & 0xFFFFFFFFFFFFFFFF),
+    $chk('QP-320 zero p^12', sprintf('%016x %016x', $s[0], $s[1]),
          '6c3d34cc09474fbb 4ad0c1e3cc099b31');
     $chk('hash("") Secure', bin2hex(n2q_hash(N2Q_SECURE,'')),
          '5349a47ebb78bb4a403a518a28f86740ddfd96a880f72ea6ada15a1656072bed');

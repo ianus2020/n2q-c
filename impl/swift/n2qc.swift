@@ -8,6 +8,11 @@
 
 // Audit status: see STATUS.md in the repository root.
 import Foundation
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
 
 let SBOX: [UInt8] = [
     0x1b,0x04,0x0d,0x06,0x1f,0x1c,0x10,0x0e,0x03,0x15,0x17,0x13,0x14,0x0f,0x0b,0x11,
@@ -18,6 +23,12 @@ let RC: [UInt64] = [0x15,0xe3,0x2d,0xa2,0x5e,0x5c,0xab,0xae,0xc8,0x9b,0xb6,0xb3,
 let SECURE = 16, FAST = 8, B = 8
 let DOM_HASH: UInt64 = 1, DOM_MAC: UInt64 = 2, DOM_ENC: UInt64 = 3, DOM_BI: UInt64 = 4
 
+let ANF: [[Int]] = (0..<5).map { k in
+    var a = SBOX.map { Int(($0 >> k) & 1) }
+    for bit in [1,2,4,8,16] { for m in 0..<32 where m & bit != 0 { a[m] ^= a[m ^ bit] } }
+    return (0..<32).filter { a[$0] != 0 }
+}
+func valid(_ r: Int, _ key: [UInt8]) -> Bool { (r == SECURE || r == FAST) && key.count == 16 }
 func rotr(_ x: UInt64, _ r: UInt64) -> UInt64 { (x >> r) | (x << (64 - r)) }
 
 func permute(_ input: [UInt64], _ rounds: Int) -> [UInt64] {
@@ -25,16 +36,11 @@ func permute(_ input: [UInt64], _ rounds: Int) -> [UInt64] {
     for i in 0..<rounds {
         s[2] ^= RC[i]                               // pC
         var out = [UInt64](repeating: 0, count: 5)  // pS
-        for j in 0..<64 {
-            let jj = UInt64(j)
-            let col = Int((s[0] >> jj) & 1)
-                | (Int((s[1] >> jj) & 1) << 1)
-                | (Int((s[2] >> jj) & 1) << 2)
-                | (Int((s[3] >> jj) & 1) << 3)
-                | (Int((s[4] >> jj) & 1) << 4)
-            let o = SBOX[col]
-            for k in 0..<5 { out[k] |= UInt64((o >> k) & 1) << jj }
-        }
+        for k in 0..<5 { for m in ANF[k] {
+            var term = UInt64.max
+            for lane in 0..<5 where m & (1 << lane) != 0 { term &= s[lane] }
+            out[k] ^= term
+        } }
         s = out
         for k in 0..<5 { s[k] ^= rotr(s[k], ROTS[k].0) ^ rotr(s[k], ROTS[k].1) }   // pL
     }
@@ -67,15 +73,18 @@ func squeeze(_ st: [UInt64], _ n: Int, _ r: Int) -> [UInt8] {
 }
 
 func hashN2Q(_ r: Int, _ msg: [UInt8]) -> [UInt8] {
+    guard r == SECURE || r == FAST else { return [] }
     var s = [UInt64](repeating: 0, count: 5); s[4] ^= DOM_HASH; s = permute(s, r)
     return squeeze(absorb(s, msg, r), 32, r)
 }
 func mac(_ r: Int, _ key: [UInt8], _ data: [UInt8], _ dom: UInt64) -> [UInt8] {
+    guard valid(r,key) else { return [] }
     var s = [UInt64](repeating: 0, count: 5)
     s[1] = le64(key[0..<8]); s[2] = le64(key[8..<16]); s[4] ^= dom; s = permute(s, r)
     return squeeze(absorb(s, data, r), 16, r)
 }
 func keystream(_ r: Int, _ key: [UInt8], _ v: [UInt8], _ n: Int) -> [UInt8] {
+    guard valid(r,key), v.count == 16, n >= 0 else { return [] }
     var s = [UInt64](repeating: 0, count: 5)
     s[1] = le64(key[0..<8]); s[2] = le64(key[8..<16])
     s[3] = le64(v[0..<8]); s[4] = le64(v[8..<16]) ^ DOM_ENC; s = permute(s, r)
@@ -85,11 +94,13 @@ func sivInput(_ nonce: [UInt8], _ ad: [UInt8], _ pt: [UInt8]) -> [UInt8] {
     nonce + put64(UInt64(ad.count)) + ad + put64(UInt64(pt.count)) + pt
 }
 func seal(_ profile: Int, _ key: [UInt8], _ nonce: [UInt8], _ ad: [UInt8], _ pt: [UInt8]) -> [UInt8] {
+    guard valid(profile,key), nonce.count == 16 else { return [] }
     let v = mac(profile, key, sivInput(nonce, ad, pt), DOM_MAC)
     let ks = keystream(profile, key, v, pt.count)
     return v + zip(pt, ks).map { $0 ^ $1 }
 }
 func openN2Q(_ profile: Int, _ key: [UInt8], _ nonce: [UInt8], _ ad: [UInt8], _ sealed: [UInt8]) -> [UInt8]? {
+    guard valid(profile,key), nonce.count == 16 else { return nil }
     if sealed.count < 16 { return nil }
     let v = Array(sealed[0..<16]); let ct = Array(sealed[16...])
     let ks = keystream(profile, key, v, ct.count)
@@ -102,6 +113,7 @@ func ctEq(_ a: [UInt8], _ b: [UInt8]) -> Bool {
     var acc: UInt8 = 0; for i in 0..<a.count { acc |= a[i] ^ b[i] }; return acc == 0
 }
 func sealToken(_ profile: Int, _ key: [UInt8], _ nonce: [UInt8], _ ad: [UInt8], _ pt: [UInt8]) -> String {
+    guard valid(profile,key), nonce.count == 16 else { return "" }
     let suite: UInt8 = 0x01 | (profile == FAST ? 0x20 : 0)
     let raw = [1, suite] + nonce + seal(profile, key, nonce, ad, pt)
     let b64 = Data(raw).base64EncodedString().replacingOccurrences(of: "+", with: "-")
@@ -109,51 +121,64 @@ func sealToken(_ profile: Int, _ key: [UInt8], _ nonce: [UInt8], _ ad: [UInt8], 
     return "nqc." + b64
 }
 func openToken(_ key: [UInt8], _ ad: [UInt8], _ token: String) -> [UInt8]? {
+    guard token.utf8.count <= 24*1024*1024, token.hasPrefix("nqc.") else { return nil }
+    let body = String(token.dropFirst(4))
+    guard body.utf8.allSatisfy({ (65...90).contains($0) || (97...122).contains($0) || (48...57).contains($0) || $0 == 45 || $0 == 95 }) else { return nil }
     var b = String(token.dropFirst(4)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
     while b.count % 4 != 0 { b += "=" }
     guard let d = Data(base64Encoded: b) else { return nil }
-    let raw = [UInt8](d); if raw.count < 18 { return nil }
+    let raw = [UInt8](d)
+    let canonical = d.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    guard canonical == body, raw.count >= 34, raw[0] == 1, [UInt8(1), 0x21].contains(raw[1]) else { return nil }
     let profile = (raw[1] & 0x20) != 0 ? FAST : SECURE
     return openN2Q(profile, key, Array(raw[2..<18]), ad, Array(raw[18...]))
 }
 
-// ---- N2QF binary file container (N2Q-128): "N2QF"|ver|suite|{le32|sealed}* ----
+// N2QF v2. Bounded records and mandatory authenticated final record.
+func fileError() -> NSError { NSError(domain: "N2QF v2 authentication/format", code: 1) }
+func fileAD(_ header: [UInt8], _ kind: UInt8, _ idx: UInt64, _ total: UInt64) -> [UInt8] {
+    Array("N2QF/v2".utf8) + header + [kind] + put64(idx) + put64(total)
+}
+func atomicFile(_ path: String, _ bytes: [UInt8]) throws {
+    var template = Array((path + ".n2q-XXXXXX").utf8CString)
+    let fd = mkstemp(&template)
+    guard fd >= 0 else { throw fileError() }
+    let name = String(cString: template), handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+    defer { try? handle.close(); unlink(name) }
+    try handle.write(contentsOf: Data(bytes)); try handle.synchronize(); try handle.close()
+    guard rename(name,path) == 0 else { throw fileError() }
+}
 func encryptFile(_ profile: Int, _ key: [UInt8], _ inPath: String, _ outPath: String) throws {
-    let data = try Data(contentsOf: URL(fileURLWithPath: inPath))
-    let suite: UInt8 = 0x01 | (profile == FAST ? 0x20 : 0)          // 128-bit suite
-    var out = Data([0x4e, 0x32, 0x51, 0x46, 1, suite])              // "N2QF" | ver | suite
-    var idx: UInt64 = 0, off = 0
-    while off < data.count {
-        let end = min(off + 65536, data.count)
-        var nonce = [UInt8](repeating: 0, count: 16)
-        withUnsafeBytes(of: idx.littleEndian) { nonce.replaceSubrange(0..<8, with: $0) }
-        let sealed = seal(profile, key, nonce, [], [UInt8](data[off..<end]))  // raw tag||ct
-        var l = UInt32(sealed.count).littleEndian
-        out.append(Data(bytes: &l, count: 4))
-        out.append(Data(sealed))
-        idx += 1; off = end
+    guard valid(profile,key) else { throw fileError() }
+    let data = [UInt8](try Data(contentsOf: URL(fileURLWithPath: inPath)))
+    var rng = SystemRandomNumberGenerator()
+    let hdr = Array("N2QF".utf8) + [2, UInt8(profile == FAST ? 0x21 : 1)] + (0..<16).map { _ in UInt8.random(in: 0...255, using: &rng) }
+    var out = hdr, off = 0, idx: UInt64 = 0
+    while true {
+        let end = min(off+65536, data.count), kind: UInt8 = off == data.count ? 1 : 0
+        let pt = Array(data[off..<end])
+        let sealed = seal(profile,key,put64(idx) + [UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,UInt64(off)),pt)
+        out += [kind] + Array(put64(UInt64(sealed.count)).prefix(4)) + sealed
+        if kind == 1 { break }; off = end; idx += 1
     }
-    try out.write(to: URL(fileURLWithPath: outPath))
+    try atomicFile(outPath,out)
 }
 func decryptFile(_ key: [UInt8], _ inPath: String, _ outPath: String) throws {
+    guard key.count == 16 else { throw fileError() }
     let data = [UInt8](try Data(contentsOf: URL(fileURLWithPath: inPath)))
-    guard data.count >= 6, Array(data[0..<4]) == [0x4e, 0x32, 0x51, 0x46] else {
-        throw NSError(domain: "N2Q", code: 1)   // not an N2QF file
+    guard data.count >= 22, Array(data.prefix(5)) == Array("N2QF".utf8)+[2], [UInt8(1),0x21].contains(data[5]) else { throw fileError() }
+    let hdr = Array(data.prefix(22)), profile = data[5] == 0x21 ? FAST : SECURE
+    var out = [UInt8](), pos = 22, idx: UInt64 = 0
+    while true {
+        guard data.count-pos >= 5 else { throw fileError() }
+        let kind = data[pos], len = Int(le64(data[pos+1..<pos+5])); pos += 5
+        guard ((kind == 0 && len > 16 && len <= 65552) || (kind == 1 && len == 16)), len <= data.count-pos else { throw fileError() }
+        guard let pt = openN2Q(profile,key,put64(idx)+[UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,UInt64(out.count)),Array(data[pos..<pos+len])) else { throw fileError() }
+        pos += len
+        if kind == 1 { guard pos == data.count else { throw fileError() }; break }
+        out += pt; idx += 1
     }
-    let profile = (data[5] & 0x20) != 0 ? FAST : SECURE
-    var out = Data(), p = 6, idx: UInt64 = 0
-    while p < data.count {
-        let len = data[p..<p+4].enumerated().reduce(UInt32(0)) { $0 | UInt32($1.1) << (8 * $1.0) }
-        p += 4
-        let sealed = Array(data[p..<p+Int(len)]); p += Int(len)
-        var nonce = [UInt8](repeating: 0, count: 16)
-        withUnsafeBytes(of: idx.littleEndian) { nonce.replaceSubrange(0..<8, with: $0) }
-        guard let pt = openN2Q(profile, key, nonce, [], sealed) else {
-            throw NSError(domain: "N2Q", code: 2)   // authentication failed
-        }
-        out.append(Data(pt)); idx += 1
-    }
-    try out.write(to: URL(fileURLWithPath: outPath))
+    try atomicFile(outPath,out)
 }
 
 // ---- self-test ----
@@ -167,14 +192,18 @@ func check(_ name: String, _ got: String, _ exp: String) {
 let key = [UInt8](Data(base64Encoded: "ABEiM0RVZneImaq7zN3u/w==")!)  // 00112233...eeff
 let nonce = [UInt8](repeating: 0xa5, count: 16)
 
-// CLI file mode:  swift n2qc.swift encrypt|decrypt <in> <out>   (fixed demo key)
-if CommandLine.arguments.count == 4,
-   CommandLine.arguments[1] == "encrypt" || CommandLine.arguments[1] == "decrypt" {
+// CLI: explicit 16-byte binary key file, Secure profile.
+if CommandLine.arguments.count > 1 {
     let a = CommandLine.arguments
+    guard a.count == 5, a[1] == "encrypt" || a[1] == "decrypt" else {
+        print("usage: n2qc encrypt|decrypt KEYFILE INPUT OUTPUT"); exit(1)
+    }
     do {
-        if a[1] == "encrypt" { try encryptFile(FAST, key, a[2], a[3]) }
-        else { try decryptFile(key, a[2], a[3]) }
-    } catch { print("error:", error); exit(1) }
+        let k = [UInt8](try Data(contentsOf: URL(fileURLWithPath: a[2])))
+        guard k.count == 16 else { throw fileError() }
+        if a[1] == "encrypt" { try encryptFile(SECURE,k,a[3],a[4]) }
+        else { try decryptFile(k,a[3],a[4]) }
+    } catch { print("error:",error); exit(1) }
     exit(0)
 }
 
@@ -188,3 +217,5 @@ check("blind_index", hx(blindIndex(SECURE, key, [UInt8]("alice@x.com".utf8))), "
 let tok = sealToken(FAST, key, nonce, [UInt8]("ad".utf8), [UInt8]("the quick brown fox".utf8))
 check("token Fast roundtrip", String(bytes: openToken(key, [UInt8]("ad".utf8), tok) ?? [], encoding: .utf8) ?? "", "the quick brown fox")
 print(fails == 0 ? "ALL PASS" : "\(fails) FAILURES")
+
+exit(fails == 0 ? 0 : 1)

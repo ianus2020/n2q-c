@@ -44,32 +44,32 @@ static void init_anf(void) {
 }
 
 /* ---- permutation, one definition per lane width via a macro ---- */
-#define DEFINE_QP(NAME, TYPE, WIDTH)                                              \
-    static TYPE rotr_##NAME(TYPE x, unsigned r) {                                 \
-        return (TYPE)((x >> r) | (x << (WIDTH - r)));                             \
-    }                                                                            \
-    static void NAME(TYPE s[5], const unsigned rots[5][2], int rounds) {         \
-        const TYPE ONES = (TYPE)~(TYPE)0;                                         \
-        for (int i = 0; i < rounds; i++) {                                        \
-            s[2] ^= (TYPE)RC[i];                       /* pC */                   \
-            TYPE out[5];                                /* pS (bitsliced ANF) */  \
-            for (int k = 0; k < 5; k++) {                                         \
-                TYPE acc = 0;                                                     \
-                for (int t = 0; t < anf_cnt[k]; t++) {                            \
-                    uint8_t m = anf_mono[k][t];                                   \
-                    TYPE term = ONES;                                             \
-                    for (int b = 0; b < 5; b++)                                   \
-                        if ((m >> b) & 1)                                         \
-                            term &= s[b];                                         \
-                    acc ^= term;                                                  \
-                }                                                                 \
-                out[k] = acc;                                                     \
-            }                                                                    \
-            for (int k = 0; k < 5; k++)                                           \
-                s[k] = out[k];                                                    \
-            for (int k = 0; k < 5; k++)               /* pL */                    \
-                s[k] ^= rotr_##NAME(s[k], rots[k][0]) ^ rotr_##NAME(s[k], rots[k][1]); \
-        }                                                                        \
+#define DEFINE_QP(NAME, TYPE, WIDTH)                                                              \
+    static TYPE rotr_##NAME(TYPE x, unsigned r) {                                                 \
+        return (TYPE)((x >> r) | (x << (WIDTH - r)));                                             \
+    }                                                                                             \
+    static void NAME(TYPE s[5], const unsigned rots[5][2], int rounds) {                          \
+        const TYPE ONES = (TYPE)~(TYPE)0;                                                         \
+        for (int i = 0; i < rounds; i++) {                                                        \
+            s[2] ^= (TYPE)RC[i];                       /* pC */                                   \
+            TYPE out[5];                                /* pS (bitsliced ANF) */                  \
+            for (int k = 0; k < 5; k++) {                                                         \
+                TYPE acc = 0;                                                                     \
+                for (int t = 0; t < anf_cnt[k]; t++) {                                            \
+                    uint8_t m = anf_mono[k][t];                                                   \
+                    TYPE term = ONES;                                                             \
+                    for (int b = 0; b < 5; b++)                                                   \
+                        if ((m >> b) & 1)                                                         \
+                            term &= s[b];                                                         \
+                    acc ^= term;                                                                  \
+                }                                                                                 \
+                out[k] = acc;                                                                     \
+            }                                                                                     \
+            for (int k = 0; k < 5; k++)                                                           \
+                s[k] = out[k];                                                                    \
+            for (int k = 0; k < 5; k++)               /* pL */                                    \
+                s[k] ^= rotr_##NAME(s[k], rots[k][0]) ^ rotr_##NAME(s[k], rots[k][1]);            \
+        }                                                                                         \
     }
 
 DEFINE_QP(qp320, uint64_t, 64)
@@ -84,277 +84,252 @@ DEFINE_QP(qp640, __uint128_t, 128)
 #define DOM_BI 4
 #define DOM_STREAM 5
 
+static void secure_wipe(void *p, size_t n) {
+    volatile uint8_t *v = (volatile uint8_t *)p;
+    while (n--) *v++ = 0;
+}
+
 /* width-independent SIV framing: nonce ‖ le64(|ad|) ‖ ad ‖ le64(|pt|) ‖ pt */
 static uint8_t *siv_input(const uint8_t *nonce, const uint8_t *ad, size_t adlen, const uint8_t *pt,
                           size_t ptlen, size_t *outlen) {
-    size_t ilen = 16 + 8 + adlen + 8 + ptlen;
+    if (adlen > SIZE_MAX-32 || ptlen > SIZE_MAX-32-adlen) return NULL;
+    size_t ilen = 32 + adlen + ptlen;
     uint8_t *in = calloc(ilen, 1);
+    if (!in) return NULL;
     size_t p = 0;
     memcpy(in + p, nonce, 16);
     p += 16;
     for (int i = 0; i < 8; i++)
         in[p + i] = (uint8_t)((uint64_t)adlen >> (8 * i));
     p += 8;
-    memcpy(in + p, ad, adlen);
+    if (adlen) memcpy(in + p, ad, adlen);
     p += adlen;
     for (int i = 0; i < 8; i++)
         in[p + i] = (uint8_t)((uint64_t)ptlen >> (8 * i));
     p += 8;
-    memcpy(in + p, pt, ptlen);
+    if (ptlen) memcpy(in + p, pt, ptlen);
     *outlen = ilen;
     return in;
 }
 
 /* `r` = round count for the sponge f (Secure=16, Fast=8), used uniformly. */
-#define DEFINE_MODES(SFX, TYPE, B, QPFUN, ROTS)                                                  \
-    static TYPE rd_##SFX(const uint8_t *p) {                                                     \
-        TYPE v = 0;                                                                              \
-        for (int i = 0; i < B; i++)                                                              \
-            v |= (TYPE)p[i] << (8 * i);                                                          \
-        return v;                                                                                \
-    }                                                                                            \
-    static void wr_##SFX(uint8_t *p, TYPE v) {                                                   \
-        for (int i = 0; i < B; i++)                                                              \
-            p[i] = (uint8_t)(v >> (8 * i));                                                      \
-    }                                                                                            \
-    static void f_##SFX(TYPE s[5], int r) { QPFUN(s, ROTS, r); }                                 \
-    static void absorb_##SFX(TYPE s[5], const uint8_t *m, size_t len, int r) {                   \
-        size_t pl = ((len + 1 + (B - 1)) / B) * B;                                               \
-        uint8_t *b = calloc(pl, 1);                                                              \
-        memcpy(b, m, len);                                                                       \
-        b[len] = 0x01;                                                                           \
-        b[pl - 1] |= 0x80;                                                                       \
-        for (size_t o = 0; o < pl; o += B) {                                                     \
-            s[0] ^= rd_##SFX(b + o);                                                             \
-            f_##SFX(s, r);                                                                       \
-        }                                                                                        \
-        free(b);                                                                                 \
-    }                                                                                            \
-    static void squeeze_##SFX(TYPE s[5], uint8_t *out, size_t n, int r) {                        \
-        size_t d = 0;                                                                            \
-        while (d < n) {                                                                          \
-            uint8_t blk[16];                                                                     \
-            wr_##SFX(blk, s[0]);                                                                 \
-            size_t take = (n - d < (size_t)B) ? (n - d) : (size_t)B;                             \
-            memcpy(out + d, blk, take);                                                          \
-            d += B;                                                                              \
-            f_##SFX(s, r);                                                                       \
-        }                                                                                        \
-    }                                                                                            \
-    static void hash_##SFX(const uint8_t *m, size_t len, uint8_t *out, size_t ol, int r) {       \
-        TYPE s[5] = {0, 0, 0, 0, 0};                                                             \
-        s[4] ^= (TYPE)DOM_HASH;                                                                  \
-        f_##SFX(s, r);                                                                           \
-        absorb_##SFX(s, m, len, r);                                                              \
-        squeeze_##SFX(s, out, ol, r);                                                            \
-    }                                                                                            \
-    static void mac_##SFX(const uint8_t *k, const uint8_t *dt, size_t len, int dom, uint8_t *out, int r) { \
-        TYPE s[5] = {0, 0, 0, 0, 0};                                                             \
-        s[1] = rd_##SFX(k);                                                                      \
-        s[2] = rd_##SFX(k + B);                                                                  \
-        s[4] ^= (TYPE)dom;                                                                       \
-        f_##SFX(s, r);                                                                           \
-        absorb_##SFX(s, dt, len, r);                                                             \
-        squeeze_##SFX(s, out, 2 * B, r);                                                         \
-    }                                                                                            \
-    static void ks_##SFX(const uint8_t *k, const uint8_t *v, uint8_t *out, size_t n, int r) {    \
-        TYPE s[5] = {0, 0, 0, 0, 0};                                                             \
-        s[1] = rd_##SFX(k);                                                                      \
-        s[2] = rd_##SFX(k + B);                                                                  \
-        s[3] = rd_##SFX(v);                                                                      \
-        s[4] = rd_##SFX(v + B) ^ (TYPE)DOM_ENC;                                                  \
-        f_##SFX(s, r);                                                                           \
-        squeeze_##SFX(s, out, n, r);                                                             \
-    }                                                                                            \
-    static size_t seal_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,  \
-                             const uint8_t *pt, size_t pl, uint8_t *out, int r) {                \
-        size_t il;                                                                               \
-        uint8_t *in = siv_input(nc, ad, al, pt, pl, &il);                                        \
-        uint8_t v[2 * B];                                                                        \
-        mac_##SFX(k, in, il, DOM_MAC, v, r);                                                     \
-        free(in);                                                                                \
-        uint8_t *kbuf = calloc(pl ? pl : 1, 1);                                                  \
-        ks_##SFX(k, v, kbuf, pl, r);                                                             \
-        memcpy(out, v, 2 * B);                                                                   \
-        for (size_t i = 0; i < pl; i++)                                                          \
-            out[2 * B + i] = pt[i] ^ kbuf[i];                                                    \
-        free(kbuf);                                                                              \
-        return 2 * B + pl;                                                                       \
-    }                                                                                            \
-    static int open_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,     \
-                          const uint8_t *sealed, size_t slen, uint8_t *pt, size_t *ptlen, int r) { \
-        if (slen < (size_t)(2 * B))                                                              \
-            return 0;                                                                            \
-        const uint8_t *v = sealed, *ct = sealed + 2 * B;                                         \
-        size_t ctl = slen - 2 * B;                                                               \
-        uint8_t *kbuf = calloc(ctl ? ctl : 1, 1);                                                \
-        ks_##SFX(k, v, kbuf, ctl, r);                                                            \
-        for (size_t i = 0; i < ctl; i++)                                                         \
-            pt[i] = ct[i] ^ kbuf[i];                                                             \
-        free(kbuf);                                                                              \
-        size_t il;                                                                               \
-        uint8_t *in = siv_input(nc, ad, al, pt, ctl, &il);                                       \
-        uint8_t v2[2 * B];                                                                       \
-        mac_##SFX(k, in, il, DOM_MAC, v2, r);                                                    \
-        free(in);                                                                                \
-        int diff = 0;                                                                            \
-        for (int i = 0; i < 2 * B; i++)                                                          \
-            diff |= v[i] ^ v2[i];                                                                \
-        *ptlen = ctl;                                                                            \
-        return diff == 0;                                                                        \
-    }                                                                                            \
-    static void blind_##SFX(const uint8_t *k, const uint8_t *v, size_t len, uint8_t *out, int r) { \
-        mac_##SFX(k, v, len, DOM_BI, out, r);                                                    \
-    }                                                                                            \
-    static void sinit_##SFX(TYPE s[5], const uint8_t *k, const uint8_t *nc, int r) {             \
-        uint8_t nb[32];                                                                          \
-        memset(nb, 0, 32);                                                                       \
-        memcpy(nb, nc, 16);                                                                      \
-        s[0] = 0;                                                                                \
-        s[1] = rd_##SFX(k);                                                                      \
-        s[2] = rd_##SFX(k + B);                                                                  \
-        s[3] = rd_##SFX(nb);                                                                     \
-        s[4] = rd_##SFX(nb + B) ^ (TYPE)DOM_STREAM;                                              \
-        f_##SFX(s, r);                                                                           \
-        s[3] ^= rd_##SFX(k);                                                                     \
-        s[4] ^= rd_##SFX(k + B);                                                                 \
-    }                                                                                            \
-    static void sad_##SFX(TYPE s[5], const uint8_t *ad, size_t len, int r) {                     \
-        size_t pl = ((len + 1 + (B - 1)) / B) * B;                                               \
-        uint8_t *b = calloc(pl, 1);                                                              \
-        memcpy(b, ad, len);                                                                      \
-        b[len] = 0x01;                                                                           \
-        b[pl - 1] |= 0x80;                                                                       \
-        for (size_t o = 0; o < pl; o += B) {                                                     \
-            s[0] ^= rd_##SFX(b + o);                                                             \
-            f_##SFX(s, r);                                                                       \
-        }                                                                                        \
-        free(b);                                                                                 \
-        s[4] ^= (TYPE)1;                                                                         \
-    }                                                                                            \
-    static void sfin_##SFX(TYPE s[5], const uint8_t *k, uint8_t *tag, int r) {                   \
-        s[3] ^= rd_##SFX(k);                                                                     \
-        s[4] ^= rd_##SFX(k + B);                                                                 \
-        f_##SFX(s, r);                                                                           \
-        wr_##SFX(tag, s[3]);                                                                     \
-        wr_##SFX(tag + B, s[4]);                                                                 \
-    }                                                                                            \
-    static size_t sseal_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al, \
-                              const uint8_t *pt, size_t pl, uint8_t *out, int r) {               \
-        TYPE s[5];                                                                               \
-        sinit_##SFX(s, k, nc, r);                                                                \
-        sad_##SFX(s, ad, al, r);                                                                 \
-        size_t oi = 0, full = pl / B;                                                            \
-        for (size_t i = 0; i < full; i++) {                                                      \
-            s[0] ^= rd_##SFX(pt + i * B);                                                        \
-            wr_##SFX(out + oi, s[0]);                                                            \
-            oi += B;                                                                             \
-            f_##SFX(s, r);                                                                       \
-        }                                                                                        \
-        size_t l = pl - full * B;                                                                \
-        uint8_t rb[16];                                                                          \
-        wr_##SFX(rb, s[0]);                                                                      \
-        for (size_t j = 0; j < l; j++)                                                           \
-            out[oi++] = pt[full * B + j] ^ rb[j];                                                \
-        uint8_t pb[16];                                                                          \
-        memset(pb, 0, 16);                                                                       \
-        memcpy(pb, pt + full * B, l);                                                            \
-        pb[l] ^= 0x01;                                                                           \
-        s[0] ^= rd_##SFX(pb);                                                                    \
-        uint8_t tag[2 * B];                                                                      \
-        sfin_##SFX(s, k, tag, r);                                                                \
-        memcpy(out + oi, tag, 2 * B);                                                            \
-        return oi + 2 * B;                                                                       \
-    }                                                                                            \
-    static int sopen_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,    \
-                           const uint8_t *sd, size_t sl, uint8_t *pt, size_t *ptlen, int r) {    \
-        if (sl < (size_t)(2 * B))                                                                \
-            return 0;                                                                            \
-        size_t ctl = sl - 2 * B;                                                                 \
-        const uint8_t *ct = sd, *tag = sd + ctl;                                                 \
-        TYPE s[5];                                                                               \
-        sinit_##SFX(s, k, nc, r);                                                                \
-        sad_##SFX(s, ad, al, r);                                                                 \
-        size_t pi = 0, full = ctl / B;                                                           \
-        for (size_t i = 0; i < full; i++) {                                                      \
-            uint8_t rb[16];                                                                      \
-            wr_##SFX(rb, s[0]);                                                                  \
-            for (int j = 0; j < B; j++)                                                          \
-                pt[pi++] = rb[j] ^ ct[i * B + j];                                                \
-            s[0] = rd_##SFX(ct + i * B);                                                         \
-            f_##SFX(s, r);                                                                       \
-        }                                                                                        \
-        size_t l = ctl - full * B;                                                               \
-        uint8_t rb[16];                                                                          \
-        wr_##SFX(rb, s[0]);                                                                      \
-        for (size_t j = 0; j < l; j++)                                                           \
-            pt[pi++] = ct[full * B + j] ^ rb[j];                                                 \
-        uint8_t nr[16];                                                                          \
-        memcpy(nr, rb, 16);                                                                      \
-        for (size_t j = 0; j < l; j++)                                                           \
-            nr[j] = ct[full * B + j];                                                            \
-        nr[l] ^= 0x01;                                                                           \
-        s[0] = rd_##SFX(nr);                                                                     \
-        uint8_t t2[2 * B];                                                                       \
-        sfin_##SFX(s, k, t2, r);                                                                 \
-        int diff = 0;                                                                            \
-        for (int i = 0; i < 2 * B; i++)                                                          \
-            diff |= tag[i] ^ t2[i];                                                              \
-        *ptlen = pi;                                                                             \
-        return diff == 0;                                                                        \
+#define DEFINE_MODES(SFX, TYPE, B, QPFUN, ROTS)                                                   \
+    static TYPE rd_##SFX(const uint8_t *p) {                                                      \
+        TYPE v = 0;                                                                               \
+        for (int i = 0; i < B; i++)                                                               \
+            v |= (TYPE)p[i] << (8 * i);                                                           \
+        return v;                                                                                 \
+    }                                                                                             \
+    static void wr_##SFX(uint8_t *p, TYPE v) {                                                    \
+        for (int i = 0; i < B; i++)                                                               \
+            p[i] = (uint8_t)(v >> (8 * i));                                                       \
+    }                                                                                             \
+    static void f_##SFX(TYPE s[5], int r) { QPFUN(s, ROTS, r); }                                  \
+    static void absorb_##SFX(TYPE s[5], const uint8_t *m, size_t len, int r) {                    \
+        size_t full = len / B;                                                                    \
+        for (size_t i = 0; i < full; i++) {                                                       \
+            s[0] ^= rd_##SFX(m + i * B);                                                          \
+            f_##SFX(s, r);                                                                        \
+        }                                                                                         \
+        uint8_t tail[B]; memset(tail, 0, B);                                                      \
+        size_t rem = len % B;                                                                     \
+        if (rem) memcpy(tail, m + full * B, rem);                                                 \
+        tail[rem] = 0x01; tail[B - 1] |= 0x80;                                                    \
+        s[0] ^= rd_##SFX(tail); f_##SFX(s, r);                                                    \
+    }                                                                                             \
+    static void squeeze_##SFX(TYPE s[5], uint8_t *out, size_t n, int r) {                         \
+        size_t d = 0;                                                                             \
+        while (d < n) {                                                                           \
+            uint8_t blk[16];                                                                      \
+            wr_##SFX(blk, s[0]);                                                                  \
+            size_t take = (n - d < (size_t)B) ? (n - d) : (size_t)B;                              \
+            memcpy(out + d, blk, take);                                                           \
+            d += B;                                                                               \
+            f_##SFX(s, r);                                                                        \
+        }                                                                                         \
+    }                                                                                             \
+    static void hash_##SFX(const uint8_t *m, size_t len, uint8_t *out, size_t ol, int r) {        \
+        if (r != 8 && r != 16) { secure_wipe(out, ol); return; }                                  \
+        TYPE s[5] = {0, 0, 0, 0, 0};                                                              \
+        s[4] ^= (TYPE)DOM_HASH;                                                                   \
+        f_##SFX(s, r);                                                                            \
+        absorb_##SFX(s, m, len, r);                                                               \
+        squeeze_##SFX(s, out, ol, r);                                                             \
+    }                                                                                             \
+    static void mac_##SFX(const uint8_t *k, const uint8_t *dt, size_t len, int dom, uint8_t *out, int r) {\
+        if (r != 8 && r != 16) { secure_wipe(out, 2 * B); return; }                               \
+        TYPE s[5] = {0, 0, 0, 0, 0};                                                              \
+        s[1] = rd_##SFX(k);                                                                       \
+        s[2] = rd_##SFX(k + B);                                                                   \
+        s[4] ^= (TYPE)dom;                                                                        \
+        f_##SFX(s, r);                                                                            \
+        absorb_##SFX(s, dt, len, r);                                                              \
+        squeeze_##SFX(s, out, 2 * B, r);                                                          \
+    }                                                                                             \
+    static void ks_##SFX(const uint8_t *k, const uint8_t *v, uint8_t *out, size_t n, int r) {     \
+        TYPE s[5] = {0, 0, 0, 0, 0};                                                              \
+        s[1] = rd_##SFX(k);                                                                       \
+        s[2] = rd_##SFX(k + B);                                                                   \
+        s[3] = rd_##SFX(v);                                                                       \
+        s[4] = rd_##SFX(v + B) ^ (TYPE)DOM_ENC;                                                   \
+        f_##SFX(s, r);                                                                            \
+        squeeze_##SFX(s, out, n, r);                                                              \
+    }                                                                                             \
+    static size_t seal_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,   \
+                             const uint8_t *pt, size_t pl, uint8_t *out, int r) {                 \
+        if (r != 8 && r != 16) return 0;                                                          \
+        if (pl > SIZE_MAX-2*B) return 0;                                                          \
+        size_t il;                                                                                \
+        uint8_t *in = siv_input(nc, ad, al, pt, pl, &il);                                         \
+        if (!in) return 0;                                                                        \
+        uint8_t v[2 * B];                                                                         \
+        mac_##SFX(k, in, il, DOM_MAC, v, r);                                                      \
+        free(in);                                                                                 \
+        uint8_t *kbuf = calloc(pl ? pl : 1, 1);                                                   \
+        if (!kbuf) return 0;                                                                      \
+        ks_##SFX(k, v, kbuf, pl, r);                                                              \
+        memcpy(out, v, 2 * B);                                                                    \
+        for (size_t i = 0; i < pl; i++)                                                           \
+            out[2 * B + i] = pt[i] ^ kbuf[i];                                                     \
+        secure_wipe(kbuf, pl); free(kbuf);                                                        \
+        return 2 * B + pl;                                                                        \
+    }                                                                                             \
+    static int open_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,      \
+                          const uint8_t *sealed, size_t slen, uint8_t *pt, size_t *ptlen, int r) {\
+        *ptlen = 0;                                                                               \
+        if (r != 8 && r != 16) return 0;                                                          \
+        if (slen < (size_t)(2 * B))                                                               \
+            return 0;                                                                             \
+        const uint8_t *v = sealed, *ct = sealed + 2 * B;                                          \
+        size_t ctl = slen - 2 * B;                                                                \
+        uint8_t *kbuf = calloc(ctl ? ctl : 1, 1);                                                 \
+        if (!kbuf) return 0;                                                                      \
+        ks_##SFX(k, v, kbuf, ctl, r);                                                             \
+        for (size_t i = 0; i < ctl; i++)                                                          \
+            pt[i] = ct[i] ^ kbuf[i];                                                              \
+        secure_wipe(kbuf, ctl); free(kbuf);                                                       \
+        size_t il;                                                                                \
+        uint8_t *in = siv_input(nc, ad, al, pt, ctl, &il);                                        \
+        if (!in) { secure_wipe(pt, ctl); return 0; }                                              \
+        uint8_t v2[2 * B];                                                                        \
+        mac_##SFX(k, in, il, DOM_MAC, v2, r);                                                     \
+        free(in);                                                                                 \
+        int diff = 0;                                                                             \
+        for (int i = 0; i < 2 * B; i++)                                                           \
+            diff |= v[i] ^ v2[i];                                                                 \
+        if (diff) { secure_wipe(pt, ctl); return 0; }                                             \
+        *ptlen = ctl;                                                                             \
+        return diff == 0;                                                                         \
+    }                                                                                             \
+    static void blind_##SFX(const uint8_t *k, const uint8_t *v, size_t len, uint8_t *out, int r) {\
+        mac_##SFX(k, v, len, DOM_BI, out, r);                                                     \
+    }                                                                                             \
+    static void sinit_##SFX(TYPE s[5], const uint8_t *k, const uint8_t *nc, int r) {              \
+        uint8_t nb[32];                                                                           \
+        memset(nb, 0, 32);                                                                        \
+        memcpy(nb, nc, 16);                                                                       \
+        s[0] = 0;                                                                                 \
+        s[1] = rd_##SFX(k);                                                                       \
+        s[2] = rd_##SFX(k + B);                                                                   \
+        s[3] = rd_##SFX(nb);                                                                      \
+        s[4] = rd_##SFX(nb + B) ^ (TYPE)DOM_STREAM;                                               \
+        f_##SFX(s, r);                                                                            \
+        s[3] ^= rd_##SFX(k);                                                                      \
+        s[4] ^= rd_##SFX(k + B);                                                                  \
+    }                                                                                             \
+    static void sad_##SFX(TYPE s[5], const uint8_t *ad, size_t len, int r) {                      \
+        size_t pl = ((len + 1 + (B - 1)) / B) * B;                                                \
+        uint8_t *b = calloc(pl, 1);                                                               \
+        memcpy(b, ad, len);                                                                       \
+        b[len] = 0x01;                                                                            \
+        b[pl - 1] |= 0x80;                                                                        \
+        for (size_t o = 0; o < pl; o += B) {                                                      \
+            s[0] ^= rd_##SFX(b + o);                                                              \
+            f_##SFX(s, r);                                                                        \
+        }                                                                                         \
+        free(b);                                                                                  \
+        s[4] ^= (TYPE)1;                                                                          \
+    }                                                                                             \
+    static void sfin_##SFX(TYPE s[5], const uint8_t *k, uint8_t *tag, int r) {                    \
+        s[3] ^= rd_##SFX(k);                                                                      \
+        s[4] ^= rd_##SFX(k + B);                                                                  \
+        f_##SFX(s, r);                                                                            \
+        wr_##SFX(tag, s[3]);                                                                      \
+        wr_##SFX(tag + B, s[4]);                                                                  \
+    }                                                                                             \
+    static size_t sseal_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,  \
+                              const uint8_t *pt, size_t pl, uint8_t *out, int r) {                \
+        if (r != 8 && r != 16) return 0;                                                          \
+        TYPE s[5];                                                                                \
+        sinit_##SFX(s, k, nc, r);                                                                 \
+        sad_##SFX(s, ad, al, r);                                                                  \
+        size_t oi = 0, full = pl / B;                                                             \
+        for (size_t i = 0; i < full; i++) {                                                       \
+            s[0] ^= rd_##SFX(pt + i * B);                                                         \
+            wr_##SFX(out + oi, s[0]);                                                             \
+            oi += B;                                                                              \
+            f_##SFX(s, r);                                                                        \
+        }                                                                                         \
+        size_t l = pl - full * B;                                                                 \
+        uint8_t rb[16];                                                                           \
+        wr_##SFX(rb, s[0]);                                                                       \
+        for (size_t j = 0; j < l; j++)                                                            \
+            out[oi++] = pt[full * B + j] ^ rb[j];                                                 \
+        uint8_t pb[16];                                                                           \
+        memset(pb, 0, 16);                                                                        \
+        memcpy(pb, pt + full * B, l);                                                             \
+        pb[l] ^= 0x01;                                                                            \
+        s[0] ^= rd_##SFX(pb);                                                                     \
+        uint8_t tag[2 * B];                                                                       \
+        sfin_##SFX(s, k, tag, r);                                                                 \
+        memcpy(out + oi, tag, 2 * B);                                                             \
+        return oi + 2 * B;                                                                        \
+    }                                                                                             \
+    static int sopen_##SFX(const uint8_t *k, const uint8_t *nc, const uint8_t *ad, size_t al,     \
+                           const uint8_t *sd, size_t sl, uint8_t *pt, size_t *ptlen, int r) {     \
+        *ptlen = 0;                                                                               \
+        if (r != 8 && r != 16) return 0;                                                          \
+        if (sl < (size_t)(2 * B))                                                                 \
+            return 0;                                                                             \
+        size_t ctl = sl - 2 * B;                                                                  \
+        const uint8_t *ct = sd, *tag = sd + ctl;                                                  \
+        TYPE s[5];                                                                                \
+        sinit_##SFX(s, k, nc, r);                                                                 \
+        sad_##SFX(s, ad, al, r);                                                                  \
+        size_t pi = 0, full = ctl / B;                                                            \
+        for (size_t i = 0; i < full; i++) {                                                       \
+            uint8_t rb[16];                                                                       \
+            wr_##SFX(rb, s[0]);                                                                   \
+            for (int j = 0; j < B; j++)                                                           \
+                pt[pi++] = rb[j] ^ ct[i * B + j];                                                 \
+            s[0] = rd_##SFX(ct + i * B);                                                          \
+            f_##SFX(s, r);                                                                        \
+        }                                                                                         \
+        size_t l = ctl - full * B;                                                                \
+        uint8_t rb[16];                                                                           \
+        wr_##SFX(rb, s[0]);                                                                       \
+        for (size_t j = 0; j < l; j++)                                                            \
+            pt[pi++] = ct[full * B + j] ^ rb[j];                                                  \
+        uint8_t nr[16];                                                                           \
+        memcpy(nr, rb, 16);                                                                       \
+        for (size_t j = 0; j < l; j++)                                                            \
+            nr[j] = ct[full * B + j];                                                             \
+        nr[l] ^= 0x01;                                                                            \
+        s[0] = rd_##SFX(nr);                                                                      \
+        uint8_t t2[2 * B];                                                                        \
+        sfin_##SFX(s, k, t2, r);                                                                  \
+        int diff = 0;                                                                             \
+        for (int i = 0; i < 2 * B; i++)                                                           \
+            diff |= tag[i] ^ t2[i];                                                               \
+        if (diff) { secure_wipe(pt, pi); return 0; }                                              \
+        *ptlen = pi;                                                                              \
+        return diff == 0;                                                                         \
     }
 
 DEFINE_MODES(128, uint64_t, 8, qp320, ROTS320)
 DEFINE_MODES(256, __uint128_t, 16, qp640, ROTS640)
 
-/* ---- N2QF binary file container: "N2QF" | ver(1) | suite(1) | {le32|sealed}* ----
- * nonce for chunk i = 16-byte little-endian i (host is little-endian). */
-static int enc_file(int profile, const uint8_t *key, int bits, const char *inp, const char *out) {
-    FILE *fi = fopen(inp, "rb"), *fo = fopen(out, "wb");
-    if (!fi || !fo) return -1;
-    uint8_t suite = (bits == 128 ? 0x01 : 0x02) | (profile == 8 ? 0x20 : 0);
-    uint8_t hdr[6] = {'N', '2', 'Q', 'F', 1, suite};
-    fwrite(hdr, 1, 6, fo);
-    uint8_t *buf = malloc(65536), *ob = malloc(65536 + 64);
-    uint64_t idx = 0;
-    size_t n;
-    while ((n = fread(buf, 1, 65536, fi)) > 0) {
-        uint8_t nonce[16] = {0};
-        memcpy(nonce, &idx, 8);
-        size_t sn = (bits == 128) ? seal_128(key, nonce, (const uint8_t *)"", 0, buf, n, ob, profile)
-                                  : seal_256(key, nonce, (const uint8_t *)"", 0, buf, n, ob, profile);
-        uint32_t l = (uint32_t)sn;
-        fwrite(&l, 4, 1, fo);
-        fwrite(ob, 1, sn, fo);
-        idx++;
-    }
-    free(buf); free(ob); fclose(fi); fclose(fo);
-    return 0;
-}
-static int dec_file(const uint8_t *key, const char *inp, const char *out) {
-    FILE *fi = fopen(inp, "rb"), *fo = fopen(out, "wb");
-    if (!fi || !fo) return -1;
-    uint8_t hdr[6];
-    if (fread(hdr, 1, 6, fi) != 6 || memcmp(hdr, "N2QF", 4) != 0) return -2;
-    int bits = (hdr[5] & 0x0f) == 2 ? 256 : 128, r = (hdr[5] & 0x20) ? 8 : 16;
-    uint8_t *sealed = malloc(65536 + 64), *pt = malloc(65536);
-    uint64_t idx = 0;
-    uint32_t l;
-    int rc = 0;
-    while (fread(&l, 4, 1, fi) == 1) {
-        if (fread(sealed, 1, l, fi) != l) { rc = -3; break; }
-        uint8_t nonce[16] = {0};
-        memcpy(nonce, &idx, 8);
-        size_t ptlen;
-        int ok = (bits == 128) ? open_128(key, nonce, (const uint8_t *)"", 0, sealed, l, pt, &ptlen, r)
-                               : open_256(key, nonce, (const uint8_t *)"", 0, sealed, l, pt, &ptlen, r);
-        if (!ok) { rc = -4; break; }
-        fwrite(pt, 1, ptlen, fo);
-        idx++;
-    }
-    free(sealed); free(pt); fclose(fi); fclose(fo);
-    return rc;
-}
+#include "n2q_file.h"
 
 /* ---- self-test ---- */
 static int fails = 0;
@@ -395,7 +370,7 @@ static void check_hex(const char *name, const uint8_t *got, size_t n, const char
     }
     char buf[256];
     for (size_t i = 0; i < n; i++)
-        sprintf(buf + 2 * i, "%02x", got[i]);
+        snprintf(buf + 2 * i, 3, "%02x", got[i]);
     int ok = strcmp(buf, exp) == 0;
     printf("  [%s] %s\n", ok ? "PASS" : "FAIL", name);
     if (!ok) {
@@ -407,15 +382,19 @@ static void check_hex(const char *name, const uint8_t *got, size_t n, const char
 #ifndef N2Q_CORE_NO_MAIN /* define to reuse this file as a core library (see n2q_stream.c) */
 int main(int argc, char **argv) {
     init_anf();
-    /* CLI file mode:  ./n2qc encrypt|decrypt <in> <out>   (fixed demo key) */
-    if (argc == 4 && (strcmp(argv[1], "encrypt") == 0 || strcmp(argv[1], "decrypt") == 0)) {
-        uint8_t key[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                           0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
-        int rc = strcmp(argv[1], "encrypt") == 0
-                     ? enc_file(8 /*Fast*/, key, 128, argv[2], argv[3])
-                     : dec_file(key, argv[2], argv[3]);
-        if (rc != 0) fprintf(stderr, "error %d\n", rc);
-        return rc == 0 ? 0 : 1;
+    /* CLI: explicit binary key file; Secure profile. */
+    if (argc > 1) {
+        if (argc != 5 || (strcmp(argv[1], "encrypt") && strcmp(argv[1], "decrypt"))) {
+            fprintf(stderr, "usage: %s encrypt|decrypt KEYFILE INPUT OUTPUT\n", argv[0]); return 1;
+        }
+        uint8_t key[33]; FILE *kf = fopen(argv[2], "rb");
+        if (!kf) return 1;
+        size_t n = fread(key, 1, sizeof key, kf); int err = ferror(kf); fclose(kf);
+        if (err || (n != 16 && n != 32)) { secure_wipe(key,sizeof key); return 1; }
+        int rc = !strcmp(argv[1], "encrypt") ? enc_file(16,key,(int)n*8,argv[3],argv[4]) : dec_file(key,(int)n*8,argv[3],argv[4]);
+        secure_wipe(key,sizeof key);
+        if (rc) fprintf(stderr, "invalid input, authentication or I/O failure\n");
+        return rc ? 1 : 0;
     }
     printf("N2Q C reference — Appendix A known-answer self-test\n");
 
@@ -520,7 +499,7 @@ int main(int argc, char **argv) {
     if (tf) {
         fclose(tf);
         int eq = 0;
-        if (dec_file(key, "/tmp/filedemo/photo.n2q", "/tmp/filedemo/photo.c.png") == 0) {
+        if (dec_file(key, 128, "/tmp/filedemo/photo.n2q", "/tmp/filedemo/photo.c.png") == 0) {
             FILE *fa = fopen("/tmp/filedemo/photo.png", "rb"), *fb = fopen("/tmp/filedemo/photo.c.png", "rb");
             if (fa && fb) {
                 eq = 1;

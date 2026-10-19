@@ -14,6 +14,15 @@ measurements** — not a proven or independently confirmed guarantee.
 **Do not use N2Q to protect real secrets or production data.** For production
 today, use a vetted, widely reviewed library: libsodium, AES-GCM, or Ascon.
 
+## Current implementation limits
+
+Core ports use ANF rather than state-indexed S-box lookup. Python/PHP runtimes,
+Go/Swift compilers, garbage collection and WASM/JIT behavior are not certified
+constant-time. A historical C timing result cannot establish this for all ports.
+N2QF v1 is rejected; [v2](docs/n2qf.md) requires authenticated EOF. Files and
+stateful extensions still require application resource limits and independent
+review. No RUP robustness is claimed ([correction](docs/robustness.md)).
+
 ## What *is* verified
 
 These are facts, reproducible on your own machine from this repository:
@@ -23,7 +32,7 @@ These are facts, reproducible on your own machine from this repository:
 | Six implementations agree **byte-for-byte** (Rust, C, Python, Go, PHP, Swift) | run each self-test; compare with `impl/conformance/vectors.txt` |
 | Constants are **reproducible from a public seed** — no hand-picked values | `tools/const-search` reproduces `APPENDIX-A.md` |
 | Measured cryptanalysis: diffusion, avalanche, degree, differential, timing | `docs/cryptanalysis.md`, `tools/cryptanalysis` |
-| Constant-time by design (no tables, no secret-dependent branches); dudect \|t\| = 0.48 | `docs/cryptanalysis.md` |
+| Lane-wise ANF S-box in the six core ports; no state-indexed S-box lookup | KATs and source; this does not prove runtime constant-time behavior |
 | Every extended mode ships a self-test that passes | `docs/conformance.md` |
 | Cross-language interop for files, modes and federation parcels | the cross-check tests in each port |
 
@@ -60,8 +69,9 @@ data, credentials, or anything whose exposure would cause harm.
 
 ## The path to production readiness
 
-Milestones M1–M5 are complete (specification, reproducible constants,
-implementations, in-house cryptanalysis, hardening). **M6 — external audit and a
+Implementation hardening is ongoing; previous milestone completion labels
+were not evidence that every parser, file format or extension was secure.
+See [the remediation record](docs/security-fixes.md) for changes and remaining work. **M6 — external audit and a
 public break-it challenge — is the gate.** Until M6 is done and its findings are
 published and addressed, the guidance above does not change.
 

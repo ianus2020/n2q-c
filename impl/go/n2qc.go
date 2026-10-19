@@ -6,13 +6,16 @@
 package main
 
 import (
+	"bytes"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"math/bits"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 var sbox = [32]byte{
@@ -34,6 +37,34 @@ const (
 	domStream = 5
 )
 
+func valid(profile int, key []byte, size int) bool {
+	return (profile == Secure || profile == Fast) && len(key) == size
+}
+
+// Public Möbius transform, never indexed by secret state.
+var anf = func() [5][]int {
+	var out [5][]int
+	for k := 0; k < 5; k++ {
+		var a [32]byte
+		for m := 0; m < 32; m++ {
+			a[m] = (sbox[m] >> k) & 1
+		}
+		for bit := 1; bit < 32; bit <<= 1 {
+			for m := 0; m < 32; m++ {
+				if m&bit != 0 {
+					a[m] ^= a[m^bit]
+				}
+			}
+		}
+		for m := 0; m < 32; m++ {
+			if a[m] != 0 {
+				out[k] = append(out[k], m)
+			}
+		}
+	}
+	return out
+}()
+
 func rotr(x uint64, r uint) uint64 { return bits.RotateLeft64(x, -int(r)) }
 
 // permute applies `rounds` rounds of QP-320 to the 5-lane state.
@@ -41,11 +72,15 @@ func permute(s [5]uint64, rounds int) [5]uint64 {
 	for i := 0; i < rounds; i++ {
 		s[2] ^= uint64(rc[i]) // pC
 		var out [5]uint64     // pS: 5-bit S-box per bit-column
-		for j := 0; j < 64; j++ {
-			col := (s[0]>>j)&1 | ((s[1]>>j)&1)<<1 | ((s[2]>>j)&1)<<2 | ((s[3]>>j)&1)<<3 | ((s[4]>>j)&1)<<4
-			o := sbox[col]
-			for k := 0; k < 5; k++ {
-				out[k] |= uint64((o>>k)&1) << j
+		for k, terms := range anf {
+			for _, m := range terms {
+				t := ^uint64(0)
+				for lane := 0; lane < 5; lane++ {
+					if m&(1<<lane) != 0 {
+						t &= s[lane]
+					}
+				}
+				out[k] ^= t
 			}
 		}
 		s = out
@@ -87,6 +122,9 @@ func squeeze(s [5]uint64, n, r int) []byte {
 }
 
 func Hash(r int, msg []byte) []byte {
+	if r != Secure && r != Fast {
+		return nil
+	}
 	s := [5]uint64{}
 	s[4] ^= domHash
 	s = permute(s, r)
@@ -95,6 +133,9 @@ func Hash(r int, msg []byte) []byte {
 }
 
 func mac(r int, key, data []byte, dom byte) []byte {
+	if !valid(r, key, 16) {
+		return nil
+	}
 	s := [5]uint64{}
 	s[1] = binary.LittleEndian.Uint64(key[0:8])
 	s[2] = binary.LittleEndian.Uint64(key[8:16])
@@ -127,6 +168,9 @@ func sivInput(nonce, ad, pt []byte) []byte {
 
 // Seal encrypts under the given profile (Secure or Fast). Returns tag ‖ ct.
 func Seal(profile int, key, nonce, ad, pt []byte) []byte {
+	if !valid(profile, key, 16) || len(nonce) != 16 {
+		return nil
+	}
 	v := mac(profile, key, sivInput(nonce, ad, pt), domMAC)
 	ks := keystream(profile, key, v, len(pt))
 	out := append([]byte{}, v...)
@@ -138,6 +182,9 @@ func Seal(profile int, key, nonce, ad, pt []byte) []byte {
 
 // Open decrypts; returns (plaintext, true) or (nil, false) on auth failure.
 func Open(profile int, key, nonce, ad, sealed []byte) ([]byte, bool) {
+	if !valid(profile, key, 16) || len(nonce) != 16 {
+		return nil, false
+	}
 	if len(sealed) < 16 {
 		return nil, false
 	}
@@ -169,6 +216,9 @@ func ctEq(a, b []byte) bool {
 
 // SealToken → self-describing "nqc." token (records mode+size+profile).
 func SealToken(profile int, key, nonce, ad, pt []byte) string {
+	if !valid(profile, key, 16) || len(nonce) != 16 {
+		return ""
+	}
 	suite := byte(0x01)
 	if profile == Fast {
 		suite |= 0x20
@@ -180,8 +230,11 @@ func SealToken(profile int, key, nonce, ad, pt []byte) string {
 
 // OpenToken reads the profile+nonce from the token and decrypts.
 func OpenToken(key, ad []byte, token string) ([]byte, bool) {
-	raw, err := base64.RawURLEncoding.DecodeString(token[4:])
-	if err != nil || len(raw) < 18 {
+	if len(token) > 24*1024*1024 || !strings.HasPrefix(token, "nqc.") {
+		return nil, false
+	}
+	raw, err := base64.RawURLEncoding.Strict().DecodeString(token[4:])
+	if err != nil || len(raw) < 34 || raw[0] != 1 || (raw[1] != 1 && raw[1] != 0x21) || base64.RawURLEncoding.EncodeToString(raw) != token[4:] {
 		return nil, false
 	}
 	profile := Secure
@@ -239,7 +292,9 @@ func setbit(x *u128, j int, v uint64) {
 		x.hi |= v << uint(j-64)
 	}
 }
-func le128(b []byte) u128 { return u128{binary.LittleEndian.Uint64(b[8:16]), binary.LittleEndian.Uint64(b[0:8])} }
+func le128(b []byte) u128 {
+	return u128{binary.LittleEndian.Uint64(b[8:16]), binary.LittleEndian.Uint64(b[0:8])}
+}
 func put128(x u128) []byte {
 	b := make([]byte, 16)
 	binary.LittleEndian.PutUint64(b[0:8], x.lo)
@@ -251,11 +306,16 @@ func permute640(s [5]u128, rounds int) [5]u128 {
 	for i := 0; i < rounds; i++ {
 		s[2] = s[2].xor(u128{0, uint64(rc[i])}) // pC
 		var out [5]u128                         // pS
-		for j := 0; j < 128; j++ {
-			col := s[0].bit(j) | s[1].bit(j)<<1 | s[2].bit(j)<<2 | s[3].bit(j)<<3 | s[4].bit(j)<<4
-			o := sbox[col]
-			for k := 0; k < 5; k++ {
-				setbit(&out[k], j, uint64((o>>k)&1))
+		for k, terms := range anf {
+			for _, m := range terms {
+				t := u128{^uint64(0), ^uint64(0)}
+				for lane := 0; lane < 5; lane++ {
+					if m&(1<<lane) != 0 {
+						t.hi &= s[lane].hi
+						t.lo &= s[lane].lo
+					}
+				}
+				out[k] = out[k].xor(t)
 			}
 		}
 		s = out
@@ -292,12 +352,18 @@ func squeeze256(s [5]u128, n, r int) []byte {
 	return out[:n]
 }
 func Hash256(r int, msg []byte) []byte {
+	if r != Secure && r != Fast {
+		return nil
+	}
 	s := [5]u128{}
 	s[4] = s[4].xor(u128{0, 1}) // DOM_HASH
 	s = permute640(s, r)
 	return squeeze256(absorb256(s, msg, r), 64, r)
 }
 func mac256(r int, key, data []byte, dom byte) []byte {
+	if !valid(r, key, 32) {
+		return nil
+	}
 	s := [5]u128{}
 	s[1] = le128(key[0:16])
 	s[2] = le128(key[16:32])
@@ -315,6 +381,9 @@ func keystream256(r int, key, v []byte, n int) []byte {
 	return squeeze256(s, n, r)
 }
 func Seal256(profile int, key, nonce, ad, pt []byte) []byte {
+	if !valid(profile, key, 32) || len(nonce) != 16 {
+		return nil
+	}
 	v := mac256(profile, key, sivInput(nonce, ad, pt), 2)
 	ks := keystream256(profile, key, v, len(pt))
 	out := append([]byte{}, v...)
@@ -324,6 +393,9 @@ func Seal256(profile int, key, nonce, ad, pt []byte) []byte {
 	return out
 }
 func Open256(profile int, key, nonce, ad, sealed []byte) ([]byte, bool) {
+	if !valid(profile, key, 32) || len(nonce) != 16 {
+		return nil, false
+	}
 	if len(sealed) < 32 {
 		return nil, false
 	}
@@ -340,122 +412,200 @@ func Open256(profile int, key, nonce, ad, sealed []byte) ([]byte, bool) {
 }
 func BlindIndex256(profile int, key, value []byte) []byte { return mac256(profile, key, value, 4) }
 
-// ===================== N2QF binary file container =============================
-// Layout:  "N2QF" | version(1) | suite(1) | { le32(len) | sealed(tag||ct) }*
-// nonce for chunk i = 16-byte little-endian i (deterministic → not stored).
-const chunkSize = 1 << 16
+// N2QF v2. See docs/n2qf.md. Writers publish only complete authenticated files.
+const chunkSize = 65536
 
-func EncryptFile(profile int, key []byte, inPath, outPath string) error {
-	bits := 128
-	suite := byte(0x01)
+func fileAD(header []byte, kind byte, idx, total uint64) []byte {
+	ad := append([]byte("N2QF/v2"), header...)
+	ad = append(ad, kind)
+	var x [16]byte
+	binary.LittleEndian.PutUint64(x[:8], idx)
+	binary.LittleEndian.PutUint64(x[8:], total)
+	return append(ad, x[:]...)
+}
+func writeContainer(profile int, key []byte, chunks [][]byte) ([]byte, error) {
+	if !valid(profile, key, len(key)) || (len(key) != 16 && len(key) != 32) {
+		return nil, errors.New("invalid key/profile")
+	}
+	suite := byte(1)
 	if len(key) == 32 {
-		bits, suite = 256, 0x02
+		suite = 2
 	}
 	if profile == Fast {
 		suite |= 0x20
 	}
-	fi, err := os.Open(inPath)
-	if err != nil {
-		return err
+	header := append([]byte("N2QF"), 2, suite)
+	id := make([]byte, 16)
+	if _, e := rand.Read(id); e != nil {
+		return nil, e
 	}
-	defer fi.Close()
-	fo, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer fo.Close()
-	fo.Write([]byte{'N', '2', 'Q', 'F', 1, suite})
-	buf := make([]byte, chunkSize)
-	var idx uint64
-	var l [4]byte
-	for {
-		n, e := fi.Read(buf)
-		if n > 0 {
-			nonce := make([]byte, 16)
-			binary.LittleEndian.PutUint64(nonce, idx)
-			var sealed []byte
-			if bits == 128 {
-				sealed = Seal(profile, key, nonce, nil, buf[:n])
-			} else {
-				sealed = Seal256(profile, key, nonce, nil, buf[:n])
+	header = append(header, id...)
+	out := append([]byte{}, header...)
+	total := uint64(0)
+	for idx := 0; idx <= len(chunks); idx++ {
+		kind := byte(0)
+		var pt []byte
+		if idx == len(chunks) {
+			kind = 1
+		} else {
+			pt = chunks[idx]
+			if len(pt) == 0 || len(pt) > chunkSize {
+				return nil, errors.New("chunk length")
 			}
-			binary.LittleEndian.PutUint32(l[:], uint32(len(sealed)))
-			fo.Write(l[:])
-			fo.Write(sealed)
-			idx++
 		}
-		if e != nil {
-			break
+		nonce := make([]byte, 16)
+		binary.LittleEndian.PutUint64(nonce, uint64(idx))
+		ad := fileAD(header, kind, uint64(idx), total)
+		sealed := Seal(profile, key, nonce, ad, pt)
+		if len(key) == 32 {
+			sealed = Seal256(profile, key, nonce, ad, pt)
 		}
+		var rec [5]byte
+		rec[0] = kind
+		binary.LittleEndian.PutUint32(rec[1:], uint32(len(sealed)))
+		out = append(out, rec[:]...)
+		out = append(out, sealed...)
+		total += uint64(len(pt))
 	}
-	return nil
+	return out, nil
 }
-
-func DecryptFile(key []byte, inPath, outPath string) error {
-	fi, err := os.Open(inPath)
-	if err != nil {
-		return err
+func readContainer(key, data []byte) ([][]byte, error) {
+	bad := errors.New("invalid or unauthenticated N2QF v2")
+	if len(data) < 22 || string(data[:5]) != "N2QF\x02" {
+		return nil, bad
 	}
-	defer fi.Close()
-	fo, err := os.Create(outPath)
-	if err != nil {
-		return err
+	suite := byte(1)
+	if len(key) == 32 {
+		suite = 2
 	}
-	defer fo.Close()
-	hdr := make([]byte, 6)
-	if _, err := io.ReadFull(fi, hdr); err != nil || string(hdr[:4]) != "N2QF" {
-		return errors.New("not an N2QF file")
+	if len(key) != 16 && len(key) != 32 {
+		return nil, bad
 	}
-	suite := hdr[5]
-	bits, profile := 128, Secure
-	if suite&0x0f == 2 {
-		bits = 256
+	if data[5] != suite && data[5] != (suite|0x20) {
+		return nil, bad
 	}
-	if suite&0x20 != 0 {
+	profile := Secure
+	if data[5]&0x20 != 0 {
 		profile = Fast
 	}
-	var idx uint64
-	var l [4]byte
+	header := data[:22]
+	data = data[22:]
+	var chunks [][]byte
+	var idx, total uint64
+	tag := len(key)
 	for {
-		if _, e := io.ReadFull(fi, l[:]); e != nil {
-			break
+		if len(data) < 5 {
+			return nil, bad
 		}
-		sealed := make([]byte, binary.LittleEndian.Uint32(l[:]))
-		if _, e := io.ReadFull(fi, sealed); e != nil {
-			return errors.New("truncated container")
+		kind := data[0]
+		n := uint64(binary.LittleEndian.Uint32(data[1:5]))
+		data = data[5:]
+		if !((kind == 0 && n > uint64(tag) && n <= uint64(chunkSize+tag)) || (kind == 1 && n == uint64(tag))) || n > uint64(len(data)) {
+			return nil, bad
 		}
 		nonce := make([]byte, 16)
 		binary.LittleEndian.PutUint64(nonce, idx)
+		ad := fileAD(header, kind, idx, total)
 		var pt []byte
 		var ok bool
-		if bits == 128 {
-			pt, ok = Open(profile, key, nonce, nil, sealed)
+		if tag == 16 {
+			pt, ok = Open(profile, key, nonce, ad, data[:int(n)])
 		} else {
-			pt, ok = Open256(profile, key, nonce, nil, sealed)
+			pt, ok = Open256(profile, key, nonce, ad, data[:int(n)])
 		}
 		if !ok {
-			return fmt.Errorf("authentication failed (chunk %d)", idx)
+			return nil, bad
 		}
-		fo.Write(pt)
+		data = data[int(n):]
+		if kind == 1 {
+			if len(data) != 0 {
+				return nil, bad
+			}
+			return chunks, nil
+		}
+		chunks = append(chunks, pt)
 		idx++
+		total += uint64(len(pt))
 	}
-	return nil
+}
+func atomicFile(path string, data []byte) error {
+	f, err := os.CreateTemp(filepath.Dir(path), ".n2q-*")
+	if err != nil {
+		return err
+	}
+	name := f.Name()
+	defer os.Remove(name)
+	if _, err = f.Write(data); err != nil {
+		f.Close()
+		return err
+	}
+	if err = f.Sync(); err != nil {
+		f.Close()
+		return err
+	}
+	if err = f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(name, path)
+}
+func EncryptFile(profile int, key []byte, inPath, outPath string) error {
+	data, err := os.ReadFile(inPath)
+	if err != nil {
+		return err
+	}
+	var chunks [][]byte
+	for len(data) > 0 {
+		n := len(data)
+		if n > chunkSize {
+			n = chunkSize
+		}
+		chunks = append(chunks, data[:n])
+		data = data[n:]
+	}
+	out, err := writeContainer(profile, key, chunks)
+	if err != nil {
+		return err
+	}
+	return atomicFile(outPath, out)
+}
+func DecryptFile(key []byte, inPath, outPath string) error {
+	data, err := os.ReadFile(inPath)
+	if err != nil {
+		return err
+	}
+	chunks, err := readContainer(key, data)
+	if err != nil {
+		return err
+	}
+	return atomicFile(outPath, bytes.Join(chunks, nil))
 }
 
-func hx(b []byte) string { s := ""; for _, x := range b { s += fmt.Sprintf("%02x", x) }; return s }
+func hx(b []byte) string {
+	s := ""
+	for _, x := range b {
+		s += fmt.Sprintf("%02x", x)
+	}
+	return s
+}
 
 func main() {
-	// CLI file mode:  go run . encrypt|decrypt <in> <out>   (fixed demo key)
-	if len(os.Args) == 4 && (os.Args[1] == "encrypt" || os.Args[1] == "decrypt") {
-		key := []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}
-		var err error
+	if len(os.Args) > 1 {
+		if len(os.Args) != 5 || (os.Args[1] != "encrypt" && os.Args[1] != "decrypt") {
+			fmt.Fprintln(os.Stderr, "usage: n2qc encrypt|decrypt KEYFILE INPUT OUTPUT")
+			os.Exit(1)
+		}
+		key, err := os.ReadFile(os.Args[2])
+		if err != nil || (len(key) != 16 && len(key) != 32) {
+			fmt.Fprintln(os.Stderr, "key file must contain 16 or 32 bytes")
+			os.Exit(1)
+		}
 		if os.Args[1] == "encrypt" {
-			err = EncryptFile(Fast, key, os.Args[2], os.Args[3])
+			err = EncryptFile(Secure, key, os.Args[3], os.Args[4])
 		} else {
-			err = DecryptFile(key, os.Args[2], os.Args[3])
+			err = DecryptFile(key, os.Args[3], os.Args[4])
 		}
 		if err != nil {
-			fmt.Println("error:", err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		return

@@ -13,7 +13,7 @@ unambiguously specified and correctly implemented.
 | path | what |
 |---|---|
 | [`n2q-c-ref/`](n2q-c-ref) | Rust reference (`#![forbid(unsafe_code)]`) — QP-320/640; N2Q-128 **and** N2Q-256 modes (hash, SIV-AEAD, blind index, streaming AEAD); N2Q-PW password KDF (`pw.rs`); wire frame (`frame.rs`) |
-| [`c/n2qc.c`](c/n2qc.c) | single-file C reference — full parity: permutation + N2Q-128 **and** N2Q-256 modes incl. streaming, with a KAT self-test |
+| [`c/n2qc.c`](c/n2qc.c) | C reference (includes `n2q_file.h`) — full parity: permutation + N2Q-128 **and** N2Q-256 modes incl. streaming, with a KAT self-test |
 | [`n2q-c-wasm/`](n2q-c-wasm) | WASM bindings + browser tester (`web/index.html`) driving the own cipher |
 
 ## Constant-time by construction
@@ -42,7 +42,7 @@ Both must print all-PASS; the C mode vectors are asserted equal to the Rust ones
 
 ```sh
 cd n2q-c-wasm
-wasm-pack build --target web --out-dir web/pkg
+../../scripts/build-web.sh
 cd web && python3 -m http.server 8790     # open http://localhost:8790
 ```
 Encrypt/decrypt (SIV), hash and blind-index for **both** N2Q-128 and N2Q-256,
@@ -57,3 +57,5 @@ verified).
 
 Pending: measured constant-time verification (dudect) — that is M4. Round counts
 remain provisional until M4.
+
+Security fixes, supported file suites and API changes: [remediation record](../docs/security-fixes.md).
