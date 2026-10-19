@@ -21,7 +21,9 @@ def record(job):
         "impl/n2q-c-ref/Cargo.lock","impl/n2q-c-wasm/Cargo.lock","fuzz/Cargo.lock",
         "tools/bench/Cargo.lock","tools/cryptanalysis/Cargo.lock","package-lock.json",
         "impl/c/n2qc.c","scripts/check.sh","scripts/build-web.sh",
-        "scripts/serve-web.py","scripts/dependency-audit.sh","scripts/verification-record.py"]
+        "scripts/serve-web.py","scripts/dependency-audit.sh","scripts/verification-record.py",
+        "tools/cryptanalysis/exact.py","tools/cryptanalysis/trails.py",
+        "tools/cryptanalysis/src/bin/audit.rs"]
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     manifest=ROOT/"impl/n2q-c-wasm/web/pkg/build-manifest.json"
     commands={

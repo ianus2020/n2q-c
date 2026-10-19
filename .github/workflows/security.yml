@@ -9,6 +9,32 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  cryptanalysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: rustup toolchain install 1.96.1 --profile minimal && rustup default 1.96.1
+      - name: Exact components and reproducible experiments
+        run: |
+          mkdir -p /tmp/n2q-cryptanalysis
+          python3 tools/cryptanalysis/exact.py > /tmp/n2q-cryptanalysis/exact.json
+          cargo run --release --locked --manifest-path tools/cryptanalysis/Cargo.toml --bin audit -- full > /tmp/n2q-cryptanalysis/experiments.jsonl
+      - name: Record cryptanalysis inputs
+        if: always()
+        env:
+          N2Q_VERIFICATION_STATUS: ${{ job.status }}
+          N2Q_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/verification-record.py --job cryptanalysis --output /tmp/n2q-cryptanalysis-evidence.json
+      - name: Retain experimental results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-cryptanalysis
+          path: |
+            /tmp/n2q-cryptanalysis/
+            /tmp/n2q-cryptanalysis-evidence.json
+          retention-days: 14
   native:
     runs-on: macos-15
     timeout-minutes: 20
