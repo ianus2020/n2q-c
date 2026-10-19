@@ -29,6 +29,8 @@ def record(job):
         "tools/local_stand/web.py","tools/local_stand/run.py",
         "tools/migration/n2q_migrate.py","impl/n2q-c-ref/examples/migration_keys.rs",
         "impl/c/n2q_cone_anchor_http.c","impl/c/n2q_cone_anchor_http.h"]
+    paths += [str(path.relative_to(ROOT)) for path in sorted((ROOT/'fuzz/c').glob('*.c'))]
+    paths += [str(path.relative_to(ROOT)) for path in sorted((ROOT/'fuzz/fuzz_targets').glob('*.rs'))]
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     manifest=ROOT/"impl/n2q-c-wasm/web/pkg/build-manifest.json"
     commands={
@@ -49,7 +51,7 @@ def record(job):
         "input_sha256":hashes,
         "tools":{name:version(command) for name,command in commands.items()},
         "web_manifest":json.loads(manifest.read_text()) if manifest.exists() else None,
-        "limits":{"fuzz_targets":5,"fuzz_runs_per_target":2000,
+        "limits":{"fuzz_targets":7,"fuzz_runs_per_target":2000,
                   "meaning":"smoke budget; no exhaustive search or cryptographic certification"}}
 if __name__=="__main__":
     parser=argparse.ArgumentParser();parser.add_argument("--job",required=True);parser.add_argument("--output",required=True)
