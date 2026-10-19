@@ -94,6 +94,18 @@ jobs:
             sleep 1
           done
           npm run test:web
+      - name: Local HTTPS stand and versioned releases
+        run: |
+          python3 -m unittest discover -s tests -p test_local_web.py -v
+          python3 tools/local_stand/run.py --state /tmp/n2q-https-stand --web-port 19443 --anchor-port 19444 --check
+          python3 tools/local_stand/run.py --state /tmp/n2q-https-stand --resume > /tmp/n2q-https-stand.log 2>&1 &
+          stand=$!
+          trap 'kill "$stand"; wait "$stand" || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl --cacert /tmp/n2q-https-stand/pki/ca.pem --fail --silent https://localhost:19443/ > /dev/null; then break; fi
+            sleep 1
+          done
+          N2Q_WEB_URL=https://localhost:19443 N2Q_LOCAL_TEST_CA=1 npm run test:web
       - name: Record web verification inputs
         if: always()
         env:

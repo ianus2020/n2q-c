@@ -18,6 +18,7 @@
 | 10: ошибки, найденные дополнительной проверкой | отдельный commit | Convergent key boundary и C capacities/overflow, сравнение commitment, исправление методологических выводов; целевые C/Rust/Python проверки PASS, Go — в CI |
 | 11: закрытый отчёт и evidence криптоанализа | отдельный commit | 11 семейств; 40 784 roundtrip, 662 648 отклонённых изменений, 80 000 подделок, 1,6 млн timing; CI 39272081407 все 5 заданий PASS на 11b763c; сырые данные/модели/логи сохранены |
 | 12: локальный backend CoNe | отдельный commit | mTLS, SQLite WAL/FULL, C callback, concurrency/restart/rollback/network-failure tests; эксплуатационная независимость хранения не подтверждена |
+| 13: локальный HTTPS-стенд и конфигурации | отдельный commit | Versioned atomic releases, private test PKI, allowlist/headers/quota, TLS и C signer check; Linux service templates подготовлены без заявления об их запуске |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная

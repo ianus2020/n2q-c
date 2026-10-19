@@ -26,3 +26,6 @@ impl/go/n2qc
 
 fuzz/corpus/
 fuzz/artifacts/
+
+# Local TEST certificates, private state and browser release snapshots
+/.local-stand/

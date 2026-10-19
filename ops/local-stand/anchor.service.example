@@ -1,0 +1,30 @@
+# REVIEW TEMPLATE for Linux systemd; not installed or tested on macOS.
+# Account, paths, owner-only config/keys and separate rollback domain must be
+# provisioned explicitly. This keeps the reference service loopback-only.
+[Unit]
+Description=N2Q reference CoNe anchor
+After=network.target
+
+[Service]
+Type=simple
+User=n2q-anchor
+Group=n2q-anchor
+UMask=0077
+WorkingDirectory=/opt/n2q
+ExecStart=/usr/bin/python3 /opt/n2q/tools/anchor/server.py serve --config /etc/n2q/anchor.json
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/var/lib/n2q-anchor
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=256M
+CPUQuota=100%
+TasksMax=64
+LimitNOFILE=256
+
+[Install]
+WantedBy=multi-user.target
