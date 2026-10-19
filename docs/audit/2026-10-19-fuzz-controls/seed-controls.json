@@ -1,0 +1,314 @@
+{
+  "mode_variants": [
+    {
+      "variant": 0,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    },
+    {
+      "variant": 1,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 32,
+      "large_positions": [
+        0,
+        2039,
+        4077
+      ]
+    },
+    {
+      "variant": 2,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    },
+    {
+      "variant": 3,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 32,
+      "large_positions": [
+        0,
+        2039,
+        4077
+      ]
+    },
+    {
+      "variant": 4,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    },
+    {
+      "variant": 5,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 32,
+      "large_positions": [
+        0,
+        2039,
+        4077
+      ]
+    },
+    {
+      "variant": 6,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    },
+    {
+      "variant": 7,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 32,
+      "large_positions": [
+        0,
+        2039,
+        4077
+      ]
+    }
+  ],
+  "convergent_profiles": [
+    {
+      "variant": 0,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    },
+    {
+      "variant": 1,
+      "bit_choices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "empty_tag_bytes": 16,
+      "large_positions": [
+        0,
+        2031,
+        4061
+      ]
+    }
+  ],
+  "capacity_boundaries": [
+    {
+      "fast": 0,
+      "plaintext_length": 0,
+      "controls": [
+        0,
+        15
+      ]
+    },
+    {
+      "fast": 0,
+      "plaintext_length": 1,
+      "controls": [
+        0,
+        1,
+        16
+      ]
+    },
+    {
+      "fast": 0,
+      "plaintext_length": 16,
+      "controls": [
+        0,
+        15,
+        16,
+        31
+      ]
+    },
+    {
+      "fast": 0,
+      "plaintext_length": 33,
+      "controls": [
+        0,
+        32,
+        33,
+        48
+      ]
+    },
+    {
+      "fast": 0,
+      "plaintext_length": 256,
+      "controls": [
+        0,
+        255,
+        256,
+        271
+      ]
+    },
+    {
+      "fast": 0,
+      "plaintext_length": 4046,
+      "controls": [
+        0,
+        4045,
+        4046,
+        4061
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 0,
+      "controls": [
+        0,
+        15
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 1,
+      "controls": [
+        0,
+        1,
+        16
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 16,
+      "controls": [
+        0,
+        15,
+        16,
+        31
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 33,
+      "controls": [
+        0,
+        32,
+        33,
+        48
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 256,
+      "controls": [
+        0,
+        255,
+        256,
+        271
+      ]
+    },
+    {
+      "fast": 1,
+      "plaintext_length": 4046,
+      "controls": [
+        0,
+        4045,
+        4046,
+        4061
+      ]
+    }
+  ],
+  "status": "passed",
+  "limitations": "Seed coordinate coverage, not all tag-byte/bit combinations or cryptographic proof."
+}

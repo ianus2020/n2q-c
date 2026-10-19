@@ -28,7 +28,7 @@
 | 20: сохранённое подтверждение CI | source c556436 | CI 39289459101 — все 7 PASS; jobs/full log/dependency reports/SHA-256 сохранены, native включает 42 Python и 6-port interop |
 | 21: строгий отказ C sanitizer gates | 682f325 | Воспроизведён UBSan report с exit=0 на fixture; fno-sanitize-recover + ASan/UBSan controls PASS macOS/Linux, полный native/42 Python/6 портов PASS; CI 39295178168 все 7 PASS |
 | 22: новые fuzz targets и измеримые отчёты | ed175fe | 7 x 1000 smoke PASS, 958 modes / 976 convergent property cases; исходные хэши, corpora и failure controls сохранены; CI 39297156434 все 7 PASS |
-| 23: независимые fuzz controls и большие смещения | отдельный коммит этапа | 13 199 выполнений на 7 целях PASS, включая 1951 modes / 1152 convergent property cases; corpus coordinates/capacities и исходные хэши проверены |
+| 23: независимые fuzz controls и большие смещения | 8f8b23a + evidence | 13 209 выполнений на 7 целях PASS, включая 1951 modes / 1162 convergent property cases; все 72 source hashes и corpus coordinates/capacities проверены; Linux offline |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная
