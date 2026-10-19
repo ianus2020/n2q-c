@@ -135,9 +135,12 @@ function n2q_file_ad(string $hdr,int $kind,int $index,int $total): string {
     return 'N2QF/v2'.$hdr.chr($kind).pack('P',$index).pack('P',$total);
 }
 function n2q_atomic(string $path,string $data): void {
-    $tmp=tempnam(dirname($path),'.n2q-'); if($tmp===false) throw new RuntimeException('temporary file failed');
+    $parent=realpath(dirname($path));
+    if($parent===false) throw new RuntimeException('output directory does not exist');
+    $tmp=tempnam($parent,'.n2q-'); if($tmp===false) throw new RuntimeException('temporary file failed');
     $f=null;
     try {
+        if(realpath(dirname($tmp))!==$parent) throw new RuntimeException('temporary file must be in output directory');
         if(!chmod($tmp,0600)) throw new RuntimeException('file permissions');
         $f=fopen($tmp,'wb');if($f===false) throw new RuntimeException('file open');
         $offset=0;$len=strlen($data);
