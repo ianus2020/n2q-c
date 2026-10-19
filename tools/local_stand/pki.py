@@ -22,11 +22,13 @@ def create(directory):
     key('ca')
     run('req','-new','-x509','-sha256','-days','2','-key','ca.key','-subj','/CN=N2Q LOCAL TEST CA',
         '-out','ca.pem','-addext','basicConstraints=critical,CA:TRUE',
-        '-addext','keyUsage=critical,keyCertSign,cRLSign')
+        '-addext','keyUsage=critical,keyCertSign,cRLSign',
+        '-addext','subjectKeyIdentifier=hash')
     for number,name in enumerate(['server','client','unlisted'],2):
         key(name)
         run('req','-new','-sha256','-key',name+'.key','-subj','/CN=N2Q LOCAL '+name,'-out',name+'.csr')
-        ext = 'basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\n'
+        ext = ('basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature\n'
+               'subjectKeyIdentifier=hash\nauthorityKeyIdentifier=keyid,issuer\n')
         if name == 'server':
             ext += 'extendedKeyUsage=serverAuth\nsubjectAltName=DNS:localhost,IP:127.0.0.1\n'
         else:

@@ -47,5 +47,6 @@ def server_context(cert, key, client_ca=None):
     context.load_cert_chain(cert, key)
     if client_ca is not None:
         context.verify_mode = ssl.CERT_REQUIRED
+        context.verify_flags |= ssl.VERIFY_X509_STRICT
         context.load_verify_locations(cafile=client_ca)
     return context

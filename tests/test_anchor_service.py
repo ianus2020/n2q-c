@@ -66,16 +66,26 @@ class AnchorService(unittest.TestCase):
         process = subprocess.Popen([sys.executable,str(ROOT/'tools/anchor/server.py'),'serve','--config',str(path)],
                                    stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
         self.processes.append(process)
-        for _ in range(100):
+        self.addCleanup(self.stop_process,process)
+        deadline = time.monotonic()+10
+        last = 'no response'
+        while time.monotonic() < deadline:
             if process.poll() is not None:
                 self.fail(process.stderr.read().decode())
             try:
-                if self.request(None,port=port,path='/health') == 204:
+                last = self.request(None,port=port,path='/health',timeout=0.5)
+                if last == 204:
                     return port
-            except (OSError,ssl.SSLError,http.client.HTTPException):
-                pass
+            except (OSError,ssl.SSLError,http.client.HTTPException) as error:
+                last = type(error).__name__+': '+str(error)
             time.sleep(0.02)
-        self.fail('anchor startup timeout')
+        self.fail('anchor startup timeout: '+str(last))
+
+    @staticmethod
+    def stop_process(process):
+        if process.poll() is None:
+            process.terminate();process.wait(timeout=5)
+        process.stderr.close()
 
     def tearDown(self):
         for process in self.processes:
@@ -87,12 +97,13 @@ class AnchorService(unittest.TestCase):
     def context(self,identity='client'):
         context = ssl.create_default_context(cafile=str(self.pki/'ca.pem'))
         context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.verify_flags |= ssl.VERIFY_X509_STRICT
         if identity:
             context.load_cert_chain(str(self.pki/(identity+'.pem')),str(self.pki/(identity+'.key')))
         return context
 
-    def request(self,body,port=None,path='/v1/reserve',identity='client',raw=False):
-        conn = http.client.HTTPSConnection('localhost',port or self.port,context=self.context(identity),timeout=5)
+    def request(self,body,port=None,path='/v1/reserve',identity='client',raw=False,timeout=5):
+        conn = http.client.HTTPSConnection('localhost',port or self.port,context=self.context(identity),timeout=timeout)
         try:
             if body is None:
                 conn.request('GET',path)
