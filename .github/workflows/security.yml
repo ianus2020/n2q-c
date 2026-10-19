@@ -43,3 +43,20 @@ jobs:
             sleep 1
           done
           npm run test:web
+  fuzz:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: rustup toolchain install 1.96.1 --profile minimal
+      - run: rustup toolchain install nightly-2026-10-18 --profile minimal
+      - run: cargo +1.96.1 install cargo-fuzz --version 0.13.2 --locked
+      - run: scripts/fuzz-smoke.sh
+      - name: Retain crashing inputs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fuzz-crashes
+          path: fuzz/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -23,3 +23,6 @@ site/
 
 impl/go/n2qc
 .interop-*/
+
+fuzz/corpus/
+fuzz/artifacts/

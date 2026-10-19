@@ -1,0 +1,24 @@
+[package]
+name = "n2q-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+[package.metadata]
+cargo-fuzz = true
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+n2q-c-ref = { path = "../impl/n2q-c-ref" }
+[[bin]]
+name = "frames"
+path = "fuzz_targets/frames.rs"
+test = false
+doc = false
+bench = false
+[[bin]]
+name = "n2qf"
+path = "fuzz_targets/n2qf.rs"
+test = false
+doc = false
+bench = false
+[workspace]
+members = ["."]
