@@ -1,0 +1,8 @@
+{
+  "anchor-modern-libressl.log.gz": "1d2deda64b8530933a2cd815e3ef6dd41b9698dc75bc028fc78e1dbca62f2d8a",
+  "browser-https.log.gz": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f",
+  "migration-final-tests.log.gz": "a2385d614a9dd468ce11df67eab2beaeae6b58513088dbb9f5c70862d2166e7c",
+  "native-final.log.gz": "575d958f93d6cc84165ed68ff82c7268000e84939754180d310e97e742d40789",
+  "stage12-ci-failed.log.gz": "0bf00561f9d0fb3639bca84bdd1ca67fdf3e4a79e11627eb667679b42ad9a064",
+  "verification.json": "88238f028b17c31a1ee718e88a4802291957d3b77ffe00c7e94d37f3ba39cf40"
+}

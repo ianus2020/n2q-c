@@ -13,13 +13,14 @@
 | 5: потоковые файловые API | f492029, CI 39253676632 | native/web/fuzz PASS; short IO, staging cleanup, in-place и шесть портов PASS |
 | 6: фронтенд и комплект JS/WASM | c244dbf + test-header fix cca0d1f, CI 39254989733 | native/web/fuzz PASS; дедлайны, crash и mismatched assets PASS |
 | 7: C init, зависимости и evidence | 91df2bc + точечные KAT exceptions 6d5fd11, CI 39256779040 | native/web/fuzz/dependencies PASS; RustSec/npm 0, 35 коммитов проверены Gitleaks |
-| 8: доступ и настройки репозитория | отдельный commit документации | GitHub private=true, main protected=true; локальная ветка обновлена, почасовые отчёты ACTIVE |
-| 9: инструменты дополнительного криптоанализа | отдельный commit | Полный перебор компонентов, QP-320/640, SAT, измерения и отдельное задание CI; итоговый отчёт последует после финальных прогонов |
-| 10: ошибки, найденные дополнительной проверкой | отдельный commit | Convergent key boundary и C capacities/overflow, сравнение commitment, исправление методологических выводов; целевые C/Rust/Python проверки PASS, Go — в CI |
-| 11: закрытый отчёт и evidence криптоанализа | отдельный commit | 11 семейств; 40 784 roundtrip, 662 648 отклонённых изменений, 80 000 подделок, 1,6 млн timing; CI 39272081407 все 5 заданий PASS на 11b763c; сырые данные/модели/логи сохранены |
-| 12: локальный backend CoNe | отдельный commit | mTLS, SQLite WAL/FULL, C callback, concurrency/restart/rollback/network-failure tests; эксплуатационная независимость хранения не подтверждена |
-| 13: локальный HTTPS-стенд и конфигурации | отдельный commit | Versioned atomic releases, private test PKI, allowlist/headers/quota, TLS и C signer check; Linux service templates подготовлены без заявления об их запуске |
-| 14: offline-миграция и PW recovery | отдельный commit | Inventory, trusted-evidence v1 recovery/v2 rekey, private no-replace output, Argon2id new/restore и isolated legacy PW; синтетические тесты PASS, реальных данных не переносили |
+| 8: доступ и настройки репозитория | b85131c | GitHub private=true, main protected=true; локальная ветка обновлена, почасовые отчёты ACTIVE |
+| 9: инструменты дополнительного криптоанализа | 0e7a594 | Полный перебор компонентов, QP-320/640, SAT, измерения и отдельное задание CI; отчёт — этап 11 |
+| 10: ошибки, найденные дополнительной проверкой | 11b763c | Convergent key boundary и C capacities/overflow, сравнение commitment, методология; CI 39272081407 все 5 заданий PASS |
+| 11: закрытый отчёт и evidence криптоанализа | 873df5e | 11 семейств; 40 784 roundtrip, 662 648 отклонённых изменений, 80 000 подделок, 1,6 млн timing; CI 39274707825 все 5 PASS; сырые данные/модели/логи сохранены |
+| 12: локальный backend CoNe | 2d99cb1 + PKI fix 4864be0 | mTLS, SQLite WAL/FULL, C callback, concurrency/restart/rollback/network-failure tests PASS локально; первый native CI FAIL на PKI, причина воспроизведена/исправлена, повтор в очереди |
+| 13: локальный HTTPS-стенд и конфигурации | 0ec3a89 + cleanup 086afd4 | Versioned atomic releases, private test PKI, allowlist/headers/quota; TLS/C signer/Chromium PASS; Linux templates не запускались |
+| 14: offline-миграция и PW recovery | c1d7cbe + validation 80595e0 | 10 Python + 2 Rust теста PASS; inventory, trusted-evidence recovery/rekey, private no-replace output, Argon2id new/restore и isolated legacy PW; реальных данных не переносили |
+| 15: итог локальных проверок | проверен код 80595e0; отдельный docs commit | Полный native PASS (6 портов), HTTPS browser PASS, strict SSL/LibreSSL compatibility PASS; последний GitHub CI queued, не объявлен успешным; подробности stage-15-local-verification.ru.md |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная

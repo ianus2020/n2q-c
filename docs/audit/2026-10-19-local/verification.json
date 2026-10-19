@@ -1,0 +1,98 @@
+{
+  "historical_pki_reproduction": {
+    "error": "CERTIFICATE_VERIFY_FAILED: Missing Authority Key Identifier",
+    "fixed": "Explicit SKI/AKI; strict client/server checks retained",
+    "openssl_cli": "LibreSSL 3.3.6",
+    "source_commit": "2d99cb1",
+    "strict_client": "Python 3.12 / OpenSSL 3.5.9"
+  },
+  "input_sha256": {
+    "impl/c/n2q_cone_anchor_http.c": "4cbcf338916fb98daeab1018f24002056ae1369bac9a71887701aa4383779f8e",
+    "impl/c/n2q_cone_anchor_http.h": "815d352179fe542e020032aed9cce57ea955ae5502a041ac2409d12482094ab2",
+    "impl/n2q-c-ref/examples/migration_keys.rs": "0ff3a59a428a922c7730987e86de27df5c2c01a43e4b2bfc1f5d6922eca6ad12",
+    "scripts/check.sh": "ccdcc3a3dbf3461f5d827d17cc9ea693d6c06e5dc47598f1c43e59d3e47223a8",
+    "tests/test_anchor_service.py": "7037c78a43b53b92ee10641a76b40ef2a40e794b5ddd482b119857fd44d2a1a7",
+    "tests/test_local_web.py": "bb430a7590aab6ddef7be0b99f48cdd844a8796cedd042851370102c4a7fa8d1",
+    "tests/test_offline_migration.py": "800fb000df51575095efa2a60e4859f224451ee2e7a16baf7c6a20dfc5131f90",
+    "tests/web.cjs": "b46e33f0861448a906204ff7e7ab90ca803ee400effcc029765df96537620744",
+    "tools/anchor/server.py": "dd36453e4df3c94582ff3dd55defb66ae71346a5f748ab7130cdc2df169c26d6",
+    "tools/local_stand/pki.py": "4f07ec3ce578b9d21e1e5b1f6fba6d3867a17dfbb0a91c767753c1cf20467ac0",
+    "tools/local_stand/run.py": "0085d5f7f7d6bcefcc2a64290c63719c206e1d440e01c0274953d4f060957dec",
+    "tools/local_stand/tls.py": "7163221bc155d296a9ab155b1935d35e398b201c7b5ed96f3e9a7e8e8bb91ed9",
+    "tools/local_stand/web.py": "04948469d7685884a4b0615adb71bd5bf708f1f877954fda97439126381f7b0a",
+    "tools/migration/n2q_migrate.py": "b1876d62120e3e7a8e8fc5e13471f0e1c0543b017fb57b1f0ddd5cc5df21a195"
+  },
+  "limitations": [
+    "No production deployment, real-data migration, off-host rollback/storage or physical power-loss confirmation.",
+    "Latest GitHub CI was queued; local results are not presented as a GitHub CI success.",
+    "Systemd templates are reviewed examples, not an executed Linux deployment."
+  ],
+  "live_stand": {
+    "anchor": {
+      "status": 204
+    },
+    "private_pki_and_state": "Not included in evidence or Git",
+    "seed": "PUBLIC fixture only",
+    "web": {
+      "headers": {
+        "Cache-Control": "no-store",
+        "Content-Length": "4321",
+        "Content-Security-Policy": "default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "Content-Type": "text/html; charset=utf-8",
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Resource-Policy": "same-origin",
+        "Date": "Mon, 19 Oct 2026 15:48:43 GMT",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Referrer-Policy": "no-referrer",
+        "Server": "N2QLocalTLS ",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY"
+      },
+      "status": 200,
+      "url": "https://localhost:9443/releases/29abfddace014f7c2d6709b582fda57024307b8b597afe793b115ddd25a915a4/index.html"
+    }
+  },
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "recorded_utc": "2026-10-19T15:48:43.548900+00:00",
+  "schema": 1,
+  "source_commit": "80595e058fcf62138af8489d03c5e71eea68d0fc",
+  "tools": {
+    "go": "go version go1.27.2 darwin/arm64",
+    "openssl": "OpenSSL 4.0.3 29 Sep 2026 (Library: OpenSSL 4.0.3 29 Sep 2026)",
+    "php": "PHP 8.5.11 (cli) (built: Sep 22 2026 13:32:06) (NTS)",
+    "python": "3.9.6",
+    "rust": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+    "system_openssl": "LibreSSL 3.3.6"
+  },
+  "verification": {
+    "anchor_compatibility": {
+      "cases": 6,
+      "exit_code": 0,
+      "pki_cli": "LibreSSL 3.3.6; strict X509 enabled",
+      "python": "3.12.15 / OpenSSL 3.5.9"
+    },
+    "browser_https": {
+      "command": "N2Q_WEB_URL=https://localhost:9443 N2Q_LOCAL_TEST_CA=1 npm run test:web",
+      "exit_code": 0,
+      "meaning": "Test CA bypass only for Chromium; separate Python/C tests verify certificates"
+    },
+    "final_web_unit_tests": {
+      "cases": 4,
+      "evidence": "Tool console, 4 tests / 2.179 seconds / OK",
+      "exit_code": 0
+    },
+    "migration": {
+      "exit_code": 0,
+      "python_cases": 10,
+      "rust_cases": 2
+    },
+    "native": {
+      "command": "scripts/check.sh",
+      "exit_code": 0,
+      "python_tests": 37,
+      "scope": "Full native run followed by final targeted release-validation tests; core/migration changes were included in native run."
+    },
+    "sigterm_cleanup": "Supervisor termination closed both child-service ports"
+  }
+}

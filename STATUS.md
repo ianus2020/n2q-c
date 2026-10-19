@@ -83,13 +83,14 @@ data, credentials, or anything whose exposure would cause harm.
 
 Implementation hardening is ongoing; previous milestone completion labels
 were not evidence that every parser, file format or extension was secure.
-See [the remediation record](docs/security-fixes.md) for changes and remaining work. **M6 — external audit and a
-public break-it challenge — is the gate.** Until M6 is done and its findings are
-published and addressed, the guidance above does not change.
+See [the remediation record](docs/security-fixes.md) for changes and remaining
+work. Independent external cryptanalysis can be confidential; its findings must
+be documented and addressed, together with the operational release gates.
+Internal tests do not close that milestone. This repository and audit stay
+private; disclosure requires a separate owner decision.
 
 ## Reporting a weakness
 
-Found a break, a bug, or a flawed argument? That is the single most valuable
-contribution to this project — please open an issue at
-<https://github.com/ianus2020/n2q-c/issues>. Negative results are welcome and
-will be published.
+Record weaknesses in the private repository or through an agreed confidential
+channel with its owner. Include reproduction and affected revision. Disclosure
+decisions remain with the owner.

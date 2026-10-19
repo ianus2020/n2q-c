@@ -51,6 +51,13 @@ General sponge or SIV results do not certify this implementation or its extensio
 | M3 | Reference implementations: Rust, C, Python, Go, PHP, Swift + WASM tester, KAT cross-check | ✅ done |
 | M4 | In-house cryptanalysis (avalanche / degree / differential / timing), round finalization | ◐ measurements done; a certified MILP bound is open |
 | M5 | Wire format, password KDF (Argon2id), threat model | ✅ done |
-| M6 | External audit / publication / public challenge | — |
+| M6 | Independent external cryptanalysis; confidential review is possible | Open |
 
 ---
+
+The [closed additional audit](docs/cryptographic-audit-2026-10-19.ru.md),
+[local HTTPS/CoNe stand](tools/local_stand/README.md) and
+[offline migration tools](tools/migration/README.md) have reproducible records
+in [the local verification report](docs/stage-15-local-verification.ru.md).
+The repository remains private. M6 review can be confidential; publication or a
+public challenge requires a separate owner decision.

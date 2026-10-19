@@ -33,3 +33,7 @@ test TLS. Генерация test PKI теперь явно задаёт SKI/AKI
 умолчаний конкретного OpenSSL CLI; strict X.509 включён на обеих сторонах.
 Добавлены точная диагностика readiness и уборка процесса даже при ошибке setUp.
 Локально все шесть тестов с strict validation PASS; повторный CI проверяет macOS.
+
+В этапе 15 причина воспроизведена с исходным generator и LibreSSL CLI:
+strict OpenSSL выдаёт Missing Authority Key Identifier. Новая версия с явными
+SKI/AKI прошла все шесть тестов в этой же комбинации. Проверка не ослаблялась.

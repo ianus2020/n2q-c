@@ -395,22 +395,21 @@ Appendix-A test vectors and are cross-validated in CI.
   N2Q-256 modes (hash, SIV-AEAD, blind index, streaming AEAD); cross-checked
   C↔Rust↔tool with KAT vectors ([Appendix A.5–A.6](APPENDIX-A.md)); WASM browser
   tester on the own cipher. Measured constant-time (dudect) belongs to M4.
-- **M4 — Self-cryptanalysis. ◐ mostly done.** [`tools/cryptanalysis`](tools/cryptanalysis)
-  measured diffusion/avalanche, algebraic degree (zero-sum), differential
-  collapse, rotational symmetry, and constant-time (dudect, |t|=0.48) on the real
-  permutation; results and margins in [docs/cryptanalysis.md](docs/cryptanalysis.md).
-  Round counts remain provisional (§3.4). A solver-free differential trail search is
-  built (best single-column trails: 2R→4, 3R→7 active S-boxes). **Open (external
-  review, M6):** the *certified* differential/linear lower bound needs an all-
-  starts MILP/SAT search (a solver); plus rebound/hash analysis and QP-640 runs.
+- **M4 — Internal cryptanalysis. Partial.** Both widths have exact component
+  checks and empirical diffusion/differential/linear/cube/rotation/hash/timing
+  experiments. Bounded all-start 2/3-round SAT results and unknown timeouts are
+  recorded in [the dossier](docs/cryptanalysis.md). No full-round security
+  margin, whole-mode reduction or side-channel certification is established.
+  Round counts remain provisional (§3.4).
 - **M5 — Hardening & docs.** Argon2id password derivation (§6.5) and the
   wire frame (§9) implemented and tested; misuse-resistant SIV is already the
   primary mode (§5.1); threat model written
   ([docs/threat-model.md](docs/threat-model.md)).
-- **M6 — Open the project.** Per the chosen "private first, then open" path,
-  M1–M5 are developed privately; at M6 publish spec + tooling + dossier and
-  invite public cryptanalysis (challenge/bounty). Only after surviving this does
-  N2Q leave "research" status.
+- **M6 — Independent external cryptanalysis.** Review can be confidential.
+  Record and address findings; passing internal experiments does not close this
+  milestone. The repository and this audit remain private. Any publication or
+  public challenge requires a separate decision by the owner; none is authorized
+  or performed by this work. Production readiness also needs operational gates.
 
 ---
 
