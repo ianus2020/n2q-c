@@ -33,7 +33,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     assert(olen == plen && !memcmp(out, plain, plen));
     unchanged(out + plen, sizeof out - plen);
 
-    size_t capacity = (size_t)data[1] % (plen + 1);
+    size_t capacity_control = ((size_t)data[5] << 8) | data[6];
+    size_t capacity = capacity_control % (plen + 1);
     if (capacity < plen) {
         memset(out, 0xa5, sizeof out);
         olen = 999;
@@ -42,7 +43,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     }
     memset(second, 0xa5, sizeof second);
     memset(second_dek, 0xa5, sizeof second_dek);
-    assert(!n2q_conv_seal(master, 16, plain, plen, second_dek, second, (size_t)data[1] % clen, fast));
+    assert(!n2q_conv_seal(master, 16, plain, plen, second_dek, second, capacity_control % clen, fast));
     unchanged(second, sizeof second);
     unchanged(second_dek, sizeof second_dek);
     int invalid_length = (int)data[1] - 128;
@@ -53,7 +54,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     olen = 999;
     assert(!n2q_conv_open(dek, sealed, SIZE_MAX, out, sizeof out, &olen, fast) && !olen);
 
-    sealed[(size_t)data[1] % clen] ^= (uint8_t)(1u << (data[0] & 7));
+    size_t position = (((size_t)data[2] << 8) | data[3]) % clen;
+    sealed[position] ^= (uint8_t)(1u << (data[4] & 7));
     memset(out, 0xa5, sizeof out);
     olen = 999;
     assert(!n2q_conv_open(dek, sealed, clen, out, plen, &olen, fast) && !olen);

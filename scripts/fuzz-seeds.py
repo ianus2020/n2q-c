@@ -37,4 +37,37 @@ for size in (0,1,15,16,17,31,32,33,255,256,257,2048,4046):
     if size <= 3983:
         for flags in range(8):
             (root/"modes_roundtrip"/('aad-%d-%d'%(flags,size))).write_bytes(bytes([flags,63])+bytes(48)+bytes(range(63))+message)
+# Keep deterministic seed loading within the smoke budget. Empty messages cover
+# every tag byte and all bit choices (not their full Cartesian product); larger
+# messages cover first/middle/last bytes across the whole ciphertext.
+def mutation_pairs(size, clen, tag_size):
+    if size == 0:
+        return [(position, position % 8) for position in range(tag_size)]
+    positions = sorted({0, clen // 2, clen - 1})
+    if size == 33:
+        return [(position, bit) for position in positions for bit in range(8)]
+    return [(position, index % 8) for index, position in enumerate(positions)]
+
+for size in (0,33,4046):
+    message=bytes(i%251 for i in range(size))
+    for flags in range(8):
+        tag_size=32 if flags&1 else 16
+        clen=size+tag_size
+        for position, bit in mutation_pairs(size, clen, tag_size):
+            header=bytearray(50);header[0]=flags
+            header[2:4]=position.to_bytes(2,'big');header[4]=bit
+            (root/"modes_roundtrip"/('mutation-%d-%d-%d-%d'%(flags,size,position,bit))).write_bytes(header+message)
+    for fast in (0,1):
+        clen=size+16
+        for position, bit in mutation_pairs(size, clen, 16):
+            header=bytearray(18);header[0]=fast
+            header[2:4]=position.to_bytes(2,'big');header[4]=bit
+            (root/"convergent"/('mutation-%d-%d-%d-%d'%(fast,size,position,bit))).write_bytes(header+message)
+for size in (0,1,16,33,256,4046):
+    message=bytes(i%251 for i in range(size))
+    for fast in (0,1):
+        for capacity in sorted({0, max(0, size-1), size, size+15}):
+            header=bytearray(18);header[0]=fast
+            header[5:7]=capacity.to_bytes(2,'big')
+            (root/"convergent"/('capacity-%d-%d-%d'%(fast,size,capacity))).write_bytes(header+message)
 print("Generated deterministic test corpora")

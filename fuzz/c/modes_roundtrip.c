@@ -39,7 +39,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     for (size_t i = plen; i < sizeof out; i++) assert(out[i] == 0xa5);
     /* Every input first reaches successful authentication; raw mutations alone
        almost always stop at a tag failure before exercising this path. */
-    sealed[(size_t)data[1] % clen] ^= (uint8_t)(1u << (data[0] & 7));
+    size_t position = (((size_t)data[2] << 8) | data[3]) % clen;
+    sealed[position] ^= (uint8_t)(1u << (data[4] & 7));
     memset(out, 0xa5, sizeof out);
     olen = 999;
     assert(!open(key, nonce, ad, alen, sealed, clen, out, &olen, rounds));

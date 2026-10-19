@@ -21,6 +21,12 @@ these counters are separate from libFuzzer executions. Executions can include
 short/rejected inputs and repetitions. Do not add the counters to the execution
 total or infer attack probabilities from them.
 
+Mutation position/bit controls are independent of mode/profile flags and can
+reach the entire ciphertext. Convergent capacity controls use 16 bits, including
+values above 255. Deterministic seeds cover every tag byte and all eight bit
+choices separately, plus first/middle/last ciphertext positions and output
+capacity boundaries; they do not exhaust the Cartesian product of these inputs.
+
 ## Environment and invocation
 
 Use Linux with Clang + compiler-rt/libFuzzer, Python 3, Git, Rust 1.96.1,

@@ -27,7 +27,8 @@
 | 19: обязательные 7 CI checks | e1b66d1 | GitHub GET/PATCH/GET подтвердил strict + app_id=15368 для всех 7 jobs, остальные поля защиты сохранены; live stand restart/state/HTTPS/mTLS/Chromium PASS |
 | 20: сохранённое подтверждение CI | source c556436 | CI 39289459101 — все 7 PASS; jobs/full log/dependency reports/SHA-256 сохранены, native включает 42 Python и 6-port interop |
 | 21: строгий отказ C sanitizer gates | 682f325 | Воспроизведён UBSan report с exit=0 на fixture; fno-sanitize-recover + ASan/UBSan controls PASS macOS/Linux, полный native/42 Python/6 портов PASS; CI 39295178168 все 7 PASS |
-| 22: новые fuzz targets и измеримые отчёты | отдельный коммит этапа | 7 x 1000 smoke PASS, 958 modes / 976 convergent property cases; исходные хэши, corpora и failure controls сохранены |
+| 22: новые fuzz targets и измеримые отчёты | ed175fe | 7 x 1000 smoke PASS, 958 modes / 976 convergent property cases; исходные хэши, corpora и failure controls сохранены; CI 39297156434 все 7 PASS |
+| 23: независимые fuzz controls и большие смещения | отдельный коммит этапа | 13 199 выполнений на 7 целях PASS, включая 1951 modes / 1152 convergent property cases; corpus coordinates/capacities и исходные хэши проверены |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная
