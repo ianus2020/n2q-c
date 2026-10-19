@@ -30,7 +30,14 @@
 | 22: новые fuzz targets и измеримые отчёты | ed175fe | 7 x 1000 smoke PASS, 958 modes / 976 convergent property cases; исходные хэши, corpora и failure controls сохранены; CI 39297156434 все 7 PASS |
 | 23: независимые fuzz controls и большие смещения | 8f8b23a + bcbb602 | 13 209 выполнений на 7 целях PASS, включая 1951 modes / 1162 convergent property cases; все 72 source hashes и corpus coordinates/capacities проверены; CI 39301378234 все 7 PASS |
 | 24: расширенный изолированный фаззинг | source 8f8b23a, evidence 1840b42 | 3 614 029 выполнений / 7 целей PASS; 32 497 modes и 8872 convergent property sets; CI 39310709645 все 7 PASS; ограничения — stage-24-expanded-fuzzing.ru.md |
-| 25: управление длительной серией fuzzing | отдельный коммит этапа | SIGTERM orphan воспроизведён и исправлен; checkpoints, wall deadline, serial seeds/fail-closed; 8 controls PASS macOS/Linux, 50 Python PASS; real smoke 14 523 executions / 2 seeds PASS |
+| 25: управление длительной серией fuzzing | b45bbdf | SIGTERM orphan воспроизведён и исправлен; checkpoints, wall deadline, serial seeds/fail-closed; 8 controls PASS macOS/Linux, 50 Python PASS; real smoke 14 523 executions / 2 seeds PASS |
+
+По последнему указанию владельца текущая работа ограничена исправлением
+подтверждённых ошибок, стандартными регрессионными тестами, проверкой зависимостей
+и настроек фронтенда. Многочасовая серия, предложенная после этапа 24,
+не запускалась; восемь controls и короткая smoke-серия этапа 25 завершены.
+Существующие CI-проверки сохранены. Возможности runner не означают, что новая
+исследовательская кампания выполняется или уже пройдена.
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная

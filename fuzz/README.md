@@ -35,18 +35,23 @@ Clang 14.0.6; its minimal image needed explicit `libclang-rt-14-dev`:
 
 ```sh
 apt-get update
-apt-get install -y --no-install-recommends clang libclang-rt-14-dev python3 git ca-certificates
+apt-get install -y --no-install-recommends clang libclang-rt-14-dev python3 git ca-certificates procps
 rustup toolchain install nightly-2026-10-18 --profile minimal
 cargo +1.96.1 install cargo-fuzz --version 0.13.2 --locked
 python3 scripts/fuzz-campaign.py --output /tmp/n2q-fuzz-smoke --runs 2000 --seconds 20
 python3 scripts/fuzz-campaign.py --output /tmp/n2q-fuzz-expanded --runs 1000000 --seconds 180
 ```
 
-Each target stops at its execution or time limit. The output directory must be
-new. The runner records actual counts/coverage edges/peak RSS, tool versions,
+Each target receives execution and time budgets. Corpus initialization can exceed
+a small execution request; a time limit can stop a target before that request.
+The output directory must be new. The runner records actual counts/coverage edges/peak RSS, tool versions,
 source hashes, raw logs and initial/final corpus archives. Missing targets,
 incomplete logs, sanitizer diagnostics, source modifications and nonzero exits
-fail the report. Ctrl-C terminates the child process group and marks interruption.
+fail the report. SIGINT/SIGTERM/SIGHUP stop the child process group and mark
+interruption; stubborn descendants are killed after a five-second grace period.
+Atomic checkpoints keep running results separate from completed results.
+The whole child process has a deadline of 600 + 7 * (seconds + 5), overridable
+with `--wall-seconds`; exceeding it produces `timed_out`, never success.
 The C compiler is first checked with clean, signed-overflow and heap-UAF controls;
 all C sanitizer findings are fatal. Core dumps are disabled in the smoke script.
 The per-input timeout is 5 seconds and the fuzzer RSS cap is 512 MiB; these are
@@ -56,6 +61,12 @@ Use a fresh ignored `fuzz/corpus` for a fresh campaign, or retain its recorded
 initial archive when continuing. Named deterministic seeds are regenerated.
 Coverage edges depend on compiler/instrumentation; they are not a percentage of
 all paths. Time-bounded aggregate results are not guaranteed byte-reproducible.
+
+The optional `scripts/fuzz-series.py` accepts an explicit finite `--seeds` list,
+uses a recorded warm start and stops on the first non-success. It creates
+`series.json` and one campaign directory per seed. It is not scheduled by default.
+Process-control regression tests and retained evidence are documented in
+[stage 25](../docs/stage-25-long-fuzz-runner.ru.md).
 
 ## Isolated source snapshot
 
@@ -67,7 +78,7 @@ No services or container ports are needed. The reference container is capped at
 ```sh
 git archive --format=tar --output=/tmp/n2q-fuzz-source.tar HEAD \
   .gitignore .github/workflows/security.yml impl/c impl/python impl/n2q-c-ref \
-  fuzz scripts tests/sanitizer_probe.c
+  fuzz scripts tests/sanitizer_probe.c tests/test_fuzz_campaign.py
 ```
 
 Extract into a new directory in the container, initialize a local Git snapshot
