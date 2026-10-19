@@ -139,46 +139,72 @@ func fileError() -> NSError { NSError(domain: "N2QF v2 authentication/format", c
 func fileAD(_ header: [UInt8], _ kind: UInt8, _ idx: UInt64, _ total: UInt64) -> [UInt8] {
     Array("N2QF/v2".utf8) + header + [kind] + put64(idx) + put64(total)
 }
-func atomicFile(_ path: String, _ bytes: [UInt8]) throws {
+func readUpTo(_ input: FileHandle, _ size: Int) throws -> [UInt8] {
+    var data = Data()
+    while data.count < size {
+        guard let part = try input.read(upToCount: size-data.count), !part.isEmpty else { break }
+        data.append(part)
+    }
+    return [UInt8](data)
+}
+func readExact(_ input: FileHandle, _ size: Int) throws -> [UInt8] {
+    let data = try readUpTo(input,size)
+    guard data.count == size else { throw fileError() }
+    return data
+}
+// The closure receives a private 0600 staging file. Publication happens only
+// after it completes; failed/truncated authentication leaves the destination intact.
+func atomicFile(_ path: String, _ write: (FileHandle) throws -> Void) throws {
     var template = Array((path + ".n2q-XXXXXX").utf8CString)
     let fd = mkstemp(&template)
     guard fd >= 0 else { throw fileError() }
     let name = String(cString: template), handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
     defer { try? handle.close(); unlink(name) }
-    try handle.write(contentsOf: Data(bytes)); try handle.synchronize(); try handle.close()
+    try write(handle); try handle.synchronize(); try handle.close()
     guard rename(name,path) == 0 else { throw fileError() }
 }
 func encryptFile(_ profile: Int, _ key: [UInt8], _ inPath: String, _ outPath: String) throws {
     guard valid(profile,key) else { throw fileError() }
-    let data = [UInt8](try Data(contentsOf: URL(fileURLWithPath: inPath)))
-    var rng = SystemRandomNumberGenerator()
-    let hdr = Array("N2QF".utf8) + [2, UInt8(profile == FAST ? 0x21 : 1)] + (0..<16).map { _ in UInt8.random(in: 0...255, using: &rng) }
-    var out = hdr, off = 0, idx: UInt64 = 0
-    while true {
-        let end = min(off+65536, data.count), kind: UInt8 = off == data.count ? 1 : 0
-        let pt = Array(data[off..<end])
-        let sealed = seal(profile,key,put64(idx) + [UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,UInt64(off)),pt)
-        out += [kind] + Array(put64(UInt64(sealed.count)).prefix(4)) + sealed
-        if kind == 1 { break }; off = end; idx += 1
+    let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: inPath))
+    defer { try? input.close() }
+    try atomicFile(outPath) { output in
+        var rng = SystemRandomNumberGenerator()
+        let hdr = Array("N2QF".utf8) + [2, UInt8(profile == FAST ? 0x21 : 1)] + (0..<16).map { _ in UInt8.random(in: 0...255, using: &rng) }
+        try output.write(contentsOf: Data(hdr))
+        var idx: UInt64 = 0, total: UInt64 = 0
+        while true {
+            let pt = try readUpTo(input,65536), kind: UInt8 = pt.isEmpty ? 1 : 0
+            let sealed = seal(profile,key,put64(idx) + [UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,total),pt)
+            let record = [kind] + Array(put64(UInt64(sealed.count)).prefix(4)) + sealed
+            try output.write(contentsOf: Data(record))
+            if kind == 1 { break }
+            let (next,overflow) = total.addingReportingOverflow(UInt64(pt.count))
+            guard !overflow, idx < UInt64.max else { throw fileError() }
+            total=next;idx+=1
+        }
     }
-    try atomicFile(outPath,out)
 }
 func decryptFile(_ key: [UInt8], _ inPath: String, _ outPath: String) throws {
     guard key.count == 16 else { throw fileError() }
-    let data = [UInt8](try Data(contentsOf: URL(fileURLWithPath: inPath)))
-    guard data.count >= 22, Array(data.prefix(5)) == Array("N2QF".utf8)+[2], [UInt8(1),0x21].contains(data[5]) else { throw fileError() }
-    let hdr = Array(data.prefix(22)), profile = data[5] == 0x21 ? FAST : SECURE
-    var out = [UInt8](), pos = 22, idx: UInt64 = 0
-    while true {
-        guard data.count-pos >= 5 else { throw fileError() }
-        let kind = data[pos], len = Int(le64(data[pos+1..<pos+5])); pos += 5
-        guard ((kind == 0 && len > 16 && len <= 65552) || (kind == 1 && len == 16)), len <= data.count-pos else { throw fileError() }
-        guard let pt = openN2Q(profile,key,put64(idx)+[UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,UInt64(out.count)),Array(data[pos..<pos+len])) else { throw fileError() }
-        pos += len
-        if kind == 1 { guard pos == data.count else { throw fileError() }; break }
-        out += pt; idx += 1
+    let input = try FileHandle(forReadingFrom: URL(fileURLWithPath: inPath))
+    defer { try? input.close() }
+    try atomicFile(outPath) { output in
+        let hdr = try readExact(input,22)
+        guard Array(hdr.prefix(5)) == Array("N2QF".utf8)+[2], [UInt8(1),0x21].contains(hdr[5]) else { throw fileError() }
+        let profile = hdr[5] == 0x21 ? FAST : SECURE
+        var idx: UInt64 = 0, total: UInt64 = 0
+        while true {
+            let rec = try readExact(input,5), kind=rec[0], len=Int(le64(rec[1..<5]))
+            guard ((kind == 0 && len > 16 && len <= 65552) || (kind == 1 && len == 16)) else { throw fileError() }
+            let sealed = try readExact(input,len)
+            guard let pt = openN2Q(profile,key,put64(idx)+[UInt8](repeating: 0,count: 8),fileAD(hdr,kind,idx,total),sealed) else { throw fileError() }
+            if kind == 1 { guard try readUpTo(input,1).isEmpty else { throw fileError() }; break }
+            let (next,overflow) = total.addingReportingOverflow(UInt64(pt.count))
+            guard !overflow, idx < UInt64.max else { throw fileError() }
+            total=next;idx+=1
+            try output.write(contentsOf: Data(pt))
+        }
     }
-    try atomicFile(outPath,out)
 }
 
 // ---- self-test ----

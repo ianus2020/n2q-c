@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory(prefix='.interop-',dir=ROOT) as d:
                 if op=='encrypt':q.encrypt_file(128,q.SECURE,key.read_bytes(),src,dst)
                 else:q.decrypt_file(128,key.read_bytes(),src,dst)
                 success=True
-            except ValueError:success=False
+            except (ValueError,OSError):success=False
         else:
             p=subprocess.run(commands[name]+[op,str(key),str(src),str(dst)],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             success=p.returncode==0
@@ -40,6 +40,17 @@ with tempfile.TemporaryDirectory(prefix='.interop-',dir=ROOT) as d:
                 if writer!='python':continue
                 for reader in names:
                     out.write_bytes(b'keep');run(reader,'decrypt',bad,out,False);assert out.read_bytes()==b'keep',reader
+    # Input/output IO failures and in-place replacement exercise the staged path.
+    for name in names:
+        out.write_bytes(b'keep')
+        run(name,'encrypt',d/'missing-input',out,False)
+        assert out.read_bytes()==b'keep',name
+        run(name,'encrypt',source,d,False) # destination is an existing directory
+        same=d/'same';same.write_bytes(b'in-place payload')
+        run(name,'encrypt',same,same)
+        assert same.stat().st_mode & 0o077 == 0,(name,'output permissions')
+        run(name,'decrypt',same,same)
+        assert same.read_bytes()==b'in-place payload',name
     if 'c' in commands or 'go' in commands:
         key.write_bytes(bytes(range(32)))
         for profile in (q.SECURE,q.FAST):

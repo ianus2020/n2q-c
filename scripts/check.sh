@@ -33,11 +33,15 @@ cargo test --locked --manifest-path impl/n2q-c-wasm/Cargo.toml
 cargo build --locked --release --example file --manifest-path impl/n2q-c-ref/Cargo.toml
 (cd impl/go && go test -race ./... && go run . && go build -o "$build/go-n2qc" .)
 php impl/php/n2qc.php
+php tests/php_streaming.php
 export N2Q_C="$build/n2qc" N2Q_RUST="$PWD/impl/n2q-c-ref/target/release/examples/file" N2Q_GO="$build/go-n2qc"
 export N2Q_PHP="php $PWD/impl/php/file_cli.php"
 if command -v swiftc >/dev/null; then
     swiftc -O impl/swift/n2qc.swift -o "$build/swift-n2qc"
     "$build/swift-n2qc"
+    python3 -c 'import pathlib,sys; source=pathlib.Path("impl/swift/n2qc.swift").read_text().split("// ---- self-test ----")[0]; pathlib.Path(sys.argv[1]).write_text(source+pathlib.Path("tests/swift_streaming.swift").read_text())' "$build/swift-streaming.swift"
+    swiftc -O "$build/swift-streaming.swift" -o "$build/swift-streaming"
+    "$build/swift-streaming"
     export N2Q_SWIFT="$build/swift-n2qc"
 fi
 python3 tests/interop.py

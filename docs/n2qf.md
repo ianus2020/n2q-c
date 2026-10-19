@@ -39,9 +39,14 @@ File helpers publish output by atomic rename of a private temporary file in the
 same directory, only after full validation. On failure the old output remains.
 Temporary plaintext uses owner-only permissions and is removed on normal error
 paths. Process crashes can leave temporary files; this is not secure erasure.
-C/Python stream data to disk; Rust/Go/PHP/Swift currently buffer whole files and
-are intended for size-limited local input. Applications accepting uploads must
-cap their size before invoking these reference helpers.
+All six path-based file ports stream records with bounded scratch memory, using
+64 KiB plaintext blocks (plus tags and the core's fixed per-block scratch).
+Rust `build/parse`, Go `writeContainer/readContainer`, and seek convenience APIs
+still collect in memory by explicit API design. Avoid these conveniences for
+unbounded inputs. File helpers also bound record counts/byte totals before
+counter overflow. PHP uses its signed 64-bit integer ceiling. Services must
+still cap upload/disk space and concurrent jobs; bounded RAM does not bound
+CPU time or temporary disk use. Atomic rename is not a power-loss guarantee.
 
 The chunk-selection APIs validate the whole container before returning the
 requested chunk. They currently prioritize integrity over random-access speed.

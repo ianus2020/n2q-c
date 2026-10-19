@@ -6,12 +6,12 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"math/bits"
 	"os"
 	"path/filepath"
@@ -528,56 +528,82 @@ func readContainer(key, data []byte) ([][]byte, error) {
 		total += uint64(len(pt))
 	}
 }
-func atomicFile(path string, data []byte) error {
-	f, err := os.CreateTemp(filepath.Dir(path), ".n2q-*")
-	if err != nil {
-		return err
-	}
-	name := f.Name()
-	defer os.Remove(name)
-	if _, err = f.Write(data); err != nil {
-		f.Close()
-		return err
-	}
-	if err = f.Sync(); err != nil {
-		f.Close()
-		return err
-	}
-	if err = f.Close(); err != nil {
-		return err
-	}
-	return os.Rename(name, path)
+// These helpers write only to PRIVATE staging sinks. The file APIs below
+// publish after complete authentication, final-record verification and EOF.
+func writeAll(w io.Writer, data []byte) error {
+    for len(data)>0 {
+        n,err:=w.Write(data)
+        if err!=nil { return err }; if n<=0 || n>len(data) { return io.ErrShortWrite }
+        data=data[n:]
+    }; return nil
 }
-func EncryptFile(profile int, key []byte, inPath, outPath string) error {
-	data, err := os.ReadFile(inPath)
-	if err != nil {
-		return err
-	}
-	var chunks [][]byte
-	for len(data) > 0 {
-		n := len(data)
-		if n > chunkSize {
-			n = chunkSize
-		}
-		chunks = append(chunks, data[:n])
-		data = data[n:]
-	}
-	out, err := writeContainer(profile, key, chunks)
-	if err != nil {
-		return err
-	}
-	return atomicFile(outPath, out)
+func encryptToStaging(profile int,key []byte,input io.Reader,output io.Writer) error {
+    if !valid(profile,key,len(key)) || (len(key)!=16 && len(key)!=32) { return errors.New("invalid key/profile") }
+    suite:=byte(1);if len(key)==32 {suite=2};if profile==Fast {suite|=0x20}
+    header:=append([]byte("N2QF"),2,suite);id:=make([]byte,16)
+    if _,err:=rand.Read(id);err!=nil {return err};header=append(header,id...)
+    if err:=writeAll(output,header);err!=nil {return err}
+    buf:=make([]byte,chunkSize);defer clear(buf)
+    var idx,total uint64
+    for {
+        n,err:=io.ReadFull(input,buf)
+        if err!=nil && err!=io.EOF && err!=io.ErrUnexpectedEOF {return err}
+        kind:=byte(0);if n==0 {kind=1}
+        nonce:=make([]byte,16);binary.LittleEndian.PutUint64(nonce,idx)
+        ad:=fileAD(header,kind,idx,total)
+        var sealed []byte
+        if len(key)==16 {sealed=Seal(profile,key,nonce,ad,buf[:n])} else {sealed=Seal256(profile,key,nonce,ad,buf[:n])}
+        var record [5]byte;record[0]=kind;binary.LittleEndian.PutUint32(record[1:],uint32(len(sealed)))
+        if err:=writeAll(output,record[:]);err!=nil {return err}
+        if err:=writeAll(output,sealed);err!=nil {return err}
+        if kind==1 {return nil}
+        if total>^uint64(0)-uint64(n) || idx==^uint64(0) {return errors.New("file too large")}
+        total+=uint64(n);idx++
+    }
 }
-func DecryptFile(key []byte, inPath, outPath string) error {
-	data, err := os.ReadFile(inPath)
-	if err != nil {
-		return err
-	}
-	chunks, err := readContainer(key, data)
-	if err != nil {
-		return err
-	}
-	return atomicFile(outPath, bytes.Join(chunks, nil))
+func decryptToStaging(key []byte,input io.Reader,output io.Writer) error {
+    bad:=errors.New("invalid or unauthenticated N2QF v2")
+    tag:=len(key);if tag!=16 && tag!=32 {return bad}
+    header:=make([]byte,22);if _,err:=io.ReadFull(input,header);err!=nil {return err}
+    suite:=byte(1);if tag==32 {suite=2}
+    if string(header[:5])!="N2QF\x02" || (header[5]!=suite && header[5]!=(suite|0x20)) {return bad}
+    profile:=Secure;if header[5]&0x20!=0 {profile=Fast}
+    sealed:=make([]byte,chunkSize+tag)
+    var idx,total uint64
+    for {
+        var record [5]byte;if _,err:=io.ReadFull(input,record[:]);err!=nil {return err}
+        kind:=record[0];n:=uint64(binary.LittleEndian.Uint32(record[1:]))
+        if !((kind==0 && n>uint64(tag) && n<=uint64(chunkSize+tag)) || (kind==1 && n==uint64(tag))) {return bad}
+        if _,err:=io.ReadFull(input,sealed[:int(n)]);err!=nil {return err}
+        nonce:=make([]byte,16);binary.LittleEndian.PutUint64(nonce,idx)
+        ad:=fileAD(header,kind,idx,total)
+        var pt []byte;var ok bool
+        if tag==16 {pt,ok=Open(profile,key,nonce,ad,sealed[:int(n)])} else {pt,ok=Open256(profile,key,nonce,ad,sealed[:int(n)])}
+        if !ok {return bad}
+        if kind==1 {
+            var extra [1]byte;_,err:=io.ReadFull(input,extra[:]);if err==io.EOF {return nil}
+            if err!=nil {return err};return bad
+        }
+        if total>^uint64(0)-uint64(len(pt)) || idx==^uint64(0) {clear(pt);return bad}
+        total+=uint64(len(pt));idx++
+        err:=writeAll(output,pt);clear(pt);if err!=nil {return err}
+    }
+}
+func atomicFile(path string,write func(io.Writer) error) error {
+    f,err:=os.CreateTemp(filepath.Dir(path),".n2q-*");if err!=nil {return err}
+    name:=f.Name();defer os.Remove(name)
+    if err=write(f);err!=nil {f.Close();return err}
+    if err=f.Sync();err!=nil {f.Close();return err}
+    if err=f.Close();err!=nil {return err}
+    return os.Rename(name,path)
+}
+func EncryptFile(profile int,key []byte,inPath,outPath string) error {
+    input,err:=os.Open(inPath);if err!=nil {return err};defer input.Close()
+    return atomicFile(outPath,func(output io.Writer)error{return encryptToStaging(profile,key,input,output)})
+}
+func DecryptFile(key []byte,inPath,outPath string) error {
+    input,err:=os.Open(inPath);if err!=nil {return err};defer input.Close()
+    return atomicFile(outPath,func(output io.Writer)error{return decryptToStaging(key,input,output)})
 }
 
 func hx(b []byte) string {

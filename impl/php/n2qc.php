@@ -134,17 +134,40 @@ function n2q_open_token(string $key, string $ad, string $token): ?string {
 function n2q_file_ad(string $hdr,int $kind,int $index,int $total): string {
     return 'N2QF/v2'.$hdr.chr($kind).pack('P',$index).pack('P',$total);
 }
-function n2q_atomic(string $path,string $data): void {
+// Bounded read, including short reads. A zero-progress non-EOF stream is an error.
+function n2q_read_up_to($f,int $size): string {
+    $buf='';
+    while(strlen($buf)<$size) {
+        $part=fread($f,$size-strlen($buf));
+        if($part===false) throw new RuntimeException('read failed');
+        if($part==='') {if(!feof($f)) throw new RuntimeException('read made no progress');break;}
+        $buf.=$part;
+    }
+    return $buf;
+}
+function n2q_read_exact($f,int $size): string {
+    $buf=n2q_read_up_to($f,$size);
+    if(strlen($buf)!==$size) throw new RuntimeException('truncated file');
+    return $buf;
+}
+function n2q_write_all($f,string $data): void {
+    $offset=0;$len=strlen($data);
+    while($offset<$len) {
+        $n=fwrite($f,substr($data,$offset));
+        if($n===false || $n===0) throw new RuntimeException('write failed');
+        $offset+=$n;
+    }
+}
+function n2q_atomic(string $path,callable $write): void {
     $parent=realpath(dirname($path));
     if($parent===false) throw new RuntimeException('output directory does not exist');
-    $tmp=tempnam($parent,'.n2q-'); if($tmp===false) throw new RuntimeException('temporary file failed');
+    $tmp=tempnam($parent,'.n2q-');if($tmp===false) throw new RuntimeException('temporary file failed');
     $f=null;
     try {
         if(realpath(dirname($tmp))!==$parent) throw new RuntimeException('temporary file must be in output directory');
         if(!chmod($tmp,0600)) throw new RuntimeException('file permissions');
         $f=fopen($tmp,'wb');if($f===false) throw new RuntimeException('file open');
-        $offset=0;$len=strlen($data);
-        while($offset<$len) {$n=fwrite($f,substr($data,$offset));if($n===false || $n===0) throw new RuntimeException('write failed');$offset+=$n;}
+        $write($f);
         if(!fflush($f) || (function_exists('fsync') && !fsync($f))) throw new RuntimeException('flush failed');
         if(!fclose($f)) throw new RuntimeException('close failed');$f=null;
         if(!rename($tmp,$path)) throw new RuntimeException('rename failed');
@@ -152,32 +175,45 @@ function n2q_atomic(string $path,string $data): void {
 }
 function n2q_encrypt_file(int $profile,string $key,string $in,string $out): void {
     n2q_validate($profile,$key);
-    $data=file_get_contents($in);if($data===false) throw new RuntimeException('read failed');
-    $hdr='N2QF'.chr(2).chr($profile===N2Q_FAST?0x21:1).random_bytes(16);$buf=$hdr;$idx=0;$total=0;
-    for($off=0;;$off+=65536) {
-        $pt=substr($data,$off,65536);$kind=$pt===''?1:0;
-        $sealed=n2q_seal($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),$pt);
-        $buf.=chr($kind).pack('V',strlen($sealed)).$sealed;
-        if($kind) break;$idx++;$total+=strlen($pt);
-    }
-    n2q_atomic($out,$buf);
+    $input=fopen($in,'rb');if($input===false) throw new RuntimeException('read open failed');
+    try {
+        n2q_atomic($out,function($f)use($profile,$key,$input) {
+            $hdr='N2QF'.chr(2).chr($profile===N2Q_FAST?0x21:1).random_bytes(16);
+            n2q_write_all($f,$hdr);$idx=0;$total=0;
+            for(;;) {
+                $pt=n2q_read_up_to($input,65536);$kind=$pt===''?1:0;
+                $sealed=n2q_seal($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),$pt);
+                n2q_write_all($f,chr($kind).pack('V',strlen($sealed)).$sealed);
+                if($kind===1) break;
+                if($idx===PHP_INT_MAX || $total>PHP_INT_MAX-strlen($pt)) throw new RuntimeException('file too large');
+                $idx++;$total+=strlen($pt);
+            }
+        });
+    } finally {fclose($input);}
 }
 function n2q_decrypt_file(string $key,string $in,string $out): void {
     n2q_validate(N2Q_SECURE,$key);
-    $data=file_get_contents($in);if($data===false) throw new RuntimeException('read failed');
-    $hdr=substr($data,0,22);$size=strlen($data);
-    if(strlen($hdr)!==22 || substr($hdr,0,5)!=="N2QF\2" || !in_array(ord($hdr[5]),[1,0x21],true)) throw new RuntimeException('N2QF v2 required');
-    $profile=ord($hdr[5])===0x21?N2Q_FAST:N2Q_SECURE;$p=22;$idx=0;$total=0;$buf='';
-    for(;;) {
-        if($size-$p<5) throw new RuntimeException('missing final record');
-        $kind=ord($data[$p]);$len=unpack('V',substr($data,$p+1,4))[1];$p+=5;
-        if(!(($kind===0 && $len>16 && $len<=65552)||($kind===1 && $len===16)) || $len>$size-$p) throw new RuntimeException('record length/type');
-        $pt=n2q_open($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),substr($data,$p,$len));$p+=$len;
-        if($pt===null) throw new RuntimeException('authentication failed');
-        if($kind===1) {if($p!==$size) throw new RuntimeException('trailing data');break;}
-        $buf.=$pt;$total+=strlen($pt);$idx++;
-    }
-    n2q_atomic($out,$buf);
+    $input=fopen($in,'rb');if($input===false) throw new RuntimeException('read open failed');
+    try {
+        n2q_atomic($out,function($f)use($key,$input) {
+            $hdr=n2q_read_exact($input,22);
+            if(substr($hdr,0,5)!=="N2QF\2" || !in_array(ord($hdr[5]),[1,0x21],true)) throw new RuntimeException('N2QF v2 required');
+            $profile=ord($hdr[5])===0x21?N2Q_FAST:N2Q_SECURE;$idx=0;$total=0;
+            for(;;) {
+                $rec=n2q_read_exact($input,5);$kind=ord($rec[0]);$len=unpack('V',substr($rec,1,4))[1];
+                if(!(($kind===0 && $len>16 && $len<=65552)||($kind===1 && $len===16))) throw new RuntimeException('record length/type');
+                $sealed=n2q_read_exact($input,$len);
+                $pt=n2q_open($profile,$key,pack('P',$idx).str_repeat("\0",8),n2q_file_ad($hdr,$kind,$idx,$total),$sealed);
+                if($pt===null) throw new RuntimeException('authentication failed');
+                if($kind===1) {
+                    if(n2q_read_up_to($input,1)!=='') throw new RuntimeException('trailing data');
+                    break;
+                }
+                if($idx===PHP_INT_MAX || $total>PHP_INT_MAX-strlen($pt)) throw new RuntimeException('file too large');
+                $idx++;$total+=strlen($pt);n2q_write_all($f,$pt);
+            }
+        });
+    } finally {fclose($input);}
 }
 
 // ---- self-test (run: php n2qc.php) ----
