@@ -23,6 +23,9 @@ class EvidenceTests(unittest.TestCase):
         self.assertNotIn("private-test-marker",json.dumps(data))
         self.assertNotIn("rust-fuzz",data["tools"])
         self.assertIn("impl/conformance/vectors.txt",data["input_sha256"])
+        self.assertIn("tools/local_stand/pki.py",data["input_sha256"])
+        self.assertIn("python-ssl",data["tools"])
+        self.assertIn("openssl",data["tools"])
         self.assertTrue(all(len(v)==64 for v in data["input_sha256"].values()))
     def test_unavailable_version_tool_is_recorded(self):
         with mock.patch.object(subprocess,"run",side_effect=FileNotFoundError()):

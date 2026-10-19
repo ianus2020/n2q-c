@@ -16,6 +16,12 @@ class TLSHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         self.slots = threading.BoundedSemaphore(workers)
         super().__init__(address, handler)
 
+    def server_bind(self):
+        # HTTPServer normally performs an unbounded reverse DNS lookup here.
+        # This loopback service has no use for a DNS-derived server name.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
     def process_request(self, request, address):
         if not self.slots.acquire(blocking=False):
             self.shutdown_request(request)

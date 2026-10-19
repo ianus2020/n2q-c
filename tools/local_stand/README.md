@@ -9,6 +9,10 @@ ignored under `.local-stand/`. Never use real secrets in this stand.
 Requirements: Python SSL (use a supported Python for ongoing use), OpenSSL CLI,
 C compiler/libcurl, Rust/wasm-pack for the web build. Build and start from repo root:
 
+On Debian/Ubuntu the C callback needs the development headers as well as the
+runtime: `sudo apt-get install libcurl4-openssl-dev`. The CI HTTPS browser job
+installs this explicitly before compiling its public test signer.
+
 ```sh
 scripts/build-web.sh
 python3 tools/local_stand/run.py --state .local-stand

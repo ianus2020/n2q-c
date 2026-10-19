@@ -24,7 +24,7 @@ def record(job):
         "scripts/serve-web.py","scripts/dependency-audit.sh","scripts/verification-record.py",
         "tools/cryptanalysis/exact.py","tools/cryptanalysis/trails.py",
         "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py",
-        "tools/anchor/server.py","tools/local_stand/tls.py",
+        "tools/anchor/server.py","tools/local_stand/tls.py","tools/local_stand/pki.py",
         "tools/local_stand/web.py","tools/local_stand/run.py",
         "tools/migration/n2q_migrate.py","impl/n2q-c-ref/examples/migration_keys.rs",
         "impl/c/n2q_cone_anchor_http.c","impl/c/n2q_cone_anchor_http.h"]
@@ -33,6 +33,8 @@ def record(job):
     commands={
         "c":["cc","--version"],"rust":["rustc","--version"],"go":["go","version"],
         "php":["php","--version"],"python":["python3","--version"],
+        "python-ssl":["python3","-c","import ssl; print(ssl.OPENSSL_VERSION)"],
+        "openssl":["openssl","version"],
         "node":["node","--version"],"swift":["swiftc","--version"]}
     if job=="fuzz":
         commands.update({"rust-fuzz":["rustc","+nightly-2026-10-18","--version"],

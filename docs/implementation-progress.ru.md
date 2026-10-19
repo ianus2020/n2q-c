@@ -22,6 +22,8 @@
 | 14: offline-миграция и PW recovery | c1d7cbe + validation 80595e0 | 10 Python + 2 Rust теста PASS; inventory, trusted-evidence recovery/rekey, private no-replace output, Argon2id new/restore и isolated legacy PW; реальных данных не переносили |
 | 15: итог локальных проверок | проверен код 80595e0; отдельный docs commit | Полный native PASS (6 портов), HTTPS browser PASS, strict SSL/LibreSSL compatibility PASS; последний GitHub CI queued, не объявлен успешным; подробности stage-15-local-verification.ru.md |
 
+| 16: исправления по фактическому CI | отдельный коммит этого этапа | Установлены libcurl headers для web, проверено точечное исключение source SHA-256; устранён reverse DNS startup delay, anchor 6 / web 4 PASS на Python 3.14 + OpenSSL 4; повтор GitHub ожидается |
+
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная
 почасовая автоматизация n2q, локальная ветка обновлена fast-forward до 6d5fd11.
