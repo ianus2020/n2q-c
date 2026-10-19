@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import ssl
+import signal
 import subprocess
 import sys
 import time
@@ -77,6 +78,8 @@ def start(info,check=False):
 
 if __name__ == '__main__':
     os.umask(0o077)
+    def stop_signal(signum,frame):raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM,stop_signal)
     parser = argparse.ArgumentParser()
     parser.add_argument('--state',type=Path,required=True)
     parser.add_argument('--web-port',type=int,default=9443)
