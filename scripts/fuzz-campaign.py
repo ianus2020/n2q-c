@@ -11,11 +11,38 @@ import signal
 import subprocess
 import sys
 import tarfile
+import tempfile
+import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = {'c/fireline', 'c/n2qf', 'c/siv', 'c/modes_roundtrip', 'c/convergent',
            'rust/frames', 'rust/n2qf'}
+
+
+def write_report(path, report):
+    """Readers see the previous or next complete checkpoint, never half JSON."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, delete=False) as output:
+            temporary = Path(output.name)
+            json.dump(report, output, indent=2)
+            output.write('\n')
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+class CampaignInterrupted(Exception):
+    pass
+
+
+def signal_group(pid, signum):
+    try:
+        os.killpg(pid, signum)
+    except ProcessLookupError:
+        pass
 
 
 def parse_log(log):
@@ -70,7 +97,7 @@ def version(command):
 
 def inputs():
     paths = subprocess.check_output(['git','ls-files','-z','impl/c','impl/python','impl/n2q-c-ref','fuzz',
-                                     'scripts','tests/sanitizer_probe.c','.gitignore',
+                                     'scripts','tests/sanitizer_probe.c','tests/test_fuzz_campaign.py','.gitignore',
                                      '.github/workflows/security.yml'], cwd=ROOT).decode().split('\0')
     result = []
     for name in sorted(filter(None, paths)):
@@ -105,68 +132,128 @@ def positive(value):
     return number
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--runs', type=positive, default=1000000)
     parser.add_argument('--seconds', type=positive, default=180)
     parser.add_argument('--seed', type=positive, default=20261019)
-    args = parser.parse_args()
+    parser.add_argument('--wall-seconds', type=positive,
+                        help='Whole child-process deadline; default: 600 + 7 * (seconds + 5).')
+    args = parser.parse_args(argv)
     os.umask(0o077)
     args.output.mkdir(parents=True)  # Refuse an existing evidence directory.
     toolchain = os.environ.get('N2Q_FUZZ_TOOLCHAIN', 'nightly-2026-10-18')
     source = os.environ.get('N2Q_SOURCE_COMMIT') or subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     if re.fullmatch('[0-9a-f]{40}', source) is None:
         raise ValueError('source commit must be a full Git SHA')
-    report = {'schema':1, 'source_commit':source, 'checkout_commit':subprocess.check_output(
+    wall_limit = args.wall_seconds or 600 + len(TARGETS) * (args.seconds + 5)
+    report = {'schema':2, 'source_commit':source, 'checkout_commit':subprocess.check_output(
               ['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(), 'platform':platform.platform(),
               'budget':{'runs_per_target':args.runs, 'seconds_per_target':args.seconds,
-                        'seed':args.seed, 'max_input_bytes':4096, 'rss_limit_mb':512, 'input_timeout_seconds':5},
+                        'seed':args.seed, 'max_input_bytes':4096, 'rss_limit_mb':512, 'input_timeout_seconds':5,
+                        'wall_seconds':wall_limit},
               'tools':{'clang':version(['clang','--version']), 'rust':version(['rustc','+'+toolchain,'--version']),
                        'cargo-fuzz':version(['cargo','+1.96.1','fuzz','--version'])},
-              'inputs':inputs(), 'status':'running',
+              'inputs':inputs(), 'status':'running', 'pid':os.getpid(),
               'initial_corpus':archive_corpus(args.output, 'initial-corpus.tar.gz'),
               'limitations':['Bounded implementation fuzzing, not cryptographic security proof.',
                              'Coverage edges depend on compiler/instrumentation and are not path coverage.',
                              'A time limit can stop a target before its requested run count.']}
     report_path = args.output/'summary.json'
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+    write_report(report_path, report)
     env = os.environ.copy()
     env.update(N2Q_FUZZ_RUNS=str(args.runs), N2Q_FUZZ_SECONDS=str(args.seconds), N2Q_FUZZ_SEED=str(args.seed))
     started = time.monotonic()
     interrupted = False
+    timed_out = threading.Event()
+    escalation = None
+    previous_handlers = {}
+    received_signal = None
+    signals_ready = False
+
+    def on_signal(signum, frame):
+        nonlocal received_signal
+        received_signal = signum
+        if signals_ready:
+            raise CampaignInterrupted()
+
+    for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        previous_handlers[signum] = signal.signal(signum, on_signal)
     with (args.output/'campaign.log').open('w') as log:
         proc = subprocess.Popen([str(ROOT/'scripts/fuzz-smoke.sh')], cwd=ROOT, env=env,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True, errors='replace', start_new_session=True)
+        report['child_pid'] = proc.pid
+
+        def deadline():
+            nonlocal escalation
+            timed_out.set()
+            signal_group(proc.pid, signal.SIGTERM)
+            escalation = threading.Timer(5, signal_group, args=(proc.pid, signal.SIGKILL))
+            escalation.daemon = True
+            escalation.start()
+
+        watchdog = threading.Timer(wall_limit, deadline)
+        watchdog.daemon = True
+        watchdog.start()
+        last_checkpoint = 0.0
+
+        def checkpoint():
+            nonlocal last_checkpoint
+            last_checkpoint = time.monotonic()
+            report.update(wall_seconds=round(last_checkpoint-started, 3))
+            try:
+                report.update(parse_log((args.output/'campaign.log').read_text()))
+            except ValueError as error:
+                report['parse_error'] = str(error)
+            write_report(report_path, report)
+
         try:
+            # Defer a signal arriving during Popen/watchdog setup until cleanup
+            # is armed, so it cannot strand a freshly created process group.
+            signals_ready = True
+            if received_signal is not None:
+                raise CampaignInterrupted()
+            checkpoint()
             for line in proc.stdout:
                 log.write(line)
                 log.flush()
                 if line.startswith('N2Q_FUZZ_TARGET ') or line.startswith('Done '):
                     print(line.strip(),flush=True)
+                    checkpoint()
+                elif time.monotonic()-last_checkpoint >= 30:
+                    checkpoint()
             returncode = proc.wait()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, CampaignInterrupted):
             interrupted = True
-            try:
-                os.killpg(proc.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
+            # Ignore repeated interrupts while bounded cleanup is in progress.
+            for signum in previous_handlers:
+                signal.signal(signum, signal.SIG_IGN)
+            signal_group(proc.pid, signal.SIGTERM)
             try:
                 returncode = proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                os.killpg(proc.pid, signal.SIGKILL)
+                signal_group(proc.pid, signal.SIGKILL)
                 returncode = proc.wait()
         finally:
+            signals_ready = False
+            watchdog.cancel()
+            watchdog.join()
+            if escalation is not None:
+                escalation.cancel()
+                escalation.join()
+            # A wrapper can exit while its grandchildren still own stdout or CPU.
+            signal_group(proc.pid, signal.SIGKILL)
             if proc.poll() is None:
-                try:
-                    os.killpg(proc.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
                 proc.wait()
             proc.stdout.close()
+            interrupted = interrupted or received_signal is not None
+            for signum, handler in previous_handlers.items():
+                signal.signal(signum, handler)
     report.update(returncode=returncode, wall_seconds=round(time.monotonic()-started,3),
                   inputs_unchanged=inputs() == report['inputs'],
+                  deadline_exceeded=timed_out.is_set(), received_signal=received_signal,
                   final_corpus=archive_corpus(args.output, 'final-corpus.tar.gz'))
     try:
         report.update(parse_log((args.output/'campaign.log').read_text()))
@@ -175,9 +262,11 @@ def main():
         report.update(status='failed', parse_error=str(error))
     if interrupted:
         report['status'] = 'interrupted'
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+    elif timed_out.is_set():
+        report['status'] = 'timed_out'
+    write_report(report_path, report)
     print('Campaign '+report['status']+': '+str(report_path),flush=True)
-    return 0 if report['status'] == 'passed' else 130 if interrupted else 1
+    return 0 if report['status'] == 'passed' else 130 if interrupted else 124 if timed_out.is_set() else 1
 
 
 if __name__ == '__main__':

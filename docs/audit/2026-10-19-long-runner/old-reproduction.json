@@ -1,0 +1,10 @@
+{
+  "source_commit": "1840b42f4d52595ae55ee0e445d610f3248719b8",
+  "runner_sha256": "363c81dc8bc7abec718855c64b3768c7e2819b2f91240101ae633bb7cb3ca4e8",
+  "signal": 15,
+  "returncode": -15,
+  "summary_status": "running",
+  "live_fixture_processes_after_parent_exit": 2,
+  "test_data": "controlled wrapper and sleep child; no cryptographic defect implied",
+  "cleanup": "The test explicitly killed its isolated fixture process group."
+}

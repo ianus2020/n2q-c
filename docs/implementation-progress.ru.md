@@ -29,7 +29,8 @@
 | 21: строгий отказ C sanitizer gates | 682f325 | Воспроизведён UBSan report с exit=0 на fixture; fno-sanitize-recover + ASan/UBSan controls PASS macOS/Linux, полный native/42 Python/6 портов PASS; CI 39295178168 все 7 PASS |
 | 22: новые fuzz targets и измеримые отчёты | ed175fe | 7 x 1000 smoke PASS, 958 modes / 976 convergent property cases; исходные хэши, corpora и failure controls сохранены; CI 39297156434 все 7 PASS |
 | 23: независимые fuzz controls и большие смещения | 8f8b23a + bcbb602 | 13 209 выполнений на 7 целях PASS, включая 1951 modes / 1162 convergent property cases; все 72 source hashes и corpus coordinates/capacities проверены; CI 39301378234 все 7 PASS |
-| 24: расширенный изолированный фаззинг | source 8f8b23a, отдельный evidence commit | 3 614 029 выполнений / 7 целей PASS; 32 497 modes и 8872 convergent property sets; 72 source hashes, logs/corpus/CI сохранены; ограничения — stage-24-expanded-fuzzing.ru.md |
+| 24: расширенный изолированный фаззинг | source 8f8b23a, evidence 1840b42 | 3 614 029 выполнений / 7 целей PASS; 32 497 modes и 8872 convergent property sets; CI 39310709645 все 7 PASS; ограничения — stage-24-expanded-fuzzing.ru.md |
+| 25: управление длительной серией fuzzing | отдельный коммит этапа | SIGTERM orphan воспроизведён и исправлен; checkpoints, wall deadline, serial seeds/fail-closed; 8 controls PASS macOS/Linux, 50 Python PASS; real smoke 14 523 executions / 2 seeds PASS |
 
 На этапах 0–7 планировщик отклонял создание отчётов, локальная файловая система
 была read-only. После предоставления доступа 19.10.2026 настроена активная
