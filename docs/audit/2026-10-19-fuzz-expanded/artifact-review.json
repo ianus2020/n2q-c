@@ -1,0 +1,20 @@
+[
+  {
+    "file": "ci-fuzz/verification.json",
+    "rule": "generic-api-key",
+    "line_in_original": 22,
+    "reviewed_value": "SHA-256 of impl/n2q-c-ref/examples/migration_keys.rs",
+    "source_digest": "0ff3a59a428a922c7730987e86de27df5c2c01a43e4b2bfc1f5d6922eca6ad12",
+    "source_commit": "8f8b23ae00d2cd2923ea3aa34352d9db3481bb9e",
+    "resolution": "Verified Git blob digest. Preserve original JSON gzip and normalize map to records; no scanner exception added."
+  },
+  {
+    "file": "dependencies/verification.json",
+    "rule": "generic-api-key",
+    "line_in_original": 22,
+    "reviewed_value": "SHA-256 of impl/n2q-c-ref/examples/migration_keys.rs",
+    "source_digest": "0ff3a59a428a922c7730987e86de27df5c2c01a43e4b2bfc1f5d6922eca6ad12",
+    "source_commit": "8f8b23ae00d2cd2923ea3aa34352d9db3481bb9e",
+    "resolution": "Verified Git blob digest. Preserve original JSON gzip and normalize map to records; no scanner exception added."
+  }
+]

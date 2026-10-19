@@ -16,7 +16,7 @@
 | P2 | Полный независимый криптоанализ | Открыто: отчёт по перестановке, режимам и реальным профилям 16/8; исправление всех подтверждённых замечаний |
 | P2 | CoNe и FireLine | Границы/строгий framing, журнал, mTLS C provider и сохраняемый локальный backend проверены; отдельный эксплуатационный rollback domain и независимый анализ открыты |
 | P2 | Производственный API | Добавлены Argon2id с лимитами, owned keys, лимиты WASM/FireLine и потоковые path API шести портов; KMS, квоты и concurrency реального сервиса открыты |
-| P2 | Усиление проверки | В CI C/Rust fuzz smoke, ASan/UBSan/TSan, Go race и browser failures; длительный фаззинг и аппаратные side-channel измерения открыты |
+| P2 | Усиление проверки | В CI 7 C/Rust fuzz targets, fatal ASan/UBSan controls, TSan, Go race и browser failures; расширенный offline прогон 3 614 029 выполнений PASS; многочасовые кампании и аппаратные side-channel измерения открыты |
 | P3 | Выпуск и развёртывание | Проверяются JS/WASM, test host и зависимости; evidence artifacts добавлены. Репозиторий приватный, main защищена обязательным PR/CI. Реальный HTTPS и подписанный выпуск открыты |
 
 ## Переход на исправленную версию
@@ -37,11 +37,13 @@
 Этапы и реальная история CI: [журнал выполнения](implementation-progress.ru.md).
 Передача на внешнюю проверку и оставшиеся условия: [этап 7](stage-7-release-review.ru.md).
 
-По дополнительному закрытому аудиту выполнены этапы 9–20:
+По дополнительному закрытому аудиту выполнены этапы 9–24:
 [криптографический отчёт](cryptographic-audit-2026-10-19.ru.md),
 [локальный HTTPS/anchor стенд](../tools/local_stand/README.md),
 [offline migration/PW recovery](../tools/migration/README.md),
-[подтверждённые результаты CI](stage-20-ci-verification.ru.md).
+[подтверждённые результаты CI](stage-20-ci-verification.ru.md),
+[строгие sanitizer gates](stage-21-sanitizer-gates.ru.md),
+[расширенный фаззинг и его ограничения](stage-24-expanded-fuzzing.ru.md).
 Публикация проекта не входит в согласованную работу; внешнюю экспертизу можно
 проводить конфиденциально. Реальные данные/ключи и production не переносились.
 

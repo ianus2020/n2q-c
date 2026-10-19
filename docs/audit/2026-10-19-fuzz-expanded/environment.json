@@ -1,0 +1,20 @@
+{
+  "source_archive_sha256": "3fca424772ce14a1f9378e0e5a2fe5e0663c5e52c4105f879e67d48c93a622e0",
+  "source_commit_from_git_archive": "8f8b23ae00d2cd2923ea3aa34352d9db3481bb9e",
+  "all_source_blob_hashes_verified": 72,
+  "container": {
+    "memory_bytes": 2147483648,
+    "nano_cpus": 2000000000,
+    "host_binds": null,
+    "published_ports": {},
+    "networks": {},
+    "base_image": "sha256:e18a79fc84dfcfc3ab5ba72290398a644c135c97eaa881447fddc354ee4701a3"
+  },
+  "cargo_network": "offline",
+  "data": "synthetic corpus and public fixture keys only",
+  "crash_artifacts": 0,
+  "limitations": [
+    "Pinned base image with separately installed package/tool versions; not a fully reproducible image build.",
+    "Host source archive was copied explicitly; no host mount or Git authentication configuration."
+  ]
+}
