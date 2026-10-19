@@ -9,6 +9,10 @@ python3 impl/python/test_kat.py
 python3 impl/python/n2qc_modes.py
 cc -O1 -g -fsanitize=address,undefined impl/c/n2qc.c -o "$build/n2qc"
 "$build/n2qc"
+cc -O1 -g -pthread -fsanitize=address,undefined tests/core_init.c -o "$build/core-init"
+"$build/core-init"
+cc -O1 -g -pthread -fsanitize=thread tests/core_init.c -o "$build/core-init-thread"
+"$build/core-init-thread"
 cc -O1 -g -fsanitize=address,undefined tests/security.c -o "$build/security"
 "$build/security"
 cc -O1 -g -fsanitize=address,undefined -DN2Q_SEEK_DEMO impl/c/n2q_seek.c -o "$build/seek"

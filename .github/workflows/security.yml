@@ -20,6 +20,19 @@ jobs:
       - run: rustup toolchain install 1.96.1 --profile minimal && rustup default 1.96.1
       - run: brew install php
       - run: scripts/check.sh
+      - name: Record native verification inputs
+        if: always()
+        env:
+          N2Q_VERIFICATION_STATUS: ${{ job.status }}
+          N2Q_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/verification-record.py --job native --output /tmp/n2q-native-evidence.json
+      - name: Retain native verification record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-native
+          path: /tmp/n2q-native-evidence.json
+          retention-days: 14
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -43,6 +56,19 @@ jobs:
             sleep 1
           done
           npm run test:web
+      - name: Record web verification inputs
+        if: always()
+        env:
+          N2Q_VERIFICATION_STATUS: ${{ job.status }}
+          N2Q_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/verification-record.py --job web --output /tmp/n2q-web-evidence.json
+      - name: Retain web verification record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-web
+          path: /tmp/n2q-web-evidence.json
+          retention-days: 14
   fuzz:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -60,3 +86,50 @@ jobs:
           path: fuzz/artifacts/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Record fuzz verification inputs
+        if: always()
+        env:
+          N2Q_VERIFICATION_STATUS: ${{ job.status }}
+          N2Q_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/verification-record.py --job fuzz --output /tmp/n2q-fuzz-evidence.json
+      - name: Retain fuzz verification record
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-fuzz
+          path: /tmp/n2q-fuzz-evidence.json
+          retention-days: 14
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: rustup toolchain install 1.96.1 --profile minimal && rustup default 1.96.1
+      - run: cargo +1.96.1 install cargo-audit --version 0.22.2 --locked --no-default-features
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.26.8'
+      - run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+      - run: npm ci --ignore-scripts
+      - run: scripts/dependency-audit.sh /tmp/n2q-dependency-audit
+      - name: Record dependency verification inputs
+        if: always()
+        env:
+          N2Q_VERIFICATION_STATUS: ${{ job.status }}
+          N2Q_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/verification-record.py --job dependencies --output /tmp/n2q-dependency-evidence.json
+      - name: Retain dependency reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-dependencies
+          path: |
+            /tmp/n2q-dependency-audit/
+            /tmp/n2q-dependency-evidence.json
+          retention-days: 14

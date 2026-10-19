@@ -22,26 +22,21 @@ static const uint8_t RC[16] = {0x15, 0xe3, 0x2d, 0xa2, 0x5e, 0x5c, 0xab, 0xae,
 static const unsigned ROTS320[5][2] = {{38, 55}, {1, 23}, {23, 36}, {16, 14}, {20, 46}};
 static const unsigned ROTS640[5][2] = {{75, 7}, {89, 21}, {56, 111}, {30, 54}, {25, 52}};
 
-/* ---- S-box ANF (derived once from the table) ---- */
-static uint8_t anf_mono[5][32];
-static int anf_cnt[5];
-
-static void init_anf(void) {
-    for (int bit = 0; bit < 5; bit++) {
-        uint8_t tt[32];
-        for (int x = 0; x < 32; x++)
-            tt[x] = (SBOX[x] >> bit) & 1;
-        for (int step = 1; step < 32; step <<= 1)
-            for (int i = 0; i < 32; i += step << 1)
-                for (int j = i; j < i + step; j++)
-                    tt[j + step] ^= tt[j];
-        int c = 0;
-        for (int m = 0; m < 32; m++)
-            if (tt[m] & 1)
-                anf_mono[bit][c++] = (uint8_t)m;
-        anf_cnt[bit] = c;
-    }
-}
+/* ---- Immutable ANF, mechanically derived from SBOX above ----
+ * No runtime initialization is required. A missed init_anf() previously left
+ * the substitution identically zero for library users. Keep the no-op for
+ * source compatibility; const data also removes initialization/read races.
+ * tests/core_init.c independently re-derives all coefficients and runs KATs.
+ */
+static const uint8_t anf_mono[5][32] = {
+    {0, 1, 6, 7, 9, 12, 13, 19, 20, 21, 22, 24, 30},
+    {0, 1, 2, 10, 11, 12, 14, 15, 16, 17, 18, 21, 25, 30},
+    {1, 2, 3, 4, 5, 11, 17, 20, 22, 24, 27, 28, 29, 30},
+    {0, 1, 5, 6, 7, 8, 9, 15, 16, 20, 21, 23, 26, 28, 29},
+    {0, 1, 2, 3, 5, 6, 8, 12, 13, 14, 15, 16, 17, 18, 20, 21, 23, 24, 25, 28}
+};
+static const int anf_cnt[5] = {13, 14, 14, 15, 20};
+static void init_anf(void) { /* compatibility no-op */ }
 
 /* ---- permutation, one definition per lane width via a macro ---- */
 #define DEFINE_QP(NAME, TYPE, WIDTH)                                                              \

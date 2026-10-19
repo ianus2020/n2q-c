@@ -21,7 +21,13 @@ Go/Swift compilers, garbage collection and WASM/JIT behavior are not certified
 constant-time. A historical C timing result cannot establish this for all ports.
 N2QF v1 is rejected; [v2](docs/n2qf.md) requires authenticated EOF. Files and
 stateful extensions still require application resource limits and independent
-review. No RUP robustness is claimed ([correction](docs/robustness.md)).
+review. The six path-based N2QF ports stream bounded records to private staging
+files and publish after authenticated EOF. Password KDF v2 uses bounded
+Argon2id v19; legacy custom PW keys require explicit migration. CoNe signing
+requires durable reservations plus an external monotonic anchor; no deployment
+backend is supplied. C core ANF constants require no runtime initialization.
+The browser verifies its JS/WASM pair and handles worker failure/deadlines.
+No RUP robustness is claimed ([correction](docs/robustness.md)).
 
 ## What *is* verified
 
@@ -35,6 +41,7 @@ These are facts, reproducible on your own machine from this repository:
 | Lane-wise ANF S-box in the six core ports; no state-indexed S-box lookup | KATs and source; this does not prove runtime constant-time behavior |
 | Every extended mode ships a self-test that passes | `docs/conformance.md` |
 | Cross-language interop for files, modes and federation parcels | the cross-check tests in each port |
+| Implementation regressions, ASan/UBSan, TSan, Go race checks and bounded fuzz smoke | CI and [execution ledger](docs/implementation-progress.ru.md); these are bounded checks, not cryptographic proofs |
 
 ## What is **not** verified
 

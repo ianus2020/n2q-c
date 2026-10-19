@@ -11,7 +11,8 @@
 | 3: CoNe и контракты состояния | 0a5066f, CI 39250946073 | native/web/fuzz PASS; ASan/UBSan и ThreadSanitizer PASS |
 | 4: KDF, ресурсы и ключи | 0f1c442, CI 39252663701 | native/web/fuzz PASS; Argon2id RFC vector и lockfiles PASS |
 | 5: потоковые файловые API | f492029, CI 39253676632 | native/web/fuzz PASS; short IO, staging cleanup, in-place и шесть портов PASS |
-| 6: фронтенд и комплект JS/WASM | текущий коммит | JS/Rust/Python синтаксис и manifest в памяти PASS; Chromium и полный CI ожидаются |
+| 6: фронтенд и комплект JS/WASM | c244dbf + test-header fix cca0d1f, CI 39254989733 | native/web/fuzz PASS; дедлайны, crash и mismatched assets PASS |
+| 7: C init, зависимости и evidence | текущий коммит | C/Python/shell/YAML проверки PASS; полный CI, RustSec/npm/Gitleaks ожидаются |
 
 Часовые автоматические отчёты пока не настроены: планировщик отклонил создание
 из-за политики approval=never. Во время активной работы отчёты идут в этот чат.
@@ -20,3 +21,9 @@
 
 Внешний монотонный якорь CoNe, физические испытания питания/устройств и независимая
 криптографическая экспертиза не считаются выполненными тестами библиотеки.
+
+12:45 UTC / 15:45 Israel: первый ручной часовой отчёт отправлен в чат.
+12:52 UTC: GitHub API показал visibility=public и main protected=false.
+Пользователь разрешил сделать репозиторий приватным. Браузерный доступ к
+настройкам отклонён, административного mutation в коннекторе нет; указана
+ручная процедура. До private=true по API изменение не считается выполненным.
