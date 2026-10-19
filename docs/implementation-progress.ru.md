@@ -12,7 +12,7 @@
 | 4: KDF, ресурсы и ключи | 0f1c442, CI 39252663701 | native/web/fuzz PASS; Argon2id RFC vector и lockfiles PASS |
 | 5: потоковые файловые API | f492029, CI 39253676632 | native/web/fuzz PASS; short IO, staging cleanup, in-place и шесть портов PASS |
 | 6: фронтенд и комплект JS/WASM | c244dbf + test-header fix cca0d1f, CI 39254989733 | native/web/fuzz PASS; дедлайны, crash и mismatched assets PASS |
-| 7: C init, зависимости и evidence | текущий коммит | C/Python/shell/YAML проверки PASS; полный CI, RustSec/npm/Gitleaks ожидаются |
+| 7: C init, зависимости и evidence | 91df2bc + точечные KAT fingerprint exceptions | C/Python/shell/YAML PASS; первый dependency run 39255982924: RustSec/npm 0, четыре KAT находки разобраны. Актуальный полный итог — Checks PR №1 |
 
 Часовые автоматические отчёты пока не настроены: планировщик отклонил создание
 из-за политики approval=never. Во время активной работы отчёты идут в этот чат.
