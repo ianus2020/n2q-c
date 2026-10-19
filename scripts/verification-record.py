@@ -23,7 +23,9 @@ def record(job):
         "impl/c/n2qc.c","scripts/check.sh","scripts/build-web.sh",
         "scripts/serve-web.py","scripts/dependency-audit.sh","scripts/verification-record.py",
         "tools/cryptanalysis/exact.py","tools/cryptanalysis/trails.py",
-        "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py"]
+        "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py",
+        "tools/anchor/server.py","tools/local_stand/tls.py",
+        "impl/c/n2q_cone_anchor_http.c","impl/c/n2q_cone_anchor_http.h"]
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     manifest=ROOT/"impl/n2q-c-wasm/web/pkg/build-manifest.json"
     commands={

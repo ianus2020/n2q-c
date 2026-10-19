@@ -9,6 +9,14 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  anchor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev
+      - name: Real mTLS provider, persistent service and signer failures
+        run: python3 -m unittest discover -s tests -p test_anchor_service.py -v
   cryptanalysis:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

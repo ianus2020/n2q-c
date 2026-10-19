@@ -25,7 +25,9 @@ review. The six path-based N2QF ports stream bounded records to private staging
 files and publish after authenticated EOF. Password KDF v2 uses bounded
 Argon2id v19; legacy custom PW keys require explicit migration. CoNe signing
 requires durable reservations plus an external monotonic anchor; no deployment
-backend is supplied. C core ANF constants require no runtime initialization.
+backend is validated. A persistent [local reference anchor](tools/anchor/README.md)
+and C mTLS callback are provided; separate deployment rollback/storage domains
+remain an operator responsibility. C core ANF constants require no runtime initialization.
 The browser verifies its JS/WASM pair and handles worker failure/deadlines.
 No RUP robustness is claimed ([correction](docs/robustness.md)).
 Convergent master keys are fixed at 16 bytes; C convergent APIs require output
