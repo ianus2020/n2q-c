@@ -1,0 +1,9 @@
+{"kind":"metadata","schema":1,"quick":false,"section":"timing","test_rng":"public SplitMix64 seeds; not for secrets"}
+{"kind":"timing","width":320,"rounds":8,"batch_permutations":8,"positive_control":false,"samples":200000,"class0":100000,"class1":100000,"welch_t":1.2966730830223963,"raw_csv":"timing-320-8-permutation.csv"}
+{"kind":"timing","width":320,"rounds":8,"batch_permutations":8,"positive_control":true,"samples":200000,"class0":100000,"class1":100000,"welch_t":-3449.731167523471,"raw_csv":"timing-320-8-positive-control.csv"}
+{"kind":"timing","width":320,"rounds":16,"batch_permutations":8,"positive_control":false,"samples":200000,"class0":100000,"class1":100000,"welch_t":-0.22591087850842984,"raw_csv":"timing-320-16-permutation.csv"}
+{"kind":"timing","width":320,"rounds":16,"batch_permutations":8,"positive_control":true,"samples":200000,"class0":100000,"class1":100000,"welch_t":-4647.897811299022,"raw_csv":"timing-320-16-positive-control.csv"}
+{"kind":"timing","width":640,"rounds":8,"batch_permutations":8,"positive_control":false,"samples":200000,"class0":100000,"class1":100000,"welch_t":0.15176594274248717,"raw_csv":"timing-640-8-permutation.csv"}
+{"kind":"timing","width":640,"rounds":8,"batch_permutations":8,"positive_control":true,"samples":200000,"class0":100000,"class1":100000,"welch_t":-4049.8661199851076,"raw_csv":"timing-640-8-positive-control.csv"}
+{"kind":"timing","width":640,"rounds":16,"batch_permutations":8,"positive_control":false,"samples":200000,"class0":100000,"class1":100000,"welch_t":1.7656908945997418,"raw_csv":"timing-640-16-permutation.csv"}
+{"kind":"timing","width":640,"rounds":16,"batch_permutations":8,"positive_control":true,"samples":200000,"class0":100000,"class1":100000,"welch_t":-5545.476726857998,"raw_csv":"timing-640-16-positive-control.csv"}

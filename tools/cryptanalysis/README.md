@@ -58,3 +58,13 @@ only finite-sample evidence. A nonzero cube sum lower-bounds the restricted
 degree; a zero sum does not upper-bound global degree. Timing is randomized,
 balanced, black-boxed and batched, with raw samples and a positive control;
 passing does not establish constant time on this or other platforms.
+
+The retained 2026-10-19 record can be independently re-aggregated, including
+recomputing all Welch t values from compressed raw CSVs:
+
+```sh
+python3 tools/cryptanalysis/summarize.py docs/audit/2026-10-19 > /tmp/n2q-summary.json
+cmp docs/audit/2026-10-19/summary.json /tmp/n2q-summary.json
+```
+
+This verifies that record's arithmetic, not current runtime side-channel safety.

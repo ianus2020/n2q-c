@@ -1,0 +1,9 @@
+{"kind": "sat_metadata", "z3": "4.15.4", "scope": "all-start locally DDT-admissible differential trails, 2-4 rounds"}
+{"width": 320, "rounds": 2, "active_box_limit": 3, "status": "unsat", "timeout_ms": 15000, "seconds": 0.8047060420000001, "model_sha256": "47f51208411133e2178d1c32a83a551e4e5a24bd12ba872e523fca9c0d094879", "active_box_lower_bound": 4}
+{"width": 320, "rounds": 3, "active_box_limit": 5, "status": "unsat", "timeout_ms": 15000, "seconds": 5.616061625, "model_sha256": "7fc11c98c4305d39278adb79be70d4b86181fe7b261ee41b841858347ef870dd", "active_box_lower_bound": 6}
+{"width": 320, "rounds": 3, "active_box_limit": 6, "status": "unknown", "timeout_ms": 15000, "seconds": 15.012167917, "model_sha256": "c7cc995915a7144b20f809c1fbaebe4620bb9c4a744c707f183a30beb43b2a27", "reason": "timeout"}
+{"width": 320, "rounds": 4, "active_box_limit": 8, "status": "unknown", "timeout_ms": 15000, "seconds": 15.016815874999999, "model_sha256": "043769d0745e421fe4fa96b66e2bf3a956e003e408d179d365037765c653fb5a", "reason": "timeout"}
+{"width": 640, "rounds": 2, "active_box_limit": 3, "status": "unsat", "timeout_ms": 15000, "seconds": 13.525615916999996, "model_sha256": "ddd3272fd78b0b81bb41bb7f8a1f3e8c9dc2bc2f23134a326d6a731f63259d2f", "active_box_lower_bound": 4}
+{"width": 640, "rounds": 3, "active_box_limit": 5, "status": "unknown", "timeout_ms": 15000, "seconds": 15.010815332999996, "model_sha256": "8061f83c9e85c086885efe127152de4d115708ade9a62713551927d5b12c4ad1", "reason": "timeout"}
+{"width": 640, "rounds": 3, "active_box_limit": 6, "status": "unknown", "timeout_ms": 15000, "seconds": 15.015046499999997, "model_sha256": "4903174327f60668e3ca40daf2a32b31357984fca232cdfb926e37fb6d052e20", "reason": "timeout"}
+{"width": 640, "rounds": 4, "active_box_limit": 8, "status": "unknown", "timeout_ms": 15000, "seconds": 15.025683874999999, "model_sha256": "4c5b38e9fb84f5d50ea9b716ee39cb031dc3a83064678dc0456e3e78ba4d970f", "reason": "timeout"}

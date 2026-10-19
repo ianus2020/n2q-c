@@ -4,7 +4,7 @@
 single original SPN permutation.**
 
 Status: **DRAFT — design frozen; constants selected (M2); references built &
-cross-checked (M3); round counts confirmed by self-cryptanalysis (M4).**
+cross-checked (M3); round counts provisional, with empirical analysis (M4).**
 This document is the design half of the audit package. It fixes the
 *construction* and *selection criteria* (§3–§7); the concrete S-box, rotation
 constants, round constants, and round counts are recorded in
@@ -22,11 +22,11 @@ but by sustained public cryptanalysis. Until N2Q has survived that:
 - **Do not protect real, high-value data with it.** Treat it as a research
   artifact. For production today, use a vetted library (libsodium, Ascon, AES-GCM).
 - Every "security level" in this document is a **claim / design target**, not a
-  proven theorem, except where a construction-level reduction is cited (§5.4).
+  proven theorem. Section 5.4 describes proof obligations, not a completed reduction.
 
 What *is* achievable, and what this document delivers, is a **disciplined,
 auditable target**: one small permutation to attack, a construction whose
-security provably reduces to that permutation, explicit nothing-up-my-sleeve
+security requires permutation and composition analysis, explicit nothing-up-my-sleeve
 constants, and a written cryptanalysis plan. That is the difference between the
 N2Q 2.5 toy and something an external cryptographer can actually review.
 
@@ -58,7 +58,7 @@ each on a construction with a security reduction.
 - `b = 320` (state), a design parameter fixed for all of N2Q.
 - All named constants (S-box, rotations, round constants) are generated from a
   single public seed by the procedures in §7 — a **nothing-up-my-sleeve**
-  guarantee that no value hides a backdoor.
+selection procedure. Reproducibility alone cannot guarantee absence of a backdoor.
 
 ---
 
@@ -205,10 +205,10 @@ nonce-respecting use only.
 Every mode takes a **profile** that sets the sponge round count `r`, uniform
 across the mode:
 
-| Profile | `r` | Margin (M4 saturation ~3–5 rnd) | Throughput |
+| Profile | `r` | Established cryptographic margin | Throughput |
 |---|---|---|---|
-| **Secure** (default) | 16 | ~2.4–4× | 1× |
-| **Fast** | 8 | ~1.6–2.7× | ~2× (measured) |
+| **Secure** (default) | 16 | Not established | 1× |
+| **Fast** | 8 | Not established | ~2× (measured) |
 
 The profile is chosen at encryption time and **recorded in the frame suite byte**
 (§9, bit `0x20`), so decryption reads it back automatically — a single library
@@ -216,14 +216,15 @@ decodes both, and the two are fully interoperable. Fast is a deliberate,
 labelled margin-for-speed trade, not a separate cipher. Cross-checked C↔Rust for
 both profiles ([Appendix A.6](APPENDIX-A.md)).
 
-### 5.4 Why this is auditable — the reduction
-The duplex/sponge security theorems (Bertoni–Daemen–Peeters–Van Assche; Ascon's
-proofs), and the SIV composition theorem (Rogaway–Shrimpton) for §5.1, state:
-**if QP-w is indistinguishable from a random permutation**, both modes provide
-confidentiality and integrity up to ≈ `2^{c/2}` offline and `2^k` online
-queries, with per-key data ≤ `2^{c/2}` blocks. Therefore the whole library's
-security **reduces to a single question**: how close is QP-w to a random
-permutation? That is the one, bounded object the audit attacks — §7–§8.
+### 5.4 Proof obligations for this construction
+General sponge, duplex and SIV results motivate the design, but do not by
+themselves prove this implementation's security. N2Q's initialization,
+padding, domains, same-key MAC/encryption composition, nonce handling, output
+lengths and extensions must each satisfy the hypotheses of an applicable
+reduction. No complete reduction or concrete query/data bound for these exact
+modes is supplied. Permutation cryptanalysis and mode-composition review are
+both required. A low-round trail experiment or passing statistical test does
+not establish either suite's claimed security level.
 
 ---
 
@@ -237,27 +238,30 @@ Rate 64, capacity 256, output 256 bits. Absorb the (10*-padded) message into
 ### 6.2 N2Q-XOF
 As N2Q-Hash but squeeze an arbitrary-length stream — used internally by §6.3.
 
-### 6.3 N2Q-KDF
-HKDF-style over N2Q-Hash: `extract(salt, ikm) = Hash(salt ‖ ikm)`;
-`expand(prk, info, L) = XOF(prk ‖ info ‖ L)`. Domain-separated context strings
-give independent sub-keys (as in N2Q 3.0).
+### 6.3 Generic sub-key KDF — not provided
+The earlier variable-length `Hash(salt || ikm)` sketch was ambiguous and was
+not HKDF. It is withdrawn; no public generic N2Q-KDF/extract/expand API is
+implemented or certified by this specification. Do not implement that sketch
+or assume general key separation from it. Password derivation is the distinct
+Argon2id API in §6.5. Internal extension-specific derivations require their own
+encoding/domain and key-lifecycle review.
 
 ### 6.4 N2Q-BlindIndex
 Keyed deterministic index for search over encrypted columns (the matured
-`n2q_search`): `BI(K_bi, v) = truncate_128( N2Q-KDF-derived-keyed-Hash(v) )`.
+`n2q_search`): the implementation uses the keyed sponge MAC with domain BI=4
+and a caller-provided dedicated key; the N2Q-128 result is 16 bytes.
 Deterministic ⇒ `WHERE bi = ?`; keyed ⇒ a stolen DB can't compute indexes.
 Documented trade-off (unchanged from 3.0): reveals equality/frequency.
 
-### 6.5 N2Q-PW — password hashing (memory-hard)
-A sponge permutation is **not** memory-hard, so password→key derivation cannot be
-the bare hash. Rather than invent a memory-hard primitive (riskier than the
-cipher), **N2Q-PW instantiates Balloon hashing** (Boneh–Corrigan-Gibbs–Schechter
-2016 — a construction with a *proven* memory-hardness bound for any hash) with
-N2Q-Hash-256, using the **data-independent** addressing variant (no
-password-dependent memory access ⇒ no cache-timing channel). Cost parameters:
-`s_cost` (memory, in 32-byte blocks) and `t_cost` (passes); tune per deployment.
-Memory-hardness comes from Balloon's analysis, the hash from N2Q — the trust
-still reduces to QP. Implemented in M5 ([`impl/.../pw.rs`](impl/n2q-c-ref/src/pw.rs)).
+### 6.5 Password derivation — Argon2id v19
+The Rust password API uses Argon2id v19 and returns a 32-byte secret key.
+It replaced the historical custom PW/Balloon construction in stage 4; there
+is no automatic legacy fallback. Defaults: 64 MiB, 3 passes, 1 lane, with
+validated password/salt/cost limits before allocation. See
+[`pw.rs`](impl/n2q-c-ref/src/pw.rs) and
+[stage 4](docs/stage-4-keys-kdf.ru.md) for the exact API and migration limits.
+This derivation is not built from QP, and its use does not establish the
+security of the cipher that consumes its output.
 
 ---
 
@@ -395,11 +399,11 @@ Appendix-A test vectors and are cross-validated in CI.
   measured diffusion/avalanche, algebraic degree (zero-sum), differential
   collapse, rotational symmetry, and constant-time (dudect, |t|=0.48) on the real
   permutation; results and margins in [docs/cryptanalysis.md](docs/cryptanalysis.md).
-  Round counts confirmed final (§3.4). A solver-free differential trail search is
+  Round counts remain provisional (§3.4). A solver-free differential trail search is
   built (best single-column trails: 2R→4, 3R→7 active S-boxes). **Open (external
   review, M6):** the *certified* differential/linear lower bound needs an all-
   starts MILP/SAT search (a solver); plus rebound/hash analysis and QP-640 runs.
-- **M5 — Hardening & docs. ✅ done.** N2Q-PW (Balloon over N2Q-Hash, §6.5) and the
+- **M5 — Hardening & docs.** Argon2id password derivation (§6.5) and the
   wire frame (§9) implemented and tested; misuse-resistant SIV is already the
   primary mode (§5.1); threat model written
   ([docs/threat-model.md](docs/threat-model.md)).

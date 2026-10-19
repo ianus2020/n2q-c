@@ -32,8 +32,8 @@ General sponge or SIV results do not certify this implementation or its extensio
   Swift**, plus a **WebAssembly** build. Constant-time by design; cross-checked
   byte-for-byte against shared KAT vectors.
 - **[docs/cryptanalysis.md](docs/cryptanalysis.md)** — the cryptanalysis dossier
-  with measured results (avalanche, degree, differential, timing) and
-  round-margin bounds.
+  with measured results (avalanche, cubes, differential, timing) and their
+  limitations. Round margins and claimed security levels remain unproven.
 - **[docs/threat-model.md](docs/threat-model.md)** — assets, adversary model,
   security goals, out-of-scope items, and usage requirements.
 - **[docs/comparison.md](docs/comparison.md)** — security (by design) and speed

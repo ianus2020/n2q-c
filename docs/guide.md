@@ -261,6 +261,10 @@ one compromised `dek` opens the whole estate.
 
 ### 3.9. Deduplicating encrypted storage (convergent)
 
+`master_key` must be exactly **16 bytes**; other lengths are rejected. Rust
+requires `&[u8;16]`; the C API also requires output capacities. Historical data
+using other key lengths needs an explicit migration decision.
+
 **When:** backups or cloud storage where identical files must not be stored twice.
 
 ```python

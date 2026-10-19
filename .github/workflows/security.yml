@@ -20,6 +20,10 @@ jobs:
           mkdir -p /tmp/n2q-cryptanalysis
           python3 tools/cryptanalysis/exact.py > /tmp/n2q-cryptanalysis/exact.json
           cargo run --release --locked --manifest-path tools/cryptanalysis/Cargo.toml --bin audit -- full > /tmp/n2q-cryptanalysis/experiments.jsonl
+      - name: Verify archived audit arithmetic
+        run: |
+          python3 tools/cryptanalysis/summarize.py docs/audit/2026-10-19 > /tmp/n2q-archived-summary.json
+          cmp docs/audit/2026-10-19/summary.json /tmp/n2q-archived-summary.json
       - name: Record cryptanalysis inputs
         if: always()
         env:

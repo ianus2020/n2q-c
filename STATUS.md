@@ -28,6 +28,9 @@ requires durable reservations plus an external monotonic anchor; no deployment
 backend is supplied. C core ANF constants require no runtime initialization.
 The browser verifies its JS/WASM pair and handles worker failure/deadlines.
 No RUP robustness is claimed ([correction](docs/robustness.md)).
+Convergent master keys are fixed at 16 bytes; C convergent APIs require output
+capacities. The [closed additional AI-assisted audit](docs/cryptographic-audit-2026-10-19.ru.md)
+records experiments and fixes; it is not an independent external review.
 
 ## What *is* verified
 
@@ -48,8 +51,8 @@ These are facts, reproducible on your own machine from this repository:
 | Not verified | Consequence |
 |---|---|
 | **No external audit or public cryptanalysis** | Unknown weaknesses may exist. This is the big one. |
-| No certified differential/linear bound | Only an upper bound from a solver-free search; a proof needs a full MILP/SAT model (`docs/cryptanalysis.md`) |
-| No side-channel validation on hardware | Constant-time *by construction*, but not measured on smartcards/embedded targets |
+| No full-round differential/linear bound | Exact local results and bounded 2/3-round SAT do not establish full-round attack costs or mode security (`docs/cryptanalysis.md`) |
+| No broad side-channel validation | Recorded Rust-host timing experiment only; no smartcard/embedded/power/EM/fault certification |
 | Federation (`FireLine`) and certificates (`CoNe`) are new | Newer than the core, with correspondingly less scrutiny |
 | `CoNe` is **stateful** and simplified vs RFC 8391 / FIPS 205 | Reusing a one-time index enables forgery; multi-target resistance is weaker than the standards (`docs/cone.md`) |
 | Reference implementations are not performance-hardened | See `docs/performance.md` for measured numbers and the optimisation roadmap |

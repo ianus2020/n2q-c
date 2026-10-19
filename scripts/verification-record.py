@@ -23,7 +23,7 @@ def record(job):
         "impl/c/n2qc.c","scripts/check.sh","scripts/build-web.sh",
         "scripts/serve-web.py","scripts/dependency-audit.sh","scripts/verification-record.py",
         "tools/cryptanalysis/exact.py","tools/cryptanalysis/trails.py",
-        "tools/cryptanalysis/src/bin/audit.rs"]
+        "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py"]
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     manifest=ROOT/"impl/n2q-c-wasm/web/pkg/build-manifest.json"
     commands={
