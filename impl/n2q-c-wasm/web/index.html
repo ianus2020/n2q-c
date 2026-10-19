@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer"><title>N2Q — исследовательский стенд</title><link rel="stylesheet" href="./app.css"><script type="module" src="./app.js"></script></head>
 <body><main class="wrap"><header><h1>N2Q</h1><p id="engine" role="status" aria-live="polite">Загрузка WASM…</p><button id="btn-clear">Очистить всё</button></header>
 <p class="warning">Экспериментальный шифр без независимой криптографической экспертизы. Не используйте для реальных секретов. Обработка выполняется локально в браузере; ключ нужно сохранить самостоятельно. Перезагрузка удаляет его из формы.</p>

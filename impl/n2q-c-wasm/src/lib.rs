@@ -56,6 +56,19 @@ fn nonce16(h: &str) -> Result<[u8; 16], JsError> {
         .try_into()
         .map_err(|_| JsError::new("nonce must be 16 bytes (32 hex)"))
 }
+const MAX_TEXT_BYTES: usize = 1 << 20;
+const MAX_AAD_BYTES: usize = 1 << 18;
+const MAX_TOKEN_BYTES: usize = 1 << 21;
+fn bounded_input(s: &str, max: usize) -> Result<&str, &'static str> {
+    if s.len() > max {
+        Err("input exceeds byte limit")
+    } else {
+        Ok(s)
+    }
+}
+fn checked(s: &str, max: usize) -> Result<&str, JsError> {
+    bounded_input(s, max).map_err(JsError::new)
+}
 fn profile(fast: bool) -> Profile {
     if fast { Profile::Fast } else { Profile::Secure }
 }
@@ -76,12 +89,18 @@ pub fn gen_nonce() -> Result<String, JsError> {
 }
 
 #[wasm_bindgen]
-pub fn hash128(fast: bool, msg: &str) -> String {
-    hex(&n128::hash(profile(fast), msg.as_bytes()))
+pub fn hash128(fast: bool, msg: &str) -> Result<String, JsError> {
+    Ok(hex(&n128::hash(
+        profile(fast),
+        checked(msg, MAX_TEXT_BYTES)?.as_bytes(),
+    )))
 }
 #[wasm_bindgen]
-pub fn hash256(fast: bool, msg: &str) -> String {
-    hex(&n256::hash(profile(fast), msg.as_bytes()))
+pub fn hash256(fast: bool, msg: &str) -> Result<String, JsError> {
+    Ok(hex(&n256::hash(
+        profile(fast),
+        checked(msg, MAX_TEXT_BYTES)?.as_bytes(),
+    )))
 }
 
 /// Encrypt (SIV) → self-describing `nqc.` token that records the profile.
@@ -91,8 +110,8 @@ pub fn seal128(fast: bool, key: &str, nonce: &str, ad: &str, pt: &str) -> Result
         profile(fast),
         key16(key)?.expose(),
         &nonce16(nonce)?,
-        ad.as_bytes(),
-        pt.as_bytes(),
+        checked(ad, MAX_AAD_BYTES)?.as_bytes(),
+        checked(pt, MAX_TEXT_BYTES)?.as_bytes(),
     ))
 }
 #[wasm_bindgen]
@@ -101,22 +120,30 @@ pub fn seal256(fast: bool, key: &str, nonce: &str, ad: &str, pt: &str) -> Result
         profile(fast),
         key32(key)?.expose(),
         &nonce16(nonce)?,
-        ad.as_bytes(),
-        pt.as_bytes(),
+        checked(ad, MAX_AAD_BYTES)?.as_bytes(),
+        checked(pt, MAX_TEXT_BYTES)?.as_bytes(),
     ))
 }
 
 /// Decrypt a token — profile (and nonce) are read from the token itself.
 #[wasm_bindgen]
 pub fn open128(key: &str, ad: &str, token: &str) -> Result<String, JsError> {
-    let pt = capsule::open128(key16(key)?.expose(), ad.as_bytes(), token)
-        .ok_or_else(|| JsError::new("authentication failed (wrong key/AAD or tampered)"))?;
+    let pt = capsule::open128(
+        key16(key)?.expose(),
+        checked(ad, MAX_AAD_BYTES)?.as_bytes(),
+        checked(token, MAX_TOKEN_BYTES)?,
+    )
+    .ok_or_else(|| JsError::new("authentication failed (wrong key/AAD or tampered)"))?;
     String::from_utf8(pt).map_err(|_| JsError::new("plaintext is not valid UTF-8"))
 }
 #[wasm_bindgen]
 pub fn open256(key: &str, ad: &str, token: &str) -> Result<String, JsError> {
-    let pt = capsule::open256(key32(key)?.expose(), ad.as_bytes(), token)
-        .ok_or_else(|| JsError::new("authentication failed (wrong key/AAD or tampered)"))?;
+    let pt = capsule::open256(
+        key32(key)?.expose(),
+        checked(ad, MAX_AAD_BYTES)?.as_bytes(),
+        checked(token, MAX_TOKEN_BYTES)?,
+    )
+    .ok_or_else(|| JsError::new("authentication failed (wrong key/AAD or tampered)"))?;
     String::from_utf8(pt).map_err(|_| JsError::new("plaintext is not valid UTF-8"))
 }
 
@@ -125,7 +152,7 @@ pub fn blind_index128(fast: bool, key: &str, value: &str) -> Result<String, JsEr
     Ok(hex(&n128::blind_index(
         profile(fast),
         key16(key)?.expose(),
-        value.as_bytes(),
+        checked(value, MAX_TEXT_BYTES)?.as_bytes(),
     )))
 }
 #[wasm_bindgen]
@@ -133,12 +160,24 @@ pub fn blind_index256(fast: bool, key: &str, value: &str) -> Result<String, JsEr
     Ok(hex(&n256::blind_index(
         profile(fast),
         key32(key)?.expose(),
-        value.as_bytes(),
+        checked(value, MAX_TEXT_BYTES)?.as_bytes(),
     )))
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn direct_bindings_bound_utf8_bytes() {
+        assert!(super::bounded_input(&"a".repeat(1024), 1024).is_ok());
+        assert!(super::bounded_input(&"🌍".repeat(257), 1024).is_err());
+        assert!(
+            super::bounded_input(
+                &"a".repeat(super::MAX_TOKEN_BYTES + 1),
+                super::MAX_TOKEN_BYTES
+            )
+            .is_err()
+        );
+    }
     #[test]
     fn hex_is_bounded_and_unicode_safe() {
         assert!(super::parse_hex("aжb").is_err());

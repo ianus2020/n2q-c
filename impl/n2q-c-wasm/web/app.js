@@ -1,6 +1,16 @@
 const $ = id => document.getElementById(id);
 let worker, epoch = 0, nextId = 0, available = false, busy = false, lastToken = '', lastAAD = '';
 const pending = new Map();
+let startupTimer;
+const START_TIMEOUT_MS=15000, CALL_TIMEOUT_MS=30000;
+function rejectPending(message) {
+  pending.forEach(p=>{clearTimeout(p.timer);p.reject(new Error(message));});pending.clear();
+}
+function failWorker(message) {
+  clearTimeout(startupTimer);available=false;busy=false;
+  if(worker){worker.onmessage=null;worker.onerror=null;worker.onmessageerror=null;worker.terminate();}
+  rejectPending(message);$('engine').textContent=message+' Нажмите «Очистить всё» для перезапуска.';controls();
+}
 function controls() {
   document.querySelectorAll('[data-crypto]').forEach(b => { b.disabled = !available || busy; });
   $('btn-copy').disabled = busy || !lastToken;
@@ -9,26 +19,31 @@ function controls() {
 function start() {
   const generation = ++epoch;
   available = false; controls();
-  worker = new Worker('./crypto-worker.js', {type: 'module'});
+  try {worker = new Worker('./crypto-worker.js', {type: 'module'});}
+  catch {failWorker('Worker недоступен.');return;}
+  startupTimer=setTimeout(()=>{if(generation===epoch)failWorker('Превышено время загрузки WASM.');},START_TIMEOUT_MS);
   worker.onmessage = ({data}) => {
     if (generation !== epoch) return;
-    if ('ready' in data) { available = data.ready; $('engine').textContent = available ? 'WASM готов' : 'Не удалось загрузить WASM'; controls(); return; }
+    if(!data || typeof data!=='object'){failWorker('Некорректный ответ worker.');return;}
+    if ('ready' in data) { clearTimeout(startupTimer);if(data.ready!==true){failWorker('Не удалось проверить и загрузить JS/WASM.');return;}available=true;$('engine').textContent='WASM готов';controls();return; }
     const request = pending.get(data.id);
     if (!request) return;
-    pending.delete(data.id);
+    clearTimeout(request.timer);pending.delete(data.id);
     if (data.ok) request.resolve(data.result); else request.reject(new Error(data.error));
   };
-  worker.onerror = () => {
-    if (generation !== epoch) return;
-    available = false; $('engine').textContent = 'Ошибка WASM. Нажмите «Очистить всё» для перезапуска.';
-    pending.forEach(p => p.reject(new Error('Worker недоступен'))); pending.clear(); controls();
-  };
+  worker.onerror = () => {if(generation===epoch)failWorker('Ошибка WASM.');};
+  worker.onmessageerror = () => {if(generation===epoch)failWorker('Не удалось прочитать ответ worker.');};
 }
 function call(op, args) {
   if (!available) return Promise.reject(new Error('WASM недоступен'));
-  return new Promise((resolve, reject) => { const id = ++nextId; pending.set(id, {resolve, reject}); worker.postMessage({id, op, args}); });
+  return new Promise((resolve,reject)=>{
+    const id=++nextId;
+    const timer=setTimeout(()=>failWorker('Превышено время операции.'),CALL_TIMEOUT_MS);
+    pending.set(id,{resolve,reject,timer});
+    try {worker.postMessage({id,op,args});}catch {failWorker('Не удалось отправить запрос worker.');}
+  });
 }
-function invalidate() { lastToken = ''; lastAAD = ''; $('btn-copy').disabled = true; $('out-ct').textContent = ''; }
+function invalidate() { $('nonce').value='';lastToken = ''; lastAAD = ''; $('btn-copy').disabled = true; $('out-ct').textContent = ''; }
 function bind(id, output, op, args, success) {
   $(id).onclick = async () => {
     const generation = epoch;
@@ -55,10 +70,12 @@ $('btn-copy').onclick = () => { if (!lastToken) return; $('ct').value = lastToke
 ['suite', 'profile', 'key', 'aad', 'pt'].forEach(id => $(id).addEventListener('input', invalidate));
 $('btn-show').onclick = () => { const show = $('key').type === 'password'; $('key').type = show ? 'text' : 'password'; $('btn-show').textContent = show ? 'Скрыть ключ' : 'Показать ключ'; $('btn-show').setAttribute('aria-pressed', String(show)); };
 $('btn-clear').onclick = () => {
-  ++epoch; worker.terminate(); pending.forEach(p => p.reject(new Error('Очищено'))); pending.clear(); busy = false;
+  ++epoch;clearTimeout(startupTimer);if(worker)worker.terminate();rejectPending('Очищено');busy=false;
   ['key', 'nonce', 'aad', 'pt', 'aad2', 'ct', 'hval'].forEach(id => { $(id).value = ''; });
   ['out-ct', 'out-pt', 'out-h', 'out-test'].forEach(id => { $(id).textContent = ''; });
   $('key').type = 'password'; $('btn-show').textContent = 'Показать ключ'; $('btn-show').setAttribute('aria-pressed', 'false');
   invalidate(); $('engine').textContent = 'Перезапуск WASM…'; start();
 };
+['key','suite','aad2','ct'].forEach(id=>$(id).addEventListener('input',()=>{$('out-pt').textContent='';}));
+['hval','key','suite','profile'].forEach(id=>$(id).addEventListener('input',()=>{$('out-h').textContent='';}));
 start();

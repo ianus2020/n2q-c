@@ -7,7 +7,14 @@ const assert = require('node:assert/strict');
   page.on('pageerror', e => errors.push(e.message));
   page.on('request', r => requests.push(r.url()));
   try {
-    await page.goto(process.env.N2Q_WEB_URL || 'http://127.0.0.1:8765');
+    const base=process.env.N2Q_WEB_URL || 'http://127.0.0.1:8765';
+    const response=await page.goto(base);
+    const headers=response.headers();
+    assert(headers['content-security-policy'].includes("frame-ancestors 'none'"));
+    assert.equal(headers['x-content-type-options'],'nosniff');
+    assert.equal(headers['referrer-policy'],'no-referrer');
+    assert.equal(headers['cross-origin-opener-policy'],'same-origin');
+    assert.equal(headers['cross-origin-embedder-policy'],'require-corp');
     await page.waitForFunction(() => document.querySelector('#engine').textContent === 'WASM готов');
     for (const suite of ['128','256']) {
       await page.selectOption('#suite',suite);
@@ -44,7 +51,52 @@ const assert = require('node:assert/strict');
     for (const id of ['out-ct','out-pt','out-h','out-test']) assert.equal(await page.textContent('#'+id),'');
     assert.equal(await page.evaluate(() => localStorage.length+sessionStorage.length),0);
     assert.deepEqual(errors,[]);
-    assert(requests.every(u => u.startsWith('http://127.0.0.1:8765/')), 'unexpected network request');
+    const origin=new URL(base).origin;
+    assert(requests.every(u => u.startsWith(origin+'/') || u.startsWith('blob:'+origin+'/')), 'unexpected network request');
+    // UTF-8 byte limits apply even when browser maxlength counts characters.
+    await page.fill('#hval','🌍'.repeat(262145));await page.click('#btn-hash');
+    await page.waitForFunction(()=>document.querySelector('#out-h').textContent.startsWith('Ошибка:'));
+    assert.equal(await page.isDisabled('#btn-hash'),false);
+    // A mismatched public JS/WASM pair must never enable crypto controls.
+    for(const asset of ['n2q_c_wasm.js','n2q_c_wasm_bg.wasm']) {
+      const bad=await browser.newPage();
+      await bad.route('**/pkg/'+asset,async route=>{
+        const response=await route.fetch(),body=Buffer.from(await response.body());
+        body[body.length-1]^=1;await route.fulfill({response,body});
+      });
+      await bad.goto(base);
+      await bad.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Не удалось проверить'));
+      assert.equal(await bad.isDisabled('#btn-key'),true);await bad.close();
+    }
+    // Real worker failure while a request is pending must reject it and unlock
+    // Clear. No response is allowed to revive the crashed worker.
+    const crash=await browser.newPage();
+    await crash.route('**/crypto-worker.js',route=>route.fulfill({
+      contentType:'text/javascript',
+      body:"self.postMessage({ready:true});self.onmessage=()=>{throw new Error('injected worker failure')}"
+    }));
+    await crash.goto(base);await crash.waitForFunction(()=>document.querySelector('#engine').textContent==='WASM готов');
+    await crash.fill('#hval','data');await crash.click('#btn-hash');
+    await crash.waitForFunction(()=>document.querySelector('#out-h').textContent.startsWith('Ошибка:'));
+    assert.equal(await crash.isDisabled('#btn-hash'),true);
+    assert.equal(await crash.isDisabled('#btn-clear'),false);await crash.close();
+    // Virtual clock exercises deadlines without sleeping for 30 seconds.
+    const hung=await browser.newPage();await hung.clock.install();
+    await hung.route('**/crypto-worker.js',route=>route.fulfill({contentType:'text/javascript',body:'self.postMessage({ready:true})'}));
+    await hung.goto(base);await hung.waitForFunction(()=>document.querySelector('#engine').textContent==='WASM готов');
+    await hung.fill('#hval','data');await hung.click('#btn-hash');await hung.clock.fastForward(31000);
+    await hung.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Превышено время операции'));
+    assert.equal(await hung.isDisabled('#btn-key'),true);await hung.close();
+    const startup=await browser.newPage();await startup.clock.install();
+    await startup.route('**/crypto-worker.js',route=>route.fulfill({contentType:'text/javascript',body:'// intentionally never ready'}));
+    await startup.goto(base);await startup.clock.fastForward(16000);
+    await startup.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Превышено время загрузки'));
+    await startup.close();
+    const blocked=await browser.newPage();
+    await blocked.addInitScript(()=>{window.Worker=class{constructor(){throw new Error('blocked')}}});
+    await blocked.goto(base);
+    await blocked.waitForFunction(()=>document.querySelector('#engine').textContent.includes('Worker недоступен'));
+    assert.equal(await blocked.isDisabled('#btn-key'),true);await blocked.close();
     console.log('Browser security scenarios PASS');
   } finally { await browser.close(); }
 })().catch(e => {console.error(e);process.exit(1);});

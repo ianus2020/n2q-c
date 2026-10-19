@@ -35,7 +35,7 @@ jobs:
       - run: npm ci && npx playwright install --with-deps chromium
       - name: Browser regressions
         run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 --directory impl/n2q-c-wasm/web > /tmp/n2q-http.log 2>&1 &
+          python3 scripts/serve-web.py --port 8765 > /tmp/n2q-http.log 2>&1 &
           server=$!
           trap 'kill "$server"' EXIT
           for attempt in $(seq 1 30); do

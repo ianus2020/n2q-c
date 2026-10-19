@@ -10,7 +10,8 @@
 | 2: C/Rust фаззинг | 5f00bf1 + исправление каталога 77a405f, CI 39249622756 | native/web/fuzz PASS; 5 x 2000 запусков без сбоев |
 | 3: CoNe и контракты состояния | 0a5066f, CI 39250946073 | native/web/fuzz PASS; ASan/UBSan и ThreadSanitizer PASS |
 | 4: KDF, ресурсы и ключи | 0f1c442, CI 39252663701 | native/web/fuzz PASS; Argon2id RFC vector и lockfiles PASS |
-| 5: потоковые файловые API | текущий коммит | Rust/Swift/Python/shell синтаксис PASS; выполнение и матрица шести портов ожидаются |
+| 5: потоковые файловые API | f492029, CI 39253676632 | native/web/fuzz PASS; short IO, staging cleanup, in-place и шесть портов PASS |
+| 6: фронтенд и комплект JS/WASM | текущий коммит | JS/Rust/Python синтаксис и manifest в памяти PASS; Chromium и полный CI ожидаются |
 
 Часовые автоматические отчёты пока не настроены: планировщик отклонил создание
 из-за политики approval=never. Во время активной работы отчёты идут в этот чат.
