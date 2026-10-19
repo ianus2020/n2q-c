@@ -26,6 +26,7 @@ def record(job):
         "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py",
         "tools/anchor/server.py","tools/local_stand/tls.py",
         "tools/local_stand/web.py","tools/local_stand/run.py",
+        "tools/migration/n2q_migrate.py","impl/n2q-c-ref/examples/migration_keys.rs",
         "impl/c/n2q_cone_anchor_http.c","impl/c/n2q_cone_anchor_http.h"]
     hashes={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths}
     manifest=ROOT/"impl/n2q-c-wasm/web/pkg/build-manifest.json"

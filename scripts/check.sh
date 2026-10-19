@@ -4,6 +4,9 @@ set -eu
 cd "$(dirname "$0")/.."
 build=$(mktemp -d)
 trap 'rm -rf "$build"' EXIT HUP INT TERM
+cargo test --locked --manifest-path impl/n2q-c-ref/Cargo.toml --example migration_keys
+cargo build --release --locked --manifest-path impl/n2q-c-ref/Cargo.toml --example migration_keys
+export N2Q_MIGRATION_KEYS_BINARY="$PWD/impl/n2q-c-ref/target/release/examples/migration_keys"
 python3 -m unittest discover -s tests -v
 python3 impl/python/test_kat.py
 python3 impl/python/n2qc_modes.py

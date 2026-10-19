@@ -65,6 +65,11 @@ trusted hash/signature against the original, then encrypt the verified plaintext
 with the v2 writer. Without such independent evidence, integrity of a v1 file
 cannot be recovered. Do not label a successful v1 decryption as verified.
 
+The [explicit offline migration tools](../tools/migration/README.md) implement
+bounded recovery/rekey with independent trusted whole-file/plaintext evidence,
+read-back verification and private no-replace publication. They do not add a
+fallback to normal readers. Synthetic tests are not a real-data migration.
+
 ## Command-line helpers
 
 C and Go accept binary key files of exactly 16 or 32 bytes. Rust's `file` example,
