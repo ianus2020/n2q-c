@@ -15,10 +15,11 @@
 ## Политика main
 
 [main-protection-policy.json](main-protection-policy.json) — snapshot применённого
-запроса. Это не декларация, автоматически изменяющая сервер при checkout.
+запроса; он дополнен в [этапе 19](stage-19-required-checks.ru.md) тремя новыми
+проверками. Это не декларация, автоматически изменяющая сервер при checkout.
 
 - Слияние через PR, с разрешением обсуждений и актуальностью относительно main.
-- Обязательны native, web, fuzz, dependencies от приложения GitHub Actions
+- На этапе 8 обязательны native, web, fuzz, dependencies от приложения GitHub Actions
   (app_id=15368); произвольный отправитель статуса не заменяет это приложение.
 - Enforce admins включён; force-push и удаление ветки запрещены.
 - Число обязательных approving reviews — 0. Независимый криптографический

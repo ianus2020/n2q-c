@@ -17,6 +17,18 @@
       {
         "context": "dependencies",
         "app_id": 15368
+      },
+      {
+        "context": "cryptanalysis",
+        "app_id": 15368
+      },
+      {
+        "context": "anchor",
+        "app_id": 15368
+      },
+      {
+        "context": "migration",
+        "app_id": 15368
       }
     ]
   },

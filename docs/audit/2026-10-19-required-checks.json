@@ -1,0 +1,46 @@
+{
+  "source_commit": "c5564365002b9675c17e6f8c61ac219d35f7bc48",
+  "strict": true,
+  "required_checks": [
+    {
+      "context": "native",
+      "app_id": 15368
+    },
+    {
+      "context": "web",
+      "app_id": 15368
+    },
+    {
+      "context": "fuzz",
+      "app_id": 15368
+    },
+    {
+      "context": "dependencies",
+      "app_id": 15368
+    },
+    {
+      "context": "cryptanalysis",
+      "app_id": 15368
+    },
+    {
+      "context": "anchor",
+      "app_id": 15368
+    },
+    {
+      "context": "migration",
+      "app_id": 15368
+    }
+  ],
+  "other_protection_fields_equal": true,
+  "new_checks_observed_success": [
+    "cryptanalysis",
+    "anchor",
+    "migration"
+  ],
+  "live_stand": {
+    "https": 200,
+    "mtls_health": 204,
+    "browser": "PASS",
+    "counter_rows_and_journal_preserved": true
+  }
+}
