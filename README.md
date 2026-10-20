@@ -61,5 +61,7 @@ The [closed additional audit](docs/cryptographic-audit-2026-10-19.ru.md),
 [local HTTPS/CoNe stand](tools/local_stand/README.md) and
 [offline migration tools](tools/migration/README.md) have reproducible records
 in [the local verification report](docs/stage-15-local-verification.ru.md).
-The repository remains private. M6 review can be confidential; publication or a
-public challenge requires a separate owner decision.
+The repository and its audit materials were made public on 20 October 2026.
+That is a disclosure decision, not a security claim: M6, independent external
+cryptanalysis, is still open, and the guidance in [STATUS.md](STATUS.md) is
+unchanged. An M6 review may still be conducted confidentially.
