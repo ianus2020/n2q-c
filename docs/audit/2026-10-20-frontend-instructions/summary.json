@@ -1,0 +1,78 @@
+{
+  "baseline_commit": "885d94188f4961ce7c86fd8995fbc813779ff6cd",
+  "limitations": [
+    "Repository frontend sources only; no externally published site checked or updated.",
+    "Temporary HTTPS fixture and explicit test-CA flag; persistent stand unchanged.",
+    "Documentation consistency checks are not cryptographic security evidence."
+  ],
+  "schema": 1,
+  "source_sha256": {
+    "docs/guide.md": {
+      "after": "d46a8f58d3db7bde49c13160364b012017784b1d6fd458e1374acea5b6e37777",
+      "before": "367260cb48853bd6b2f2bc1a7edcfaa6c6602b5151b7edef59cde08d91f8456a"
+    },
+    "docs/guide.ru.md": {
+      "after": "52dd48323b7efec84a18de29e47c96189ae042b7558b1b0f84425b1b7ab960c9",
+      "before": "e165d07d6a9ebfb55b01e9f9216d9e82d8749fad5a18acb31cb8e34ac44f3f7e"
+    },
+    "impl/README.md": {
+      "after": "e8ca6fd8f8bca73c45849cdf149768a3c5da1668def2b63f27498e9f96452263",
+      "before": "e91cf358603ef69e1ca505490c6d6a0b11b17bf0dd26a09c3b451d3c8005fd58"
+    },
+    "impl/n2q-c-ref/src/frame.rs": {
+      "after": "845ac89cfe7ce995297ec275a97dd209187afaabd239798fa1f672ab18fe9648",
+      "before": "845ac89cfe7ce995297ec275a97dd209187afaabd239798fa1f672ab18fe9648"
+    },
+    "impl/n2q-c-ref/src/modes.rs": {
+      "after": "9c39fd677fd83b28e3e3dbfab720681c7a0070c0c7d46203676e5085a95ff188",
+      "before": "9c39fd677fd83b28e3e3dbfab720681c7a0070c0c7d46203676e5085a95ff188"
+    },
+    "impl/n2q-c-wasm/README.md": {
+      "after": "6914b9851fbc777df182c77143092702d5736b6c562d353e06924161f70c6bdb",
+      "before": "a086dd78ef4743a55aed75a16977176965fe4a5ae86c7277d1af6e5a73018de8"
+    },
+    "impl/n2q-c-wasm/src/lib.rs": {
+      "after": "2889db57f9eb96610059cab3c070e2efea06f5791d1eec68df463314f70abe70",
+      "before": "2889db57f9eb96610059cab3c070e2efea06f5791d1eec68df463314f70abe70"
+    },
+    "impl/n2q-c-wasm/web/app.js": {
+      "after": "f9f2f961507e8295f524ff4e0dba321d7ed2edbf86825654db517c8332ee5a7f",
+      "before": "f9f2f961507e8295f524ff4e0dba321d7ed2edbf86825654db517c8332ee5a7f"
+    },
+    "impl/n2q-c-wasm/web/crypto-worker.js": {
+      "after": "3b0878d988180375d12258511c49a008f7fbac211f774b03a1d1030ead56ef38",
+      "before": "3b0878d988180375d12258511c49a008f7fbac211f774b03a1d1030ead56ef38"
+    },
+    "impl/n2q-c-wasm/web/index.html": {
+      "after": "d6fece07543d3e39e02a63f60a928737c382fe0025053bcd412f25e120804d79",
+      "before": "38efcebceec387bc82d3db0878e89e5730f3f56556f678f329f980fb4de58413"
+    },
+    "scripts/build-web.sh": {
+      "after": "70e960fbc3a98d97fdeec2692b65ff5deb5844f0ce1b0b1484c76fd31a41c3b2",
+      "before": "70e960fbc3a98d97fdeec2692b65ff5deb5844f0ce1b0b1484c76fd31a41c3b2"
+    },
+    "scripts/serve-web.py": {
+      "after": "934473b8066502f4e94d0bf5b485f8374d0493e837905fc821a479415ac50db2",
+      "before": "934473b8066502f4e94d0bf5b485f8374d0493e837905fc821a479415ac50db2"
+    }
+  },
+  "verification": {
+    "fresh_build_exit": 0,
+    "http_browser_suite_exit": 0,
+    "http_examples_exit": 0,
+    "https_browser_suite_exit": 0,
+    "https_examples_exit": 0,
+    "ui_combinations_per_protocol": 4
+  },
+  "web_manifest": {
+    "js": {
+      "bytes": 20377,
+      "sha256": "f601b6b23af943944db1e7a0e4c89c61042e3e14b1002cd2d2996ab51cb3f4af"
+    },
+    "version": 1,
+    "wasm": {
+      "bytes": 55423,
+      "sha256": "3d95373c31f76d8f36ba37da74db1d8a4782ccc690a327b5112fe9cb09c11702"
+    }
+  }
+}

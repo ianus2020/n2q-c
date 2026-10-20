@@ -40,11 +40,9 @@ Both must print all-PASS; the C mode vectors are asserted equal to the Rust ones
 
 ## Web tester
 
-```sh
-cd n2q-c-wasm
-../../scripts/build-web.sh
-cd web && python3 -m http.server 8790     # open http://localhost:8790
-```
+Follow the [browser build, launch and test instructions](n2q-c-wasm/README.md).
+They use the locked toolchain and `scripts/serve-web.py`, which supplies the
+security headers checked by the browser suite. Commands run from the repository root.
 Encrypt/decrypt (SIV), hash and blind-index for **both** N2Q-128 and N2Q-256,
 plus a one-click self-test — all in the browser, on the own cipher.
 

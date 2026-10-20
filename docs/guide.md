@@ -100,10 +100,11 @@ let pt  = openToken(key, [UInt8]("ctx".utf8), tok)
 
 #### JavaScript (WASM)
 
-```js
-const tok = seal128(true /* fast */, keyHex, nonceHex, "ctx", "secret");
-const pt  = open128(keyHex, "ctx", tok);
-```
+See the [complete browser-console example](../impl/n2q-c-wasm/README.md#javascript-example):
+load and initialize the WASM module, generate a key and nonce, then call
+`seal128(false, keyHex, nonceHex, aad, plaintext)` and `open128(keyHex, aad, token)`.
+Here `false` selects Secure (16 rounds). The same instructions cover the 256-bit
+bindings, UTF-8 limits and the worker used by the ready-made interface.
 
 ---
 
