@@ -1,0 +1,14 @@
+[
+  {
+    "path": "scripts/serve-web.py",
+    "sha256": "934473b8066502f4e94d0bf5b485f8374d0493e837905fc821a479415ac50db2"
+  },
+  {
+    "path": "scripts/verification-record.py",
+    "sha256": "24d0d7ac86f2232a401912d6bff15a5728ff656b02c8134a7c0384d251d3ad10"
+  },
+  {
+    "path": "tests/test_web_server.py",
+    "sha256": "5d557c0d16c12aad2bac0aa33ee6b062bfe6c5843a9ceac839089ac56229527d"
+  }
+]
