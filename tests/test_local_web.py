@@ -54,8 +54,10 @@ class LocalWeb(unittest.TestCase):
         with self.get(prefix+'pkg/n2q_c_wasm_bg.wasm') as response:
             self.assertEqual(response.getheader('Content-Type'),'application/wasm')
         for name in ['../../pki/server.key','%2e%2e/%2e%2e/pki/server.key','pkg/../app.js','pkg/','secret.key','']:
-            with self.assertRaises(urllib.error.HTTPError) as error:self.get(prefix+name)
-            self.assertEqual(error.exception.code,404)
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                with self.get(prefix+name):pass
+            try:self.assertEqual(error.exception.code,404)
+            finally:error.exception.close()
         with self.assertRaises((ssl.SSLError,urllib.error.URLError)):
             urllib.request.urlopen(self.base,timeout=3)
     def test_versioned_publication_preserves_old_pages_and_rejects_tampering(self):

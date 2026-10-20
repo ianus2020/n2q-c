@@ -1,0 +1,13 @@
+{
+  "tests": 4,
+  "tests_success": true,
+  "resource_warnings": [
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>",
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>",
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>",
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>",
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>",
+    "Implicitly cleaning up <HTTPError 404: 'Not Found'>"
+  ],
+  "http_error_cleanup_warnings": 6
+}

@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "baseline_commit": "305cdd84644c0ca46d635a4d922209c00d9dba71",
+  "base_branch": "9c8653f277551f22da6a34c76f5a7061a06c90e8",
+  "source_sha256": {
+    "tests/test_local_web.py": {
+      "before": "bb430a7590aab6ddef7be0b99f48cdd844a8796cedd042851370102c4a7fa8d1",
+      "after": "69e491b811c2ea641fcc2d4c026a71761c02180374c9db0dece4589b6814a77e"
+    },
+    "README.md": {
+      "before": "b87b121b770e523a2bd96571399d336a5d66c042e7375b122caeb34924e1c121",
+      "after": "1479033bcf54a6d7afc6fb119e73498dc6977893e93ebe6933646f268b112706"
+    },
+    "STATUS.md": {
+      "before": "01ebe9ef418211b917bd44454fa66f87c58474ace313145d0bc5b32b8173ef67",
+      "after": "c0e6341176da8c117f5f277ae7d7b87861f38d4386194e3026e147b3caa66926"
+    },
+    "docs/security-plan.ru.md": {
+      "before": "ebfd7d61d43c51f310630865a25bee95843d431a9a7535777ee9630b3f6e3034",
+      "after": "800980081c7e449445217fd8b368376732753c691e4617b37292d1bce83a4f9f"
+    },
+    "docs/implementation-progress.ru.md": {
+      "before": "77be22b76426570f31e1751ba4ca6bf92d015b926ce05f6c6eaadb980f48b544",
+      "after": "2c6222df8f6e42e3e15a9851e30d5df828bfcbcab5cf0ac64ef269357f1fa07b"
+    },
+    "docs/audit-closure.ru.md": {
+      "before": null,
+      "after": "2d89a8e5e3fc6e6e698abc3b6d93f1f56107ac6bd2f7e6d8232d5ad3f747d885"
+    }
+  },
+  "local_python_tests": 63,
+  "local_resource_warnings": 0,
+  "historical_archive_check": {
+    "manifests": 18,
+    "checksum_entries": 178,
+    "gzip_archives": 94,
+    "failures": 0
+  },
+  "delivery": {
+    "pull_request": "https://github.com/ianus2020/n2q-c/pull/1",
+    "method": "protected merge commit, retaining per-stage commits",
+    "final_commit_ci": "required before merge",
+    "main_ci": "runs after merge"
+  },
+  "limitations": [
+    "Internal implementation audit only, not independent external cryptanalysis.",
+    "No production deployment, real-data migration or independent operational monotonic anchor validated."
+  ]
+}

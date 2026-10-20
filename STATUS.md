@@ -39,6 +39,11 @@ records experiments and fixes; it is not an independent external review.
 
 ## What *is* verified
 
+The agreed AI-assisted implementation audit is closed as of 20 October 2026.
+Its [close-out report](docs/audit-closure.ru.md) records completed fixes,
+verification evidence and the operational work that remains open. Closing this
+implementation work does not close the external-review milestone above.
+
 These are facts, reproducible on your own machine from this repository:
 
 | Verified | How to check |

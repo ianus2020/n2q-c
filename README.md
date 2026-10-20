@@ -17,6 +17,8 @@ General sponge or SIV results do not certify this implementation or its extensio
 
 > **Security fixes and compatibility:** [remediation record](docs/security-fixes.md),
 > [N2QF v2 and migration](docs/n2qf.md), [web build and tests](impl/n2q-c-wasm/README.md).
+>
+> **Implementation audit close-out:** [final report and remaining conditions](docs/audit-closure.ru.md).
 
 ---
 
