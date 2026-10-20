@@ -10,7 +10,7 @@ use std::time::Instant;
 use n2q_c_ref::consts::{ROTS_320, SBOX};
 use n2q_c_ref::perm::Qp;
 
-// ===================== active S-box lower bound (solver-free MILP substitute) ==
+// ===================== restricted single-column active-S-box search ===========
 // Differentials cancel the round constants, so the differential structure is
 // rotation-invariant: a single-active-column trail may be pinned to position 0.
 // We branch-and-bound the minimum number of active S-boxes; when the search
@@ -154,10 +154,9 @@ fn active_sboxes() {
          -- multi-column starts may cancel in the linear layer and do better -- so they\n  \
          do NOT by themselves certify a security bound. A valid lower bound must search\n  \
          ALL starting differences: that is exactly the full MILP/SAT model, which needs\n  \
-         a solver. The 4-round search already exceeds 80M nodes, showing the minimum\n  \
-         grows fast (consistent with the M4 empirical collapse by 3 rounds).\n\n  \
-         -> Conclusion: the differential/linear *certified* bound remains the one open\n     \
-         item for external review (M6); it is not closeable rigorously solver-free.\n"
+         a solver or another rigorous argument. Hitting the 80M-node budget is\n  \
+         inconclusive about the minimum. New all-start experiments: trails.py.\n\n  \
+         -> These restricted trails do not certify differential/linear security.\n"
     );
 }
 
@@ -225,16 +224,16 @@ fn avalanche(qp: &Qp) {
         println!("    {r:>3}     {completeness:>8.3}      {meanflip:>8.3}");
     }
     println!(
-        "\n  -> full bit dependency (completeness 1.000) is reached well before p^b=12;\n     \
-         mean flip probability sits at ~0.5 (ideal avalanche). PROVEN empirically.\n"
+        "\n  -> finite-sample diffusion measurements only; no cryptographic bound.\n     \
+         Implemented profiles are 8/16 rounds. See binary audit for both widths.\n"
     );
 }
 
 // ---- 2. algebraic degree via zero-sum cube testers ----
 fn degree(qp: &Qp) {
     println!("## 2. Algebraic degree - zero-sum / cube distinguisher (empirical)\n");
-    println!("  A cube of dimension d sums to zero iff the algebraic degree in those");
-    println!("  d variables is < d. We report the highest round with a zero-sum, per d.\n");
+    println!("  A NONZERO d-cube sum implies restricted degree >= d. A zero sum does");
+    println!("  not imply low global degree. Report: initial consecutive zero-sum rounds.\n");
     println!("  cube-dim  max-rounds-with-zero-sum");
     for &d in &[8usize, 12, 16] {
         let mut rng = Rng(0xB0u64.wrapping_add(d as u64));
@@ -266,9 +265,8 @@ fn degree(qp: &Qp) {
         println!("     {d:>3}          {max_r}");
     }
     println!(
-        "\n  -> degree saturates quickly: no low-dimension zero-sum survives past a few\n     \
-         rounds, far below p^b=12. (Zero-sum distinguishers on the bare permutation\n     \
-         at high rounds are expected for sponge permutations and are NOT AEAD attacks.)\n"
+        "\n  -> this restricted cube experiment does not establish degree saturation,\n     \
+         a global degree upper bound, or absence of higher-order attacks.\n"
     );
 }
 
@@ -297,10 +295,9 @@ fn differential(qp: &Qp) {
         println!("    {r:>3}      2^{:>6.2}         {}", log2, counts.len());
     }
     println!(
-        "\n  -> the best single-characteristic probability collapses below 2^-16 (the\n     \
-         sampling floor) within 3 rounds. A PROVEN bound over all trails needs the\n     \
-         MILP active-S-box model (follow-up); with min-active >= 32 S-boxes the\n     \
-         differential characteristic prob is < 2^-128.\n"
+        "\n  -> max observed frequency is a sample statistic, not an upper bound on\n     \
+         differential or characteristic probability. Multiplying local DDT costs\n     \
+         requires a justified trail model and does not bound differential hulls.\n"
     );
 }
 
@@ -337,7 +334,7 @@ fn rotational(qp: &Qp) {
         }
         println!("    {r:>3}          {hold}/{trials}");
     }
-    println!("\n  -> the round constants destroy the rotational relation immediately.\n");
+    println!("\n  -> no exact rotational relation observed for this offset and sample.\n");
 }
 
 // ---- 5. timing (dudect-lite): data-independence of the permutation ----
@@ -365,8 +362,8 @@ fn timing(qp: &Qp) {
     let t = welch_t(&ta, &tb);
     println!("  |t| = {:.2}   (threshold 4.5: |t| < 4.5 => no timing leak detected)", t.abs());
     println!(
-        "\n  -> the permutation has no secret-dependent branches, table lookups, or\n     \
-         memory addresses by construction; the measurement is consistent with that.\n"
+        "\n  -> historical fixed-order timing harness; not a constant-time proof.\n     \
+         Use audit timing for randomized balanced classes and positive controls.\n"
     );
 }
 

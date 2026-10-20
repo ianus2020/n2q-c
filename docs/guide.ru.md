@@ -99,10 +99,11 @@ let pt  = openToken(key, [UInt8]("ctx".utf8), tok)
 
 #### JavaScript (WASM)
 
-```js
-const tok = seal128(true /* fast */, keyHex, nonceHex, "ctx", "secret");
-const pt  = open128(keyHex, "ctx", tok);
-```
+См. [полный пример для консоли браузера](../impl/n2q-c-wasm/README.md#javascript-example):
+загрузите и инициализируйте WASM-модуль, создайте ключ и nonce, затем вызовите
+`seal128(false, keyHex, nonceHex, aad, plaintext)` и `open128(keyHex, aad, token)`.
+Здесь `false` выбирает Secure (16 раундов). Там же описаны 256-битные функции,
+лимиты UTF-8 и worker, используемый готовым интерфейсом.
 
 ---
 
@@ -148,18 +149,24 @@ PHP: `n2q_blind_index(N2Q_SECURE, $key, $v)` · Swift: `blindIndex(SECURE, key, 
 - Индексируйте нормализованное значение (`lower(trim(email))`), иначе поиск
   промахнётся.
 
-### 3.3. Пароли → ключ (Balloon KDF)
-
-**Когда:** ключ выводится из пароля пользователя.
+### 3.3. Пароли → ключ (Argon2id v19)
 
 ```rust
-use n2q_c_ref::pw;
-let key32 = pw::derive(password, salt, s_cost, t_cost);   // [u8; 32]
+use n2q_c_ref::pw::{self, Costs};
+let key32 = pw::derive(password, salt, Costs::default())?; // SecretKey256
+// n256::seal(profile, key32.expose(), nonce, ad, plaintext)
 ```
 
-**Подводные камни:** соль — уникальная на пользователя, ≥16 байт, хранится
-открыто. `s_cost`/`t_cost` подбирайте так, чтобы вывод занимал ~100–500 мс на
-вашем железе. Пароль **никогда** не используйте как ключ напрямую.
+Соль создаётся CSPRNG, содержит 16–64 байта и хранится вместе с `argon2id-v19`
+и параметрами. По умолчанию: 64 МиБ, 3 прохода, 1 полоса. До выделения памяти
+проверяются лимиты одного вызова; сервис отдельно ограничивает параллелизм.
+Пароль: 1 байт – 1 МиБ. Контролируемые ошибки возвращаются через `Result`.
+
+Это **новый KDF**, несовместимый с прежним экспериментальным N2Q-PW/Balloon.
+Старые данные нельзя открывать ключом от нового KDF: нужна явная миграция
+в доверенной среде, описанная в [этапе 4](stage-4-keys-kdf.ru.md).
+Секретный тип не имеет Copy/Clone/Serialize, скрывает Debug и стирает свой
+буфер при Drop. Это не гарантирует удаления копий из вызывающего кода/ОС.
 
 ### 3.4. Файлы любого формата (контейнер N2QF)
 
@@ -170,27 +177,26 @@ let key32 = pw::derive(password, salt, s_cost, t_cost);   // [u8; 32]
 | Python | `encrypt_file(bits, profile, key, in, out)` / `decrypt_file(bits, key, in, out)` |
 | Go | `EncryptFile(profile, key, in, out) error` / `DecryptFile(key, in, out) error` |
 | Rust | `file::encrypt_file(profile, &key, in, out)` / `file::decrypt_file(&key, in, out)` |
-| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, in, out)` |
+| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, bits, in, out)` |
 | PHP | `n2q_encrypt_file($profile,$key,$in,$out)` / `n2q_decrypt_file($key,$in,$out)` |
 | Swift | `encryptFile(profile, key, in, out)` / `decryptFile(key, in, out)` |
 
-Формат: `"N2QF" | ver | suite | { le32(len) | sealed }*`, блок 64 КБ,
-оверхед ≈ **0.07 %**. Профиль и комплект пишутся в заголовок → при расшифровке
-передавать их не нужно.
-
-**Проверено:** файл, зашифрованный на одном языке, открывается на всех
-остальных (Python ↔ Rust ↔ Go ↔ C ↔ Swift, побайтово).
+Формат **N2QF v2** содержит случайный идентификатор файла, блоки до 64 КиБ
+и обязательную метку конца. v1 отклоняется. Выход публикуется атомарно после
+полной проверки. Rust/PHP/Swift поддерживают файлы N2Q-128; C/Go/Python — оба
+размера. См. [формат, ограничения и перенос старых файлов](n2qf.md).
 
 ### 3.5. Перемотка зашифрованного медиа (seekable)
 
-**Когда:** плеер должен прыгнуть на середину зашифрованного видео.
+**Ограничение:** выбор блока сейчас проверяет весь файл. Это эталонный
+проверяющий код; для быстрой перемотки нужна отдельная проверенная схема.
 
 ```python
 cont = m.n2qf_build(key, [chunk0, chunk1, chunk2])
-data = m.seek_chunk(key, cont, 1)        # только нужный блок
+data = m.seek_chunk(key, cont, 1)        # проверяет весь контейнер до выдачи выбранного блока
 ```
 Go: `SeekChunk(key, buf, index)` · Rust: `seek_chunk(&key, &buf, i)` ·
-C: `n2q_seek_chunk(key, buf, buflen, index, out, &outlen)`
+C: `n2q_seek_chunk(key, buf, buflen, index, out, outcap, &outlen)`
 
 **Подводный камень:** индекс — номер **блока**, а не байтовое смещение.
 Позиция в секундах → номер блока считает ваш контейнер/плеер.
@@ -255,6 +261,10 @@ Go: `Wrap/Unwrap/Rewrap` · Rust: `wrap/unwrap/rewrap` · C: `n2q_wrap/_unwrap/_
 компрометация одного `dek` вскрывает всё.
 
 ### 3.9. Дедупликация зашифрованного хранилища (convergent)
+
+`master_key` должен иметь ровно **16 байт**. Иная длина отклоняется. В Rust
+тип — `&[u8;16]`; C API также требует вместимость выходного буфера. Старые
+ключи иной длины требуют отдельного явного решения о миграции.
 
 **Когда:** бэкапы/облако, где одинаковые файлы не должны занимать место дважды.
 

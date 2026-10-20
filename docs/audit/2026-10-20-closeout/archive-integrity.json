@@ -1,0 +1,898 @@
+{
+  "manifests": 18,
+  "checksum_entries": 178,
+  "gzip_archives": 94,
+  "failures": 0,
+  "checks": [
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-controls/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-controls/campaign.log.gz",
+      "sha256": "2b57248697b4d51d74e39640fa649a14e371bdb0bf7bcc32aa419cf911ae735d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-controls/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-controls/check-seeds.py",
+      "sha256": "d041089167dde7a090f68feb5759fe94da8a03043ef60cfba9977569611630b8"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-controls/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-controls/final-corpus.tar.gz",
+      "sha256": "c52362559daef7da416321e8c4832e343e922b7796dd3fee5e73cc795d0b4171"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-controls/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-controls/seed-controls.json",
+      "sha256": "5bd94411627170c8892289688c81d119d14772ca85d0b5cb06f771408fae9760"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-controls/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-controls/summary.json",
+      "sha256": "8cdb1de56d164b040658c71630281fe3e456cdcdd937dfd66d48affa99233880"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/artifact-review.json",
+      "sha256": "f323a80c8340ec8c609eec5659e6c112114435c74e6fa5e892b0c90037ca2e79"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/campaign.log.gz",
+      "sha256": "eef252d7c20f864f305513d1853ff9527d14b267a26f64ac43056d18d23fa3db"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-fuzz/campaign.log.gz",
+      "sha256": "38553f01e9f95318f78bd887ad8a81d61ab4e0ca442fe16a893af9c1af062fcf"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-fuzz/final-corpus.tar.gz",
+      "sha256": "a349d5c00775ef83fc0efe13da2c1d085d7fb907a28939fbfba46e40979b5e41"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-fuzz/summary.json",
+      "sha256": "7e5d959a0ad8bb11934d3af999a8b428cf685a707195522131a0a4047223d5da"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-fuzz/verification.json",
+      "sha256": "aa87b7a53f8bf8c7d47fe9f1f0b807d2e1ff2e904f0e7c8e1ae5775c9ea6028d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-fuzz/verification.json.gz",
+      "sha256": "512f1e535adbd9dbfdbb93f54c931d9ec5a35eb37e35c4d5dae7a2ff200f49f1"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci-run.json",
+      "sha256": "c0e97fba40bf051997b2a87f7abe2b7125f11b9c38caffbc2672725ae618d3e6"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/ci.log.gz",
+      "sha256": "b6bc8e4c6f1db8f3379bdb0864caecfba53d89cb234ec8c91fbe37ef7a2e1e6a"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/bench.json",
+      "sha256": "470008edaae77e1e99a76072fe38a7e7597852f830f8566425ae9a6d682196e3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/cryptanalysis.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/fuzz.json",
+      "sha256": "24899307724b705d2834ebf877c10919c652c15fe3148d19dfc061b5c8b52276"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/gitleaks.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/native.json",
+      "sha256": "e8571a4dbca8da490c569ef1ef8e1c21e6b06dd644623550959ae86954cb8b95"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/npm.json",
+      "sha256": "a01267e7d3023badd5d4b64f1d798707912523aeba3545b611eaaa83ee261353"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/verification.json",
+      "sha256": "945aa778a7d264680c0f98af5f7799accd39d0fbeafcfd10a06dae4e790c9a91"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/verification.json.gz",
+      "sha256": "059ba89903c393740789ef652cf373436eb170b11135a4baf47059fe161763db"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/dependencies/wasm.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/environment.json",
+      "sha256": "31c4a1bc0681bb8360917a85f95593004b8016795e4177a73730fd3c18d58d7d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/final-corpus.tar.gz",
+      "sha256": "07bfcd39db884a94d828bb815193ec06ba244cb52a2eea1219c989fd9a32841f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-expanded/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-fuzz-expanded/summary.json",
+      "sha256": "ad79175768fa89d414c4501b2fac502bb31382004fa4f8f38795fd9b714370f1"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/linux-controls.log.gz",
+      "sha256": "e539a10138594fbbfa93c4c8aa71095eba635c6da9526dbc6beac1a522512ea2"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/mac-controls.log.gz",
+      "sha256": "7a06e5f6f3e985969b89d1982b167009e33d03bdc4958a496cd4e6368f993c59"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/mac-python50.log.gz",
+      "sha256": "f397ddb65f5079dab25e7163220742d29a88297366ff7b621be1edeaaf374896"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/old-reproduction.json",
+      "sha256": "9ddc7705ad65bcc2e9d23547dff7d6422b7d7eedd279259b2a4067c31cbb5857"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/old-test.log.gz",
+      "sha256": "c8926a8bd995516d3d3d80704eec98b011ca57dde81a262ca54e0c8caa2e1732"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261019/campaign.log.gz",
+      "sha256": "3dc7379ba4a0a5aed8fcca739a12cd0d6728bfcb56d33cfcbf4a26be351b6fbe"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261019/final-corpus.tar.gz",
+      "sha256": "bf4d5fc9c6cfcce55c6d6c6589d6b6b1cfff623cbb1515a0077ce0c1d9603126"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261019/summary.json",
+      "sha256": "2b0d0abb8eaa4b25c5db18db75353c6582a6c0d92997d6e968df92153ede0786"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261020/campaign.log.gz",
+      "sha256": "14755a63bb311361dc3613df223fef6ffc55c2be2a92408ef5466f711b4ff2f6"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261020/final-corpus.tar.gz",
+      "sha256": "8d48aa5b9f0295d98c24a82ee354292679bf72479bed98a29e3ba1cd6e3da6d2"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261020/initial-corpus.tar.gz",
+      "sha256": "67a1f0c5e1e6191dc9909753f7fe57ee44caf84284e79a11887ebf1739fcd661"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/seed-20261020/summary.json",
+      "sha256": "7470f61dfd9eb2849911b0072f130efba1cdce1d8b8ee6ddf7d4a8500b529ddf"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-long-runner/SHA256SUMS",
+      "file": "docs/audit/2026-10-19-long-runner/series.json",
+      "sha256": "60652fef25ed11d829fe76a9280c99542b8421a5f347cdf45069771efb8e2071"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/anchor-after.log.gz",
+      "sha256": "605ee7ecc8cf977ba589815ea82210ebbc251708321a06f9cca799d8978316f2"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/before.json",
+      "sha256": "6fa5242d23ddfe560adb18d07341882910cb03cc36b0dbb5ec44daaf62c7d9a5"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/before.log.gz",
+      "sha256": "d013e2ced07d8d69ffbc4de250c15b09bc4932ba47d073fc304d195511b70ab4"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/python39.log.gz",
+      "sha256": "df1007e91b9ae876d661bb7ac8c1fea129e1155aad18bb43f8deb4e844ab308f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/python63.log.gz",
+      "sha256": "a29a9061a9ab7d5d5582dcd9c49944101a3b829b8c1895704fc1646f0d4d97b5"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-anchor-connection-cleanup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-anchor-connection-cleanup/summary.json",
+      "sha256": "32343a4243a77a3e56e6c651a6dc3a006a6f9fb19873c2fd441187cb1dd1e44d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-browser-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-browser-instructions/browser-after.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-browser-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-browser-instructions/browser-before.log.gz",
+      "sha256": "eabadb7162db678a8922ff93c061aa0cd09fd2a0c14e8d51dd3c58e5893535e1"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-browser-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-browser-instructions/headers-after.json",
+      "sha256": "4fdb6c6faf2f4b1aed9ce46a8fb67f00e35cf0b3926eff6aff8f9b56c4ac3873"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-browser-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-browser-instructions/headers-before.json",
+      "sha256": "3e3fc0ea099c99b03e8d21ed6508fd9abb0f142c65642a234012f47c69a72470"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-browser-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-browser-instructions/summary.json",
+      "sha256": "1bba32b22bb10181c6abc9cfe88518e7cee3fb4f81d3a032448d1d70678631c0"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/before.json",
+      "sha256": "df8b82c4b90fddfaf929c25d7e00592f819f03c031f32e1c7446ba21c2ef8ff7"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/bench.json",
+      "sha256": "470008edaae77e1e99a76072fe38a7e7597852f830f8566425ae9a6d682196e3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/cryptanalysis.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/dependency-audit.log.gz",
+      "sha256": "dcced798bb93e28ba12800614bf041198ae61e251c378ea5cbd544a33964d500"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/fuzz.json",
+      "sha256": "24899307724b705d2834ebf877c10919c652c15fe3148d19dfc061b5c8b52276"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/gitleaks.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/native.json",
+      "sha256": "e8571a4dbca8da490c569ef1ef8e1c21e6b06dd644623550959ae86954cb8b95"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/negative-control.log.gz",
+      "sha256": "6e887da6c16c2550bc3c9ab1918b7701f9ce7b328ec5943bc8d0fe7abe475f20"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/npm.json",
+      "sha256": "a01267e7d3023badd5d4b64f1d798707912523aeba3545b611eaaa83ee261353"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/python39-tests.log.gz",
+      "sha256": "5702eb39516c18b412ccfd48baa8e274dc32facc379a53b613a520f9a32a78a3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/python60.log.gz",
+      "sha256": "84caa1ecdf9afbcb42d527c7385a54a2503fb2059d62b7f3bb022577283849e5"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/summary-tests.log.gz",
+      "sha256": "14cb9feee6022135d8214e1a4099d7565db51623178b3916d4f01f019a9d432d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/summary.json",
+      "sha256": "b34a853c291e39a03a2430fb12ab22916e87e98ba058b870a8e42c7609841f65"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-dependency-report-validation/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-dependency-report-validation/wasm.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/bench.json",
+      "sha256": "470008edaae77e1e99a76072fe38a7e7597852f830f8566425ae9a6d682196e3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/browser-before.log.gz",
+      "sha256": "842f718f16b3b332ef06fea4576de9f94bdb5143473aab72fa983955526ebcf3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/browser-http.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/browser-https.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/cryptanalysis.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/dependency-audit.log.gz",
+      "sha256": "8b49242b78be0ffc58c6e739c15fcc688db5a880fd24778e950b369ec7b73c44"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/fuzz.json",
+      "sha256": "24899307724b705d2834ebf877c10919c652c15fe3148d19dfc061b5c8b52276"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/gitleaks.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/local-release.json",
+      "sha256": "3be80ef4c132e6e4e9a87f5fe24c9034b6b66e14fb7bbe72ac2f916dd6dabaad"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/native.json",
+      "sha256": "e8571a4dbca8da490c569ef1ef8e1c21e6b06dd644623550959ae86954cb8b95"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/npm.json",
+      "sha256": "a01267e7d3023badd5d4b64f1d798707912523aeba3545b611eaaa83ee261353"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/staged-findings.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/staged-gitleaks.log.gz",
+      "sha256": "964ded15862fc8aa58b2ea3e3d31a268745d343d7b2f9b8e1b589dbe1944f1d6"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/summary.json",
+      "sha256": "82d569e2ad038b1c7a4c5fbf53d5681b4e8990ddad975108406c04027e146287"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-copy-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-copy-state/wasm.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/before.json",
+      "sha256": "e50e914ff1da84d7d8c0642d86cedd8aa5ae343fa8a82f458cd82431f8c4d9fd"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/browser-http.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/browser-https.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/build.log.gz",
+      "sha256": "1aa278735a7ebcbce1c342528ccf3aa01309bb9932208a98d4d111a94db1265a"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/check-examples.cjs",
+      "sha256": "9b1d89843e19931edf6b3ec4108217c5aad2c170fdc895f290a1c9b132fd1bb3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/examples-http.json",
+      "sha256": "6d5719bf36acb4125dc71ea81e5ae12a592568a26669145f62d4f58ef4d4f78a"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/examples-http.log.gz",
+      "sha256": "aa0f4a91a453140c825c9180ac5e1a23d588b33b8f67069bff25c7e47d2aea81"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/examples-https.json",
+      "sha256": "b522c8bbba2e4d82a3c73fd4e9f1525fbc6e458e8223164cd92414470be0d5d4"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/examples-https.log.gz",
+      "sha256": "f9ca9b58b6704ec87d594d32e17ebbfa293c8e10362ba9dd689048c5fc2e41cd"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/summary.json",
+      "sha256": "c401d65a9213f337de1d22fc062ac5522ae6f76ff4c00c3645d1455c288cff85"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-instructions/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-instructions/temporary-release.json",
+      "sha256": "a7c86a5e68bdde69bf55b9bcd86e4616e3c846f1b330a7bbec6a4938eca00728"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/browser-before.log.gz",
+      "sha256": "f64d0d623e614bf86eb68bd9a4d08a97f147063fdcb66b236f7527464e4d983e"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/browser-http-after.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/browser-https-after.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/bench.json",
+      "sha256": "470008edaae77e1e99a76072fe38a7e7597852f830f8566425ae9a6d682196e3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/cryptanalysis.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/fuzz.json",
+      "sha256": "24899307724b705d2834ebf877c10919c652c15fe3148d19dfc061b5c8b52276"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/gitleaks.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/native.json",
+      "sha256": "e8571a4dbca8da490c569ef1ef8e1c21e6b06dd644623550959ae86954cb8b95"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/npm.json",
+      "sha256": "a01267e7d3023badd5d4b64f1d798707912523aeba3545b611eaaa83ee261353"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies/wasm.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/dependencies.log.gz",
+      "sha256": "4e18b80d726ff253dda204d438bbc9ea46463efc7822c317f4b2e38087e785eb"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-frontend-key-state/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-frontend-key-state/summary.json",
+      "sha256": "841bcebbc4988d951331e83bb6ad20e6b20a80d47233081982c9bbc7a14f51f8"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-http-startup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-http-startup/before.json",
+      "sha256": "22640e5fedec121a4a8ba6ef8ba3c7de4dafd3978882555495ee7e4a46b70170"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-http-startup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-http-startup/browser.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-http-startup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-http-startup/inputs.json",
+      "sha256": "4ca091fb016701dc31a2b02f0ab06d9d4821b222eb6d1a2c9b928c715099bc03"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-http-startup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-http-startup/python51.log.gz",
+      "sha256": "e360beb99c5ea5132a190c3f5e1af67e5abc336635bb79f9f921915a810dd718"
+    },
+    {
+      "manifest": "docs/audit/2026-10-20-http-startup/SHA256SUMS",
+      "file": "docs/audit/2026-10-20-http-startup/startup.json",
+      "sha256": "034d76ba456f78211c1623c2fa73dc45a4b0d169175ca117c82301c94df7b57a"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/ci.json",
+      "sha256": "d657a76fadd7c534da776e03d51152e6759368fc53672ae18e4f34d23f5a9b9d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/ci.log.gz",
+      "sha256": "f08fa80ced34fa752722109b0919c7ad4b4931d956e5a658fca6d60f5665a48b"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/environment.json",
+      "sha256": "077774ee34aa3613ff656940ce9fcf1aadfe923a3e819450ca5a7ce72eb72d0c"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/exact.json",
+      "sha256": "a6e007c56d2e8bceca2d991563a916381616cc9fc3ea88093be20387105ccc31"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/experiments.jsonl",
+      "sha256": "86e8c0d910c4db015c29f3c44c1e4b1b62e0364099978d74609230276145b0b3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/historical-convergent-asan.log",
+      "sha256": "a0b0299092d9108c70668e7def669b097fe35bb503654c139ff12d9f4a97d4c7"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/historical-convergent-poc.c.txt",
+      "sha256": "1fe47ada5349a47f623448a30178b7c5adb7faafc16769b4a7f4253fac5c90c9"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/summary.json",
+      "sha256": "2126402b93ec80426720b42a6144ae1646532e5d471a4a48cc08bb667d19ff82"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-320-16-permutation.csv.gz",
+      "sha256": "8e455f483b1a9ae8290e676a7710843aee86e365dd7e0ea87af6d80ff0457843"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-320-16-positive-control.csv.gz",
+      "sha256": "1b502fd4c506ceeb46bf0ed42c0f55e6626b210fe62e51dc8e263c224942e253"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-320-8-permutation.csv.gz",
+      "sha256": "2bbdd960c3bdedcf6962d8f269fdf7bab2aecf44a05dfd75bcab7b7cf7454550"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-320-8-positive-control.csv.gz",
+      "sha256": "9dc753567c35cee9781ad0e6cc6aa5044c2acbc78f6e6f886fdb64b1c73e79ba"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-640-16-permutation.csv.gz",
+      "sha256": "f15f5ecdd23bdc0f3290faefaa321ae43a911dec45745eb1b64bbbaccaa97a01"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-640-16-positive-control.csv.gz",
+      "sha256": "cf8970d602ae4633ff88f62d7c1a58bc6d1a3060131502464a0da767816ee25e"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-640-8-permutation.csv.gz",
+      "sha256": "689fdca264fde325e838dd25afa621313cd73a5d0032919f2bc325d3b347aaf1"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing-640-8-positive-control.csv.gz",
+      "sha256": "7ddfb486755fd0296f59289fd2a8df9f82a9799b934f9d3fbd35ca8236496592"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/timing.jsonl",
+      "sha256": "887d4b6ecc25ea1294e4130c4f8318e1b41c3c472452e843d83808f56202bd4b"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-320-2r-atmost3.smt2.gz",
+      "sha256": "c915987aac83238ce0bb50053ca8d7a2ec0072a2c5d2f088ecd50a94b719ada7"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-320-3r-atmost5.smt2.gz",
+      "sha256": "dcd95a4453710419cffffeab38c148abd54dd652c6df188ce8f7d0f6bc833cee"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-320-3r-atmost6.smt2.gz",
+      "sha256": "fd13656688d217fc909c3a3d74f3a22db98ef6d0e5039eeb1f7b78162a662090"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-320-4r-atmost8.smt2.gz",
+      "sha256": "807ddbaf0ec5bccefa5d00ac3fa7249bd125608459da3e83b55eeae2a83b94f5"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-640-2r-atmost3.smt2.gz",
+      "sha256": "b1b5e1f83f4c72b6e67896e1c0fc3a9f3f6b505495390a97c940cff6a46c9bed"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-640-3r-atmost5.smt2.gz",
+      "sha256": "f83bc9f5f72646fb5299d2b8c26c398a4a127f1be76c26c1268ad7bff6f05290"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-640-3r-atmost6.smt2.gz",
+      "sha256": "1520310e66e44616511063c082428fbace0a40dd1296d942bceec5a27991941b"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trail-640-4r-atmost8.smt2.gz",
+      "sha256": "8838327e0767d67119b1d7b207ddfa6855bf7642352bfd0fa06ffccdfbd719cc"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19/trails.jsonl",
+      "sha256": "d0470da1183969443605336b6857c139392d733b2f7a93fad4b42d1c0a3d6d16"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-repair/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-repair/anchor-after.log.gz",
+      "sha256": "1142f965d0eef4c67d01713448727c5b797ae63928185a53485f0d0b64d82f09"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-repair/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-repair/anchor-before.log.gz",
+      "sha256": "8e7aa90a8cc1997923d705e145d2286a15da77f7aa31d09e41e4951987398517"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-repair/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-repair/ci-failed.log.gz",
+      "sha256": "21edd39271d34c8d5e4661a6a04943ad793f0343aca6358fb64eb82a0e3a03c2"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-repair/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-repair/gitleaks-after.log.gz",
+      "sha256": "2039d272481a90c9727cd3896cf6f8d5bacb510384e5dc14d499616d851610a9"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-repair/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-repair/web-after.log.gz",
+      "sha256": "04607dbddb9474cd5fdc88f43860ba1c5a6cd6e6f73956fc65c0f57a1230e03f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/ci.log.gz",
+      "sha256": "889f56c156a311c18599d7f8c3b14108a3dc9a64db0bd4fe7349dde6c89a95fa"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/bench.json",
+      "sha256": "470008edaae77e1e99a76072fe38a7e7597852f830f8566425ae9a6d682196e3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/cryptanalysis.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/fuzz.json",
+      "sha256": "24899307724b705d2834ebf877c10919c652c15fe3148d19dfc061b5c8b52276"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/gitleaks.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/native.json",
+      "sha256": "e8571a4dbca8da490c569ef1ef8e1c21e6b06dd644623550959ae86954cb8b95"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/npm.json",
+      "sha256": "a01267e7d3023badd5d4b64f1d798707912523aeba3545b611eaaa83ee261353"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/dependencies/wasm.json",
+      "sha256": "4185561cb7bdccea07c7024d51001942206d2a5752456711e66460b925c509ac"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/run.json",
+      "sha256": "e10f1d43a277ab88ea3117b14d5777a628bf590c516c03afc6f742fb715a889d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-ci-success/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-ci-success/summary.json",
+      "sha256": "0643d47844e400f6ab7ca660aaf36031b94beda18bb9a66ea6a0a9b373a70eeb"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-harnesses/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-fuzz-harnesses/campaign.log.gz",
+      "sha256": "cd5ba3bea2dfc6f2c8a9e8b99bf1d56b6c515ecf0297d0f12f0d034ceff0f03c"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-harnesses/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-fuzz-harnesses/final-corpus.tar.gz",
+      "sha256": "8677b320598b82a031069bed70233c6b30b68276f84e56762c32fe8f19ca13cb"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-harnesses/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-fuzz-harnesses/initial-corpus.tar.gz",
+      "sha256": "d8fd295978d83115693f9e27d2f666ada2263a0241c698d5237079d4fc5501a3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-harnesses/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-fuzz-harnesses/report-controls.json",
+      "sha256": "97c8bce5f068fa25c06a31e16a83a58be7e3e2ec8172a3b4559c05a7fbe7b54c"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-fuzz-harnesses/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-fuzz-harnesses/summary.json",
+      "sha256": "2f4dba72f64425418af7dcc9a94a50297e0c804872c4b9968a01c8500221cf16"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/anchor-modern-libressl.log.gz",
+      "sha256": "1d2deda64b8530933a2cd815e3ef6dd41b9698dc75bc028fc78e1dbca62f2d8a"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/browser-https.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/migration-final-tests.log.gz",
+      "sha256": "a2385d614a9dd468ce11df67eab2beaeae6b58513088dbb9f5c70862d2166e7c"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/native-final.log.gz",
+      "sha256": "575d958f93d6cc84165ed68ff82c7268000e84939754180d310e97e742d40789"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/stage12-ci-failed.log.gz",
+      "sha256": "0bf00561f9d0fb3639bca84bdd1ca67fdf3e4a79e11627eb667679b42ad9a064"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-local/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-local/verification.json",
+      "sha256": "88238f028b17c31a1ee718e88a4802291957d3b77ffe00c7e94d37f3ba39cf40"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/ambient-negative-control.log.gz",
+      "sha256": "eb5787831e4cdedaad22314b1efe18a073664b4e9a94d50c8cbe68ae01409d2c"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/anchor-legacy-pki.log.gz",
+      "sha256": "4c25ae740257765566909b52c3323c0c6813bc7fc477c51354e07b096dc2e0d3"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/ci-native-failed.log.gz",
+      "sha256": "2a40e3739d4a45d177a15fc7ba2f27656c19373f460580670d6fc9e49dd4cb6f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/old-root-public.log.gz",
+      "sha256": "69fa244799eacaeb37685e00412c1736a85d37b6ac434c1fd3ed1d5310b82954"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/openssl111-after.log.gz",
+      "sha256": "55b67afe53e239f3a4622fcab7f61c51c64c7684b0f3f2bb71513f1f0ed05a23"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/openssl111-before.log.gz",
+      "sha256": "cdf2e4e09bfcf1761c7ca5029bfea95af9d2a76a4afe40182b274a102238cbce"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/python.log.gz",
+      "sha256": "47d5eeb168e12042017af0b3741ef9d999b67106214aeec829a0530d859b73b6"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-pki-configuration/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-pki-configuration/stand.log.gz",
+      "sha256": "d38b49cd236b11f7cfebff388752f8a5c68a454ff9264300d6bab90a36065a2f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-sanitizer-gates/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-sanitizer-gates/linux-controls.log.gz",
+      "sha256": "0b2b6c924560b7cdcf86b520fba2683ec699f8b35a0b0d74689ca2a1d52e710b"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-sanitizer-gates/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-sanitizer-gates/native.log.gz",
+      "sha256": "8805437e2f257f8f6b514998d4831a290f1500edb57de0fe1a84fbf1180a59aa"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-sanitizer-gates/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-sanitizer-gates/summary.json",
+      "sha256": "360b4f08b5165d4126cd388a4709c8b4cf375329070c6998ac9834fb1a8ef0ed"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-sanitizer-gates/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-sanitizer-gates/ubsan-default.log.gz",
+      "sha256": "a3de8628d031cd8dba0c4cce8b3b109f336fb66b13d0a19f09f04bbffd0c95cc"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-sanitizer-gates/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-sanitizer-gates/ubsan-strict.log.gz",
+      "sha256": "a3de8628d031cd8dba0c4cce8b3b109f336fb66b13d0a19f09f04bbffd0c95cc"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/browser.log.gz",
+      "sha256": "d23624f01e8f530c7322d0e78e93aae28664d6a25472aebdfcd5f6a10ceba77f"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/native-stage16.log.gz",
+      "sha256": "64acec978f8a0fa13307f5dd6e31097e2cb712fdbdcfd6c4c024e2ef72eac38b"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/negative-control.log.gz",
+      "sha256": "cee10104af792b3acb36bd22c674cce5c34849ae18c9529a53f2bb20a98e7b80"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/python.log.gz",
+      "sha256": "47690079deb19636625bb49b1930936a4afc8dafd23fce15a37163405213555d"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/stand.log.gz",
+      "sha256": "9631286e5b6a31225936aa50067fe241cdbb11fc5d99cd69474ed16ade38a860"
+    },
+    {
+      "manifest": "docs/audit/2026-10-19-tls-deadlines/SHA256SUMS.json",
+      "file": "docs/audit/2026-10-19-tls-deadlines/tls.log.gz",
+      "sha256": "61e462b234747306766ab59a2b8d0365d2118fe42eb3fb582056ea1b75c4f660"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "exit_code": 1,
+  "tests": 3,
+  "failed_subtests": 3,
+  "failure": "failed connection setup retained the database handle"
+}

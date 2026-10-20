@@ -59,7 +59,7 @@ margin and a table-free constant-time core.
 | Diff/linear bound | empirical + partial trail search | MILP-proven (community) | analyzed | **MILP-proven** |
 | Built-in hash | Yes | No | No | Yes |
 | Built-in searchable index | **Yes (blind index)** | No | No | No |
-| Built-in password KDF | Yes (Balloon over its hash) | No | No | No |
+| Built-in password KDF | Yes (Argon2id v19; external RustCrypto dependency) | No | No | No |
 | External analysis / standard | **None yet** | NIST, decades | RFC, decades | NIST LWC winner |
 
 ### Reading the table

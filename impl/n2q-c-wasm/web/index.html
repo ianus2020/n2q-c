@@ -1,157 +1,22 @@
 <!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>N2Q-C — тестер собственного шифра</title>
-  <style>
-    :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--line:#30363d;--fg:#e6edf3;--muted:#8b949e;--accent:#d29922;--accent2:#3fb950;--danger:#f85149;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-    .wrap{max-width:900px;margin:0 auto;padding:32px 20px 80px}
-    h1{margin:0 0 4px;font-size:26px;letter-spacing:-.5px}h1 span{color:var(--accent)}
-    .sub{color:var(--muted);margin:0 0 6px}
-    .warn{display:inline-block;font:12px/1.4 var(--mono);color:var(--danger);border:1px solid var(--danger);border-radius:8px;padding:4px 12px;margin:6px 0 18px}
-    .badge{display:inline-block;font:12px/1.4 var(--mono);color:var(--accent2);border:1px solid var(--line);border-radius:20px;padding:3px 12px;margin-left:8px}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}
-    .card h2{margin:0 0 14px;font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
-    label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
-    input[type=text],textarea,select{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:13px}
-    textarea{resize:vertical;min-height:56px;word-break:break-all}
-    .row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1 1 200px}
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer}
-    button:hover{border-color:var(--accent);color:var(--accent)}
-    button.primary{background:var(--accent);color:#0d1117;border-color:var(--accent);font-weight:600}
-    button.good{background:var(--accent2);color:#05130a;border-color:var(--accent2);font-weight:600}
-    .out{margin-top:12px;padding:11px 12px;border-radius:8px;font-family:var(--mono);font-size:13px;word-break:break-all;white-space:pre-wrap;border:1px solid var(--line);background:#0b1016;min-height:18px}
-    .out.ok{border-color:#2ea04326}.out.err{border-color:var(--danger);color:var(--danger)}
-    .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
-    .muted{color:var(--muted);font-size:12.5px}
-    .toggle{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:10px}
-    code{font-family:var(--mono);color:var(--accent)}
-    footer{color:var(--muted);font-size:12.5px;margin-top:24px;text-align:center}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1><span>N2Q-C</span> — тестер собственного шифра <span class="badge" id="engine">⏳ WASM…</span></h1>
-    <p class="sub">Свой алгоритм: губка на SPN-перестановке QP. Переключатель <b>надёжность/скорость</b> кодируется в токене — один декодер читает оба.</p>
-    <div class="warn">⚠️ Исследовательский шифр до внешнего аудита — не для защиты реальных данных.</div>
-
-    <div class="card">
-      <h2>Комплект, профиль, ключ</h2>
-      <div class="row">
-        <div>
-          <label>Комплект</label>
-          <select id="suite"><option value="128">N2Q-128</option><option value="256">N2Q-256</option></select>
-        </div>
-        <div>
-          <label>Профиль (пишется в токен)</label>
-          <select id="profile"><option value="secure">🛡 Secure (16 раундов)</option><option value="fast">⚡ Fast (8 раундов, ~2× быстрее)</option></select>
-        </div>
-      </div>
-      <label>Ключ (hex)</label>
-      <textarea id="key"></textarea>
-      <label>Nonce (hex, 16 байт)</label>
-      <input type="text" id="nonce" />
-      <div class="btns"><button id="btn-key" class="primary">🎲 Новый ключ</button><button id="btn-nonce">Новый nonce</button></div>
-    </div>
-
-    <div class="card">
-      <h2>Шифрование (AEAD-SIV) → токен</h2>
-      <label>AAD — привязка контекста</label>
-      <input type="text" id="aad" placeholder="напр. user:42" />
-      <label>Открытый текст</label>
-      <textarea id="pt">привет, свой шифр 🔐</textarea>
-      <div class="btns"><button id="btn-enc" class="primary">🔒 Зашифровать</button><button id="btn-copy">→ в «Дешифрование»</button></div>
-      <div class="out" id="out-ct"><span class="lbl">токен nqc. (профиль внутри)</span></div>
-    </div>
-
-    <div class="card">
-      <h2>Дешифрование (профиль читается из токена)</h2>
-      <label>AAD (должен совпадать)</label>
-      <input type="text" id="aad2" />
-      <label>Токен nqc.…</label>
-      <textarea id="ct"></textarea>
-      <div class="btns"><button id="btn-dec" class="good">🔓 Расшифровать</button></div>
-      <div class="out" id="out-pt"><span class="lbl">результат</span></div>
-    </div>
-
-    <div class="card">
-      <h2>Хэш и blind-index</h2>
-      <label>Данные</label>
-      <input type="text" id="hval" value="alice@example.com" />
-      <div class="btns"><button id="btn-hash">Хэш</button><button id="btn-bi">Blind index</button></div>
-      <div class="out" id="out-h"><span class="lbl">результат (hex)</span></div>
-    </div>
-
-    <div class="card">
-      <h2>Самопроверка (в т.ч. взаимопонимаемость профилей)</h2>
-      <div class="btns"><button id="btn-test" class="good">▶ Запустить</button></div>
-      <div class="out" id="out-test"><span class="lbl">результат</span></div>
-    </div>
-
-    <footer>Всё в браузере через WebAssembly. Ядро — эталонная Rust-реализация N2Q-C, сверенная с C и тест-векторами.</footer>
-  </div>
-
-  <script type="module">
-    import init, * as n2q from './pkg/n2q_c_wasm.js';
-    const $ = id => document.getElementById(id);
-    const esc = s => s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    const setOut=(el,t,k)=>{el.className='out'+(k?' '+k:'');el.innerHTML='<span class="lbl">'+el.querySelector('.lbl').textContent+'</span>'+esc(t)};
-    const S = () => $('suite').value;
-    const FAST = () => $('profile').value === 'fast';
-    const seal = (...a) => n2q['seal'+S()](FAST(), ...a);
-    const open = (...a) => n2q['open'+S()](...a);
-    const hash = (m) => n2q['hash'+S()](FAST(), m);
-    const bi   = (...a) => n2q['blind_index'+S()](FAST(), ...a);
-
-    try { await init(); $('engine').textContent='✅ WASM'; $('engine').style.color='var(--accent2)'; }
-    catch(e){ $('engine').textContent='❌ '+e; throw e; }
-
-    function newKey(){ $('key').value = S()==='128'? n2q.keygen128() : n2q.keygen256(); }
-    newKey(); $('nonce').value = n2q.gen_nonce();
-    $('suite').onchange = newKey;
-    $('btn-key').onclick = newKey;
-    $('btn-nonce').onclick = () => { $('nonce').value = n2q.gen_nonce(); };
-
-    $('btn-enc').onclick = () => {
-      try { setOut($('out-ct'), seal($('key').value,$('nonce').value,$('aad').value,$('pt').value), 'ok'); }
-      catch(e){ setOut($('out-ct'), e.message, 'err'); }
-    };
-    $('btn-copy').onclick = () => {
-      $('ct').value = $('out-ct').textContent.replace(/^токен.*внутри\)/,'').trim();
-      $('aad2').value = $('aad').value;
-    };
-    $('btn-dec').onclick = () => {
-      try { setOut($('out-pt'), open($('key').value,$('aad2').value,$('ct').value.trim()), 'ok'); }
-      catch(e){ setOut($('out-pt'), '⛔ '+e.message, 'err'); }
-    };
-    $('btn-hash').onclick = () => { try{ setOut($('out-h'), hash($('hval').value), 'ok'); }catch(e){ setOut($('out-h'), e.message,'err'); } };
-    $('btn-bi').onclick   = () => { try{ setOut($('out-h'), bi($('key').value,$('hval').value), 'ok'); }catch(e){ setOut($('out-h'), e.message,'err'); } };
-
-    $('btn-test').onclick = () => {
-      const lines=[]; const ok=(c,m)=>lines.push((c?'✅ ':'❌ ')+m);
-      try {
-        const k = S()==='128'? n2q.keygen128(): n2q.keygen256();
-        const nc = n2q.gen_nonce();
-        const sealP = (fast,pt)=> n2q['seal'+S()](fast,k,nc,'ctx',pt);
-        const openP = (tok)=> n2q['open'+S()](k,'ctx',tok);
-        // encrypt in BOTH profiles
-        const ts = sealP(false,'привет 🌍'), tf = sealP(true,'привет 🌍');
-        ok(ts.startsWith('nqc.')&&tf.startsWith('nqc.'), 'оба профиля дают токен nqc.');
-        ok(ts!==tf, 'Secure и Fast дают разные токены');
-        // ONE open reads BOTH (interoperability)
-        ok(openP(ts)==='привет 🌍', 'один open читает Secure-токен');
-        ok(openP(tf)==='привет 🌍', 'тот же open читает Fast-токен');
-        let bad=false; try{ n2q['open'+S()](k,'wrong',ts);}catch{bad=true;} ok(bad,'неверный AAD → отказ');
-        let t2=false; try{ openP(ts.slice(0,-2)+(ts.slice(-2)==='AA'?'AB':'AA')); }catch{t2=true;} ok(t2,'подделка → отказ');
-        ok(n2q['hash'+S()](false,'a')===n2q['hash'+S()](false,'a'),'хэш детерминирован');
-        const pass=lines.every(l=>l.startsWith('✅'));
-        setOut($('out-test'), lines.join('\n')+'\n\n'+(pass?'🎉 все проверки пройдены':'⚠️ есть падения'), pass?'ok':'err');
-      } catch(e){ setOut($('out-test'), lines.join('\n')+'\n❌ '+e.message,'err'); }
-    };
-  </script>
-</body>
-</html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><title>N2Q — исследовательский стенд</title><link rel="stylesheet" href="./app.css"><script type="module" src="./app.js"></script></head>
+<body><main class="wrap"><header><h1>N2Q</h1><p id="engine" role="status" aria-live="polite">Загрузка WASM…</p><button id="btn-clear">Очистить всё</button></header>
+<p class="warning">Экспериментальный шифр без независимой криптографической экспертизы. Не используйте для реальных секретов. Обработка выполняется локально в браузере. Сохраните ключ и использованный AAD самостоятельно; для очистки формы нажмите «Очистить всё».</p>
+<div class="card" id="usage-help"><h2>Пример работы</h2><ol>
+<li>Выберите N2Q-128 и Secure · 16 раундов, нажмите «Новый ключ» и сохраните его.</li>
+<li>В разделе «Шифрование» введите AAD <code>demo:v1</code> и текст <code>Привет 🌍</code>, затем нажмите «Зашифровать».</li>
+<li>Нажмите «В поле дешифрования»: токен и AAD перенесутся вместе. Нажмите «Расшифровать» — результатом будет <code>Привет 🌍</code>.</li>
+</ol><p>При повторном шифровании создаётся новый случайный nonce, поэтому токен меняется. Стенд работает с текстовыми токенами <code>nqc.</code>; файловый контейнер N2QF и получение ключа из пароля доступны в отдельных инструментах проекта.</p></div>
+<div class="card"><h2>Параметры шифрования</h2><label for="suite">Размер ключа</label><select id="suite"><option value="128">N2Q-128</option><option value="256">N2Q-256</option></select>
+<label for="profile">Профиль</label><select id="profile"><option value="secure">Secure · 16 раундов</option><option value="fast">Fast · 8 раундов · экспериментальный</option></select>
+<label for="key">Ключ (32 или 64 hex-символа)</label><input id="key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="64" aria-describedby="key-help">
+<p id="key-help">N2Q-128: 32 hex-символа; N2Q-256: 64. Введите ключ без пробелов. Смена размера сохраняет ключ; «Новый ключ» заменяет его. Для этой формы нужен готовый ключ, а не пароль.</p><button id="btn-show" aria-pressed="false">Показать ключ</button><button id="btn-key" data-crypto disabled>Новый ключ</button>
+<label for="nonce">Nonce результата (автоматически, 32 hex-символа)</label><input id="nonce" readonly><p>Nonce уже включён в токен; отдельно вводить его для дешифрования не требуется.</p></div>
+<div class="card"><h2>Шифрование</h2><label for="aad">AAD — контекст (до 256 КиБ UTF-8)</label><input id="aad" maxlength="262144" autocomplete="off" aria-describedby="aad-help"><p id="aad-help">AAD хранится отдельно от токена и должен точно совпадать при дешифровании. Пустой AAD допустим.</p><label for="pt">Открытый текст (до 1 МиБ UTF-8)</label><textarea id="pt" maxlength="1048576" autocomplete="off" spellcheck="false"></textarea>
+<button id="btn-enc" data-crypto disabled>Зашифровать</button><button id="btn-copy" disabled>В поле дешифрования</button><pre id="out-ct" class="out" role="status" aria-live="polite"></pre></div>
+<div class="card"><h2>Дешифрование</h2><p id="decrypt-help">Для дешифрования нужны исходный ключ и тот же AAD. Размер схемы, профиль и nonce читаются из токена; выбор размера и профиля в верхних списках используется для шифрования, хэша и blind index.</p><label for="aad2">AAD (до 256 КиБ UTF-8, должен совпадать)</label><input id="aad2" maxlength="262144" autocomplete="off"><label for="ct">Токен nqc. (до 2 МиБ)</label><textarea id="ct" maxlength="2097152" autocomplete="off" spellcheck="false" aria-describedby="decrypt-help"></textarea><button id="btn-dec" data-crypto disabled>Расшифровать</button><pre id="out-pt" class="out" role="status" aria-live="polite"></pre></div>
+<div class="card"><h2>Хэш и blind index</h2><p>Хэш не требует ключа. Blind index использует ключ, выбранный размер и профиль; одинаковые данные при тех же параметрах дают одинаковый индекс. Результаты выводятся в hex: N2Q-128 — хэш 64 символа, индекс 32; N2Q-256 — хэш 128 символов, индекс 64.</p><label for="hval">Данные (до 1 МиБ UTF-8)</label><textarea id="hval" maxlength="1048576" autocomplete="off" spellcheck="false"></textarea><button id="btn-hash" data-crypto disabled>Хэш</button><button id="btn-bi" data-crypto disabled>Blind index</button><pre id="out-h" class="out" role="status" aria-live="polite"></pre></div>
+<div class="card"><h2>Проверка реализации</h2><button id="btn-test" data-crypto disabled>Самопроверка</button><pre id="out-test" class="out" role="status" aria-live="polite"></pre><p>Самопроверка не заменяет криптоанализ.</p></div>
+<footer>Без сохранения ключей в хранилищах браузера. Очистка удаляет поля и завершает worker; гарантированное стирание памяти JavaScript/WASM недоступно.</footer></main></body></html>

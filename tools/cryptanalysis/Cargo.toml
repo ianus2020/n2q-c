@@ -2,6 +2,7 @@
 name = "cryptanalysis"
 version = "0.1.0"
 edition = "2021"
+default-run = "cryptanalysis"
 
 [dependencies]
 n2q-c-ref = { path = "../../impl/n2q-c-ref" }

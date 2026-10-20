@@ -1,0 +1,6 @@
+{
+  "complete_real_log": true,
+  "truncation_detected": true,
+  "ubsan_recovery_diagnostic_detected": true,
+  "duplicate_target_rejected": true
+}

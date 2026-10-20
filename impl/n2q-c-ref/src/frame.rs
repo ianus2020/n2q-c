@@ -40,7 +40,10 @@ fn b64_encode(data: &[u8]) -> String {
 
 fn b64_decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let val = |c: u8| -> Result<u32, &'static str> {
-        B64.iter().position(|&x| x == c).map(|p| p as u32).ok_or("invalid base64url")
+        B64.iter()
+            .position(|&x| x == c)
+            .map(|p| p as u32)
+            .ok_or("invalid base64url")
     };
     let bytes = s.as_bytes();
     let mut out = Vec::with_capacity(bytes.len() / 4 * 3);
@@ -76,7 +79,13 @@ pub fn encode(suite: u8, nonce: &[u8; 16], sealed: &[u8]) -> String {
 /// Decode a frame into `(suite, nonce, sealed)`.
 pub fn decode(token: &str) -> Result<(u8, [u8; 16], Vec<u8>), &'static str> {
     let body = token.strip_prefix(PREFIX).ok_or("missing nqc. prefix")?;
-    let raw = b64_decode(body.trim())?;
+    if body.len() > 24 * 1024 * 1024 {
+        return Err("token too large");
+    }
+    let raw = b64_decode(body)?;
+    if b64_encode(&raw) != body {
+        return Err("noncanonical base64url");
+    }
     if raw.len() < 2 + 16 {
         return Err("frame too short");
     }
@@ -84,6 +93,9 @@ pub fn decode(token: &str) -> Result<(u8, [u8; 16], Vec<u8>), &'static str> {
         return Err("unsupported version");
     }
     let suite = raw[1];
+    if !matches!(suite, 0x01 | 0x02 | 0x21 | 0x22 | 0x11 | 0x12 | 0x31 | 0x32) {
+        return Err("unsupported suite");
+    }
     let mut nonce = [0u8; 16];
     nonce.copy_from_slice(&raw[2..18]);
     Ok((suite, nonce, raw[18..].to_vec()))
@@ -123,7 +135,10 @@ mod tests {
         // decode, dispatch on the suite, open
         let (suite, n, s) = decode(&tok).unwrap();
         assert_eq!(suite, SUITE_SIV_128);
-        assert_eq!(n128::open(Profile::Secure, &key, &n, b"ad", &s).unwrap(), b"hello");
+        assert_eq!(
+            n128::open(Profile::Secure, &key, &n, b"ad", &s).unwrap(),
+            b"hello"
+        );
     }
 
     #[test]

@@ -1,0 +1,410 @@
+{
+  "schema": 1,
+  "source_commit": "c9c0f8d5883af0d47fbe12c06d6978965bc8fc12",
+  "checkout_commit": "c9c0f8d5883af0d47fbe12c06d6978965bc8fc12",
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "budget": {
+    "runs_per_target": 2000,
+    "seconds_per_target": 20,
+    "seed": 20261019,
+    "max_input_bytes": 4096,
+    "rss_limit_mb": 512,
+    "input_timeout_seconds": 5
+  },
+  "tools": {
+    "clang": {
+      "exit_code": 0,
+      "text": "Ubuntu clang version 18.1.3 (1ubuntu1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/bin"
+    },
+    "rust": {
+      "exit_code": 0,
+      "text": "rustc 1.101.0-nightly (8006091eb 2026-10-17)"
+    },
+    "cargo-fuzz": {
+      "exit_code": 0,
+      "text": "cargo-fuzz 0.13.2"
+    }
+  },
+  "inputs": [
+    {
+      "path": ".github/workflows/security.yml",
+      "sha256": "d11a37ef8c793404613e715e3facce5099cda690a3dfa716eeb2db9dec3fd639"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "bb87391dab100031afa3cd12f059763dbc6a156d308a291cbf12863f0ba59594"
+    },
+    {
+      "path": "fuzz/Cargo.lock",
+      "sha256": "b9573e76ac6ee29679d12872fe4e7e35e76bd96f7736c458e70b7f052031dddc"
+    },
+    {
+      "path": "fuzz/Cargo.toml",
+      "sha256": "901a1430a86edab1f842e3652846976324f8ce0ddbb652ff5bc17a2cd9fb4502"
+    },
+    {
+      "path": "fuzz/README.md",
+      "sha256": "e78818d25ac12f3a2a94be0419e7a061f46ce26497791e9af17bacdfade4500f"
+    },
+    {
+      "path": "fuzz/c/convergent.c",
+      "sha256": "3b27a60c386845ae113eded208e2c3ccc1d48edeb5c74c34a3886844530635f0"
+    },
+    {
+      "path": "fuzz/c/fireline.c",
+      "sha256": "bfafd2a8bac9df2606be0ec6ff5a03da17c331673ce9c91d293a18519be58c31"
+    },
+    {
+      "path": "fuzz/c/modes_roundtrip.c",
+      "sha256": "f2ab0bf751c422c4c5c8017e3f4df3282ab99c3a632865068d43fa5e228c5f81"
+    },
+    {
+      "path": "fuzz/c/n2qf.c",
+      "sha256": "f3f183123348797694c3d66e0e78115a7226a1ad8b761795267ad1e957c186dd"
+    },
+    {
+      "path": "fuzz/c/siv.c",
+      "sha256": "052b993e367620343e29f0c7f2525ac084a260f06664914ca5390de475d70e9e"
+    },
+    {
+      "path": "fuzz/fuzz_targets/frames.rs",
+      "sha256": "f5a11d757d6afb9b1aeed2276676f39bd6393bce28c4ec4b9006fa2a945aae60"
+    },
+    {
+      "path": "fuzz/fuzz_targets/n2qf.rs",
+      "sha256": "11ea9a54cbdbf035a98e4e8f46e1b0839385124dadd31350b1738f89a1179526"
+    },
+    {
+      "path": "impl/c/n2q_bench.c",
+      "sha256": "a8cf993fb66ec0fe6a44cca8179d664605d2918110342b5d455a26919389eedc"
+    },
+    {
+      "path": "impl/c/n2q_commit.c",
+      "sha256": "7bf3ac693d50252a5a12788769b912af2e5fc1fb2d224a6eb23f7bb8a1031c9a"
+    },
+    {
+      "path": "impl/c/n2q_commit.h",
+      "sha256": "df74775f84ace9cc0039efbd8ab79d40d650c6de67349b2107db3c371f9b74e1"
+    },
+    {
+      "path": "impl/c/n2q_cone.c",
+      "sha256": "48ed64a678ba22478c2fbd5e1e823de8da2770764e73b0f2653f04edc3922290"
+    },
+    {
+      "path": "impl/c/n2q_cone_anchor_http.c",
+      "sha256": "4cbcf338916fb98daeab1018f24002056ae1369bac9a71887701aa4383779f8e"
+    },
+    {
+      "path": "impl/c/n2q_cone_anchor_http.h",
+      "sha256": "815d352179fe542e020032aed9cce57ea955ae5502a041ac2409d12482094ab2"
+    },
+    {
+      "path": "impl/c/n2q_cone_state.c",
+      "sha256": "fc67f3caf4f5aef49257187e76ae4817887aded9c438440df32f8f0965114167"
+    },
+    {
+      "path": "impl/c/n2q_cone_state.h",
+      "sha256": "7fa9ace1dd89c1b8827184b9f13beb2d91183fa6fa35904c97341192a9043646"
+    },
+    {
+      "path": "impl/c/n2q_convergent.c",
+      "sha256": "210d189b4be71c1fd7120d92b5bb4a050fd706e6189a79b13a35f14abb68cd34"
+    },
+    {
+      "path": "impl/c/n2q_envelope.c",
+      "sha256": "a11234716727dbdb0bad0b32b401e6f8209575f737221711c9561a81ba93c02d"
+    },
+    {
+      "path": "impl/c/n2q_envelope.h",
+      "sha256": "d8cb596b43a939ecbce6048b6feffad99e8d8ee392bc4c7ed3a36f30e750c648"
+    },
+    {
+      "path": "impl/c/n2q_file.h",
+      "sha256": "37782fd1aad572f92b3abf662d8d491590daadf9a7ed1fb20df46dfb3a2cc69d"
+    },
+    {
+      "path": "impl/c/n2q_fireline.c",
+      "sha256": "329e5011ef46398a4c073dc18c72c167db89c57fb9eb09aa51a8597612505482"
+    },
+    {
+      "path": "impl/c/n2q_fpe.c",
+      "sha256": "543a57c27ba2c8ba1812f4332a882b5ac79a2abdebcc527b51b428031d994d33"
+    },
+    {
+      "path": "impl/c/n2q_franking.c",
+      "sha256": "3671df01fd074572c1467eca23b4a8d2a302266b20b90eb6f84d662c908c9de5"
+    },
+    {
+      "path": "impl/c/n2q_log.c",
+      "sha256": "97d60d10504d013de8a33a1a957aa8c375ff4b9794170b7bc884062fa5ee4630"
+    },
+    {
+      "path": "impl/c/n2q_pad.c",
+      "sha256": "f982cd05b6d05aaf40dc32f751ddc665c3961efadcca334abc91ae5633ba86ed"
+    },
+    {
+      "path": "impl/c/n2q_ratchet.c",
+      "sha256": "dfb4463f5fa0d09ebc2dcdef3d4e6f41ac06dc9274547d2ba91864d7c88eb8ca"
+    },
+    {
+      "path": "impl/c/n2q_ratchet.h",
+      "sha256": "40d30e344f8f07dd6fcd1d8d08db88fbd7b21b42894e5b201c9abb61a8d5db21"
+    },
+    {
+      "path": "impl/c/n2q_seek.c",
+      "sha256": "5842755138914168bdb959776ffe1574b7c54812ba1d4f7897f33dbc7467111d"
+    },
+    {
+      "path": "impl/c/n2q_stego.c",
+      "sha256": "b43fc08fca5c06d0815f95b03a4ccade5719ecafead3aa9f9f9a129361f49471"
+    },
+    {
+      "path": "impl/c/n2q_stream.c",
+      "sha256": "ddc14802493b8c7fbdc920341a9be7734d528c1c63c2b419c702aea6e2cef25e"
+    },
+    {
+      "path": "impl/c/n2q_stream.h",
+      "sha256": "542113f631fed4f41c369dbca8d2f67960988047e6a6c5d1d93cd6d9f088e056"
+    },
+    {
+      "path": "impl/c/n2qc.c",
+      "sha256": "8917d9c23c185b6b8840ee8c63911a88ef252e473b3f4f3a513d779bc7a0e5af"
+    },
+    {
+      "path": "impl/n2q-c-ref/.gitignore",
+      "sha256": "44c92e3a70ad3307b7056871c2bdb096d8bfa9373f5bf06a79bb6324a20ff2fb"
+    },
+    {
+      "path": "impl/n2q-c-ref/Cargo.lock",
+      "sha256": "4433a6230a99e9276890aeca54e9df82ba32efbcd8b29142fc1837d128ae2be3"
+    },
+    {
+      "path": "impl/n2q-c-ref/Cargo.toml",
+      "sha256": "fc729b6d466ba17ca03854426eb80cda84bd8340b681207e44484b52439bdbbf"
+    },
+    {
+      "path": "impl/n2q-c-ref/examples/file.rs",
+      "sha256": "c006e7fb7f17ef9713cc1e81be242bf3807bb31af99f60ff8c2bd4c2b33b2a10"
+    },
+    {
+      "path": "impl/n2q-c-ref/examples/katgen.rs",
+      "sha256": "d8fed813f1dbf6b8f394613e6b6947ccd4e1d859591f3a8ef359a059fcf805a7"
+    },
+    {
+      "path": "impl/n2q-c-ref/examples/migration_keys.rs",
+      "sha256": "0ff3a59a428a922c7730987e86de27df5c2c01a43e4b2bfc1f5d6922eca6ad12"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/consts.rs",
+      "sha256": "f2dab6ad5c182245279c32a0aef2f9c3678df28e11c8da8a7107c4b77c8634ac"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/file.rs",
+      "sha256": "58c2c269c3348106a4225f1dc85bf91e54de279cdfe00bbc700550a88d962e12"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/frame.rs",
+      "sha256": "845ac89cfe7ce995297ec275a97dd209187afaabd239798fa1f672ab18fe9648"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/keys.rs",
+      "sha256": "412db7bdb59f4c3fba1ef9364fe62e6aa9acbe32b2f9baba4cbde87a69c579ee"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/lib.rs",
+      "sha256": "67acdac6a2d86bdf54ebad843c833754bf9d857851f3aac1a461aa0af1c31e72"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/modes.rs",
+      "sha256": "9c39fd677fd83b28e3e3dbfab720681c7a0070c0c7d46203676e5085a95ff188"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/modes_ext.rs",
+      "sha256": "d16f5c41202824efc3215d0d4684dfdb05eb2c52add1f980f8b51a51fd5de832"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/perm.rs",
+      "sha256": "d5fa8e9085cb87280f2cbc726430fa816e507b5ca5423973ce989beb45b0910a"
+    },
+    {
+      "path": "impl/n2q-c-ref/src/pw.rs",
+      "sha256": "8ed40dc60f44effee3590f70e339665268c84fee71608ba1508b449d0d03bb3d"
+    },
+    {
+      "path": "impl/n2q-c-ref/tests/convergent_security.rs",
+      "sha256": "2bdfeb7f52f744b3f2e55d66c12539d6eeb15a638137c70a4cd89ac4bd2e4b2c"
+    },
+    {
+      "path": "impl/n2q-c-ref/tests/file.rs",
+      "sha256": "85e8eb267e4af4ea68e506a3a386fa7278a50dcf102bdabcc2730ca80c5a9d1b"
+    },
+    {
+      "path": "impl/n2q-c-ref/tests/kat.rs",
+      "sha256": "95b1dd64f5db6e472c0a3c7f8dceee8959267a64fb2d46a97d57e19dd84f661b"
+    },
+    {
+      "path": "impl/n2q-c-ref/tests/modes_cross.rs",
+      "sha256": "c88620f3f830227dba16accb9e1d01def85df76507ec3ab4d43f9b1f2de0902d"
+    },
+    {
+      "path": "impl/n2q-c-ref/tests/security.rs",
+      "sha256": "cf1f182b5e556ce0085c1aa7ec6221cc5802866ea6f9f39113eb8a9bc2cf09f5"
+    },
+    {
+      "path": "impl/python/n2qc.py",
+      "sha256": "1a7d84a5da8683be96f5886efa91515cfcf81f40254c9ff4fc17208f66cc25bc"
+    },
+    {
+      "path": "impl/python/n2qc_fireline.py",
+      "sha256": "a744fb35dc78598e2d338d5e9ab1871c0a5b37f6bcf24ce489629464fbe99e95"
+    },
+    {
+      "path": "impl/python/n2qc_modes.py",
+      "sha256": "8642284461a949700d6dc6a85bcf035f2bd0d90862b58af0b56e07d91473ba62"
+    },
+    {
+      "path": "impl/python/test_kat.py",
+      "sha256": "46e3f0f5874f44d98330ecb12a86b5b12339df5bf2369feb2261f2c7185c707a"
+    },
+    {
+      "path": "scripts/audit-summary.py",
+      "sha256": "a63409134a0b1f17795c65edafe373ae6db9e39547017d7b1dab0168aa414294"
+    },
+    {
+      "path": "scripts/build-web.sh",
+      "sha256": "70e960fbc3a98d97fdeec2692b65ff5deb5844f0ce1b0b1484c76fd31a41c3b2"
+    },
+    {
+      "path": "scripts/check-sanitizers.sh",
+      "sha256": "0a1f039047a76836bf096cc71238cddc6efc2c69a735290a22ff7314b952ca96"
+    },
+    {
+      "path": "scripts/check.sh",
+      "sha256": "81bce62eb2ec9aee571f49b62a35ee6c7caa1c6672dc9d16aef994ec85685d28"
+    },
+    {
+      "path": "scripts/dependency-audit.sh",
+      "sha256": "31e7482090733a8f1ce1168fdb5be7c9e00f44ac24762493dddc51d5ba04132a"
+    },
+    {
+      "path": "scripts/fuzz-campaign.py",
+      "sha256": "363c81dc8bc7abec718855c64b3768c7e2819b2f91240101ae633bb7cb3ca4e8"
+    },
+    {
+      "path": "scripts/fuzz-seeds.py",
+      "sha256": "ca9c528149e300ee414907cd52c3e3ce2e0e1089a01392d08835a9e14de98afc"
+    },
+    {
+      "path": "scripts/fuzz-smoke.sh",
+      "sha256": "44a99d5d957caf37f80fafd80aebb19b7b1096caaa462b7e619dbe86d752eaa2"
+    },
+    {
+      "path": "scripts/serve-web.py",
+      "sha256": "62b012022a1c626cfcf16c708adcad826e5c3b060a64af8addbdf077da2135ee"
+    },
+    {
+      "path": "scripts/verification-record.py",
+      "sha256": "e81f93b1ef072577d3a17956108b694ddafd23835afb1c45690ecd6e230545ff"
+    },
+    {
+      "path": "scripts/web-manifest.py",
+      "sha256": "dda6a88538b19998f2e8650bec845ddb337c156928e9210256b26d3fa074a7fa"
+    },
+    {
+      "path": "tests/sanitizer_probe.c",
+      "sha256": "4b2f9970c6ad2c0897c0146091b5f6bc29461a15f344087694e09a0c779da6ba"
+    }
+  ],
+  "status": "passed",
+  "initial_corpus": {
+    "files": 0,
+    "bytes": 0,
+    "archive": null
+  },
+  "limitations": [
+    "Bounded implementation fuzzing, not cryptographic security proof.",
+    "Coverage edges depend on compiler/instrumentation and are not path coverage.",
+    "A time limit can stop a target before its requested run count."
+  ],
+  "returncode": 0,
+  "wall_seconds": 96.155,
+  "inputs_unchanged": true,
+  "final_corpus": {
+    "files": 1006,
+    "bytes": 352931,
+    "archive": "final-corpus.tar.gz",
+    "sha256": "a349d5c00775ef83fc0efe13da2c1d085d7fb907a28939fbfba46e40979b5e41"
+  },
+  "targets": [
+    {
+      "name": "c/fireline",
+      "runs": 2000,
+      "seconds": 0,
+      "coverage_edges": 85,
+      "peak_rss_mb": 48,
+      "completed_crypto_cases": {}
+    },
+    {
+      "name": "c/n2qf",
+      "runs": 2000,
+      "seconds": 1,
+      "coverage_edges": 90,
+      "peak_rss_mb": 229,
+      "completed_crypto_cases": {}
+    },
+    {
+      "name": "c/siv",
+      "runs": 2000,
+      "seconds": 0,
+      "coverage_edges": 104,
+      "peak_rss_mb": 48,
+      "completed_crypto_cases": {}
+    },
+    {
+      "name": "c/modes_roundtrip",
+      "runs": 2000,
+      "seconds": 13,
+      "coverage_edges": 263,
+      "peak_rss_mb": 72,
+      "completed_crypto_cases": {
+        "0": 266,
+        "1": 256,
+        "2": 191,
+        "3": 263,
+        "4": 271,
+        "5": 254,
+        "6": 198,
+        "7": 250
+      }
+    },
+    {
+      "name": "c/convergent",
+      "runs": 1108,
+      "seconds": 21,
+      "coverage_edges": 107,
+      "peak_rss_mb": 58,
+      "completed_crypto_cases": {
+        "0": 609,
+        "1": 449
+      }
+    },
+    {
+      "name": "rust/frames",
+      "runs": 2000,
+      "seconds": 0,
+      "coverage_edges": 654,
+      "peak_rss_mb": 54,
+      "completed_crypto_cases": {}
+    },
+    {
+      "name": "rust/n2qf",
+      "runs": 2000,
+      "seconds": 0,
+      "coverage_edges": 368,
+      "peak_rss_mb": 55,
+      "completed_crypto_cases": {}
+    }
+  ],
+  "complete": true,
+  "sanitizer_or_fuzzer_diagnostic": false
+}

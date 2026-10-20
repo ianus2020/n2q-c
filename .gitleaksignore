@@ -1,0 +1,13 @@
+# Reviewed public KAT fixtures, not deployed credentials.
+# Each exception identifies ONE historical commit/path/rule/line only.
+# Context review: docs/stage-7-release-review.ru.md. Never suppress whole files/rules.
+# Conformance key16 is the documented 001122...eeff sample.
+f77e8f2e7711bdde9f23a0e75a437f26132d2d85:impl/conformance/vectors.txt:generic-api-key:6
+# Appendix A 128/256 mode known-answer input keys.
+771c1a5aa4127e64d08d8caf049764ce2eeab499:APPENDIX-A.md:generic-api-key:125
+771c1a5aa4127e64d08d8caf049764ce2eeab499:APPENDIX-A.md:generic-api-key:135
+# The old site's KAT_KEY uses the same documented sample inside dTest.
+771c1a5aa4127e64d08d8caf049764ce2eeab499:site/index.html:generic-api-key:3839
+# Reviewed SHA-256 of the migration helper source, not a key or credential.
+# Evidence input_sha256: docs/audit/2026-10-19-local/verification.json.
+f937866c9be8d6e9a2d14820230c94f8be7717bb:docs/audit/2026-10-19-local/verification.json:generic-api-key:12

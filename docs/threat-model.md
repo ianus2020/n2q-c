@@ -39,10 +39,10 @@ constant-time*.
 | SIV mode | Nonce-misuse resistance (repeat leaks only equality of `(N,A,P)`) | — |
 | Hash | Collision / preimage | 128,256 / 256,512 bit |
 | Blind index | Keyed, deterministic; unlinkable without the key | 128 / 256 bit |
-| N2Q-PW | Memory-hard (Balloon bound); data-independent access | per cost params |
-| All | Constant-time (no secret-dependent branch/index/time) | — |
+| N2Q-PW | Argon2id v19; bounded cost and memory | per cost params |
+| QP core | Data-independent bitsliced operations; platform timing still needs review | — |
 
-Reduction (SPEC §5.4): all of the above reduce to QP behaving as a random
+Reduction (SPEC §5.4): the N2Q modes depend on QP behaving as a random
 permutation, evidenced (not proven) by the M4 measurements
 ([cryptanalysis.md](cryptanalysis.md)).
 
@@ -69,17 +69,20 @@ permutation, evidenced (not proven) by the M4 measurements
 2. **Nonces** for the streaming mode are unique per (key, message). SIV tolerates
    reuse (leaking only equality). A 128-bit random nonce is safe to generate
    randomly.
-3. **N2Q-PW cost** (`s_cost`, `t_cost`) is tuned to the deployment; do not use the
-   test values in production.
-4. **One key, one purpose** — HKDF sub-keys (N2Q-KDF) separate uses; do not reuse
-   a raw key across unrelated primitives beyond the built-in domain separation.
+3. **Password KDF:** Argon2id v19, random 16–64-byte salt, explicit version and
+   stored costs. Defaults are 64 MiB, 3 passes, 1 lane. Bound concurrent calls in
+   addition to per-call limits; migrate legacy custom N2Q-PW keys explicitly.
+4. **One key, one purpose** — use dedicated keys for unrelated uses. A generic
+   N2Q-KDF/extract/expand API is not provided; do not implement the withdrawn
+   variable-length `Hash(salt || ikm)` sketch or assume it is HKDF.
 5. **Do not deploy pre-audit.** Until external cryptanalysis (M6), use a vetted
    library for anything real.
 
 ## 6. Known limitations / residual risk
 
 - No independent audit yet; the security goals are *claims*.
-- The differential/linear bound is empirical (M4), not MILP-proven — the one
-  headline open item.
+- Full-round differential/linear bounds and mode-composition proofs remain
+  open. Small-component exact results and bounded SAT/measurements are recorded
+  in the additional audit; they do not establish the claimed security levels.
 - Blind index leaks equality and frequency (inherent to searchable determinism).
 - The streaming mode is online but not misuse-resistant.

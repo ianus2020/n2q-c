@@ -1,0 +1,18 @@
+{
+  "baseline_source": "70b62580cdfab269b0bb0a9f182e404fe000c13a",
+  "default_ubsan_control_exit": 0,
+  "strict_control_exit": 134,
+  "native_exit": 0,
+  "native_python_tests": 42,
+  "native_ports": [
+    "C",
+    "Rust",
+    "Python",
+    "Go",
+    "PHP",
+    "Swift"
+  ],
+  "linux_probe_exit": 0,
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "meaning": "Intentional invalid control demonstrates sanitizer gate behavior; it is not a newly discovered cipher defect."
+}

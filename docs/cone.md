@@ -7,19 +7,14 @@ a hash function and nothing else.*
 *whose* trunk key that is — and a substituted key is exactly how a man in the
 middle wins. Answering it needs a **signature**.
 
-Ordinary signatures (RSA, ECDSA) are asymmetric number theory: foreign to our
-design and broken by a quantum computer. **CoNe takes the other road:
-signatures built only from a hash function** — the WOTS+ / Merkle construction
-behind XMSS (RFC 8391) and SLH-DSA (FIPS 205), instantiated on the N2Q hash.
-
-Result: a certificate system with **no number theory** and post-quantum security
-by construction — Grover only halves a hash margin, and there is nothing for
-Shor to exploit.
+CoNe is a simplified, experimental hash-chain/Merkle signature construction.
+It is not a standards-compliant WOTS+, XMSS or SLH-DSA implementation. No
+independent security level, including post-quantum strength, is established.
 
 ## Construction
 
 ```
-WOTS+    one-time signature: 67 chains of a 32-byte hash, Winternitz w = 16
+WOTS-style one-time signature: 67 chains of a 32-byte hash, Winternitz w = 16
 Merkle   a tree over 2^h one-time keys → ONE 32-byte root = the public identity
 sign     index | WOTS+ signature | authentication path
 verify   recompute the WOTS+ public key → leaf → walk the path → compare the root
@@ -35,7 +30,7 @@ verify   recompute the WOTS+ public key → leaf → walk the path → compare t
 Raising `h` multiplies capacity (h = 10 → 1024 certificates) and adds only
 `32 × h` bytes to a signature.
 
-## Verified properties
+## Behaviors exercised by the reference tests
 
 | Property | Test result |
 |---|---|
@@ -65,13 +60,22 @@ detectable but *publicly* detectable.
 
 ## Two honest warnings
 
-**1. It is stateful — this is the real operational risk.** Every leaf index is a
-**one-time** key. Signing two different messages under the same index leaks extra
-chain links and enables forgery. A deployment MUST persist the last used index
-durably (and survive backups/restores and VM snapshots, which is exactly where
-stateful schemes go wrong in practice). The reference takes the index as an
-explicit parameter so misuse is visible in the API, and the self-test
-demonstrates what happens if you ignore it.
+**1. One-time indices require durable, globally monotonic reservations.**
+The preferred integration API is [n2q_cone_state.h](../impl/c/n2q_cone_state.h).
+It uses an exclusive, owner-only POSIX journal, file locking and fsync before
+signing. A required callback must atomically persist a strictly increasing
+index for the key identity outside the signer's snapshot/rollback domain.
+There is deliberately no default in-memory or same-file anchor.
+
+A missing journal, malformed record, wrong key identity, unsafe permissions,
+missing/unavailable anchor, rollback or exhaustion produces no signature.
+Failures can burn indices. Never reset a journal to recover capacity; rotate
+the identity when all 16 leaves are exhausted. The raw demo primitive remains
+internal and demonstrates why reusing an index is unsafe.
+
+See [the state contract and tested limits](stage-3-cone-state.ru.md). Physical
+power-loss behavior, deployed storage and the external anchor require separate
+validation; local tests do not establish those properties.
 
 **2. It is simplified against the standards.** No bitmask / tweakable-hash
 addressing as in RFC 8391 and FIPS 205, so multi-target attack resistance is

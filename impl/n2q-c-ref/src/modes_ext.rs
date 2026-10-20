@@ -2,7 +2,8 @@
 //! Byte-compatible with the Python / Go / C ports — a blob made in one opens in
 //! the others. Envelope, key-committing AEAD, convergent, length-hiding, stego.
 
-use crate::modes::{n128, Profile};
+use crate::modes::{Profile, n128};
+use zeroize::Zeroizing;
 
 const ENV_AD: &[u8] = b"n2q-envelope-v1";
 const CONV_AD: &[u8] = b"n2q-conv";
@@ -27,28 +28,46 @@ fn commit(key: &[u8; 16], tag: &[u8]) -> [u8; 32] {
     buf.extend_from_slice(tag);
     n128::hash(Profile::Secure, &buf)
 }
-pub fn seal_committing(key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], pt: &[u8], p: Profile) -> Vec<u8> {
+pub fn seal_committing(
+    key: &[u8; 16],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    pt: &[u8],
+    p: Profile,
+) -> Vec<u8> {
     let sealed = n128::seal(p, key, nonce, ad, pt);
     let mut out = commit(key, &sealed[..16]).to_vec();
     out.extend_from_slice(&sealed);
     out
 }
-pub fn open_committing(key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], token: &[u8], p: Profile) -> Option<Vec<u8>> {
+pub fn open_committing(
+    key: &[u8; 16],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    token: &[u8],
+    p: Profile,
+) -> Option<Vec<u8>> {
     if token.len() < 32 + 16 {
         return None;
     }
     let (kc, sealed) = token.split_at(32);
-    if &commit(key, &sealed[..16])[..] != kc {
+    if !crate::modes::ct_eq(&commit(key, &sealed[..16]), kc) {
         return None;
     }
     n128::open(p, key, nonce, ad, sealed)
 }
 
 // ---- convergent (dedup) ----
-pub fn conv_seal(mk: &[u8], content: &[u8], p: Profile) -> ([u8; 16], Vec<u8>) {
-    let mut m = mk.to_vec();
+/// Fixed 16-byte master key makes `master_key || content` unambiguous.
+///
+/// ```compile_fail
+/// use n2q_c_ref::{modes::Profile, modes_ext::conv_seal};
+/// conv_seal(&[0u8; 17], b"content", Profile::Secure);
+/// ```
+pub fn conv_seal(mk: &[u8; 16], content: &[u8], p: Profile) -> ([u8; 16], Vec<u8>) {
+    let mut m = Zeroizing::new(mk.to_vec());
     m.extend_from_slice(content);
-    let h = n128::hash(Profile::Secure, &m);
+    let h = Zeroizing::new(n128::hash(Profile::Secure, &m));
     let mut dek = [0u8; 16];
     dek.copy_from_slice(&h[..16]);
     let ct = n128::seal(p, &dek, &ZERO, CONV_AD, content);
@@ -59,7 +78,14 @@ pub fn conv_open(dek: &[u8; 16], ct: &[u8], p: Profile) -> Option<Vec<u8>> {
 }
 
 // ---- length-hiding:  padded = le32(len) | pt | zeros to bucket ----
-pub fn seal_padded(key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], pt: &[u8], p: Profile, bucket: usize) -> Vec<u8> {
+pub fn seal_padded(
+    key: &[u8; 16],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    pt: &[u8],
+    p: Profile,
+    bucket: usize,
+) -> Vec<u8> {
     let need = 4 + pt.len();
     let padded = ((need + bucket - 1) / bucket) * bucket;
     let mut buf = vec![0u8; padded];
@@ -67,7 +93,13 @@ pub fn seal_padded(key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], pt: &[u8], p: Pr
     buf[4..4 + pt.len()].copy_from_slice(pt);
     n128::seal(p, key, nonce, ad, &buf)
 }
-pub fn open_padded(key: &[u8; 16], nonce: &[u8; 16], ad: &[u8], token: &[u8], p: Profile) -> Option<Vec<u8>> {
+pub fn open_padded(
+    key: &[u8; 16],
+    nonce: &[u8; 16],
+    ad: &[u8],
+    token: &[u8],
+    p: Profile,
+) -> Option<Vec<u8>> {
     let buf = n128::open(p, key, nonce, ad, token)?;
     if buf.len() < 4 {
         return None;
@@ -150,7 +182,11 @@ pub fn frank_seal(key: &[u8; 16], nonce: &[u8; 16], msg: &[u8]) -> Vec<u8> {
     out.extend_from_slice(&n128::seal(Profile::Secure, key, nonce, &cf, msg));
     out
 }
-pub fn frank_open(key: &[u8; 16], nonce: &[u8; 16], token: &[u8]) -> Option<(Vec<u8>, [u8; 32], [u8; 16])> {
+pub fn frank_open(
+    key: &[u8; 16],
+    nonce: &[u8; 16],
+    token: &[u8],
+) -> Option<(Vec<u8>, [u8; 32], [u8; 16])> {
     if token.len() < 32 + 16 {
         return None;
     }
@@ -167,38 +203,11 @@ pub fn frank_report_verify(cf: &[u8; 32], opening: &[u8; 16], msg: &[u8]) -> boo
 }
 
 // ---- seekable N2QF ----
-pub fn n2qf_build(key: &[u8; 16], chunks: &[&[u8]], p: Profile) -> Vec<u8> {
-    let suite = 0x01u8 | if p == Profile::Fast { 0x20 } else { 0 };
-    let mut out = b"N2QF".to_vec();
-    out.push(1);
-    out.push(suite);
-    for (i, ch) in chunks.iter().enumerate() {
-        let mut nonce = [0u8; 16];
-        nonce[..8].copy_from_slice(&(i as u64).to_le_bytes());
-        let sealed = n128::seal(p, key, &nonce, b"", ch);
-        out.extend_from_slice(&(sealed.len() as u32).to_le_bytes());
-        out.extend_from_slice(&sealed);
-    }
-    out
+pub fn n2qf_build(key: &[u8; 16], chunks: &[&[u8]], p: Profile) -> std::io::Result<Vec<u8>> {
+    crate::file::build(p, key, chunks)
 }
 pub fn seek_chunk(key: &[u8; 16], buf: &[u8], index: usize) -> Option<Vec<u8>> {
-    if buf.len() < 6 || &buf[..4] != b"N2QF" {
-        return None;
-    }
-    let p = if buf[5] & 0x20 != 0 { Profile::Fast } else { Profile::Secure };
-    let (mut pos, mut i) = (6usize, 0usize);
-    while pos + 4 <= buf.len() {
-        let l = u32::from_le_bytes(buf[pos..pos + 4].try_into().unwrap()) as usize;
-        pos += 4;
-        if i == index {
-            let mut nonce = [0u8; 16];
-            nonce[..8].copy_from_slice(&(index as u64).to_le_bytes());
-            return n128::open(p, key, &nonce, b"", &buf[pos..pos + l]);
-        }
-        pos += l;
-        i += 1;
-    }
-    None
+    crate::file::parse(key, buf).ok()?.into_iter().nth(index)
 }
 
 // ---- streaming AEAD (seq -> nonce, sliding replay window) ----
@@ -229,7 +238,13 @@ pub struct StreamRx {
 }
 impl StreamRx {
     pub fn new(key: [u8; 16], p: Profile) -> Self {
-        Self { key, p, max: 0, win: 0, started: false }
+        Self {
+            key,
+            p,
+            max: 0,
+            win: 0,
+            started: false,
+        }
     }
     pub fn open(&mut self, aad: &[u8], pkt: &[u8]) -> Option<Vec<u8>> {
         if pkt.len() < 8 + 16 {
@@ -251,7 +266,11 @@ impl StreamRx {
             self.started = true;
         } else if seq > self.max {
             let shift = seq - self.max;
-            self.win = if shift >= 64 { 1 } else { (self.win << shift) | 1 };
+            self.win = if shift >= 64 {
+                1
+            } else {
+                (self.win << shift) | 1
+            };
             self.max = seq;
         } else {
             self.win |= 1 << (self.max - seq);
@@ -296,7 +315,11 @@ pub struct RatchetRx {
 }
 impl RatchetRx {
     pub fn new(root: [u8; 16]) -> Self {
-        Self { ck: root, next: 0, skip: std::collections::HashMap::new() }
+        Self {
+            ck: root,
+            next: 0,
+            skip: std::collections::HashMap::new(),
+        }
     }
     pub fn open(&mut self, aad: &[u8], pkt: &[u8]) -> Option<Vec<u8>> {
         if pkt.len() < 8 + 16 {
@@ -325,6 +348,11 @@ impl RatchetRx {
         let pt = n128::open(Profile::Fast, &mk, &nonce, aad, &pkt[8..])?;
         for (i, m) in skipped {
             self.skip.insert(i, m);
+        }
+        while self.skip.len() > 64 {
+            if let Some(oldest) = self.skip.keys().min().copied() {
+                self.skip.remove(&oldest);
+            }
         }
         self.ck = cn;
         self.next = seq + 1;
@@ -360,6 +388,9 @@ fn fp_fill(mut v: u64, l: usize) -> String {
     String::from_utf8(b).unwrap()
 }
 pub fn fpe_encrypt(key: &[u8; 16], tw: &[u8], s: &str) -> String {
+    if !(2..=18).contains(&s.len()) || tw.len() > 255 || !s.bytes().all(|b| b.is_ascii_digit()) {
+        return String::new();
+    }
     let n = s.len();
     let (u, v) = (n / 2, n - n / 2);
     let (mut a, mut b, mut al, mut bl) = (fp_atoi(&s[..u]), fp_atoi(&s[u..]), u, v);
@@ -374,6 +405,9 @@ pub fn fpe_encrypt(key: &[u8; 16], tw: &[u8], s: &str) -> String {
     format!("{}{}", fp_fill(a, al), fp_fill(b, bl))
 }
 pub fn fpe_decrypt(key: &[u8; 16], tw: &[u8], s: &str) -> String {
+    if !(2..=18).contains(&s.len()) || tw.len() > 255 || !s.bytes().all(|b| b.is_ascii_digit()) {
+        return String::new();
+    }
     let n = s.len();
     let (u, v) = (n / 2, n - n / 2);
     let (mut a, mut b, mut al, mut bl) = (fp_atoi(&s[..u]), fp_atoi(&s[u..]), u, v);

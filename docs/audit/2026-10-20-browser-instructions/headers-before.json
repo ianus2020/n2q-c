@@ -1,0 +1,11 @@
+{
+  "command": "python3 -m http.server PORT --bind 127.0.0.1 --directory impl/n2q-c-wasm/web",
+  "headers": {
+    "Content-Security-Policy": null,
+    "X-Content-Type-Options": null,
+    "Referrer-Policy": null,
+    "Cross-Origin-Opener-Policy": null,
+    "Cross-Origin-Embedder-Policy": null
+  },
+  "browser_exit_code": 1
+}

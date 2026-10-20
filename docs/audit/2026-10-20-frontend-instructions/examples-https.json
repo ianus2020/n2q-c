@@ -1,0 +1,91 @@
+{
+  "base": "https://localhost:55320",
+  "defaults": {
+    "suite": "128",
+    "profile": "secure"
+  },
+  "readme_example": {
+    "key_hex_length": 32,
+    "nonce_hex_length": 32,
+    "prefix": "nqc.",
+    "roundtrip": true
+  },
+  "scenarios": [
+    {
+      "suite": "128",
+      "profile": "secure",
+      "key_hex_length": 32,
+      "nonce_hex_length": 32,
+      "token_version": 1,
+      "suite_byte": 1,
+      "hash_hex_length": 64,
+      "index_hex_length": 32,
+      "copied_aad": true,
+      "auto_dispatch": true,
+      "wrong_aad_rejected": true,
+      "index_deterministic": true
+    },
+    {
+      "suite": "128",
+      "profile": "fast",
+      "key_hex_length": 32,
+      "nonce_hex_length": 32,
+      "token_version": 1,
+      "suite_byte": 33,
+      "hash_hex_length": 64,
+      "index_hex_length": 32,
+      "copied_aad": true,
+      "auto_dispatch": true,
+      "wrong_aad_rejected": true,
+      "index_deterministic": true
+    },
+    {
+      "suite": "256",
+      "profile": "secure",
+      "key_hex_length": 64,
+      "nonce_hex_length": 32,
+      "token_version": 1,
+      "suite_byte": 2,
+      "hash_hex_length": 128,
+      "index_hex_length": 64,
+      "copied_aad": true,
+      "auto_dispatch": true,
+      "wrong_aad_rejected": true,
+      "index_deterministic": true
+    },
+    {
+      "suite": "256",
+      "profile": "fast",
+      "key_hex_length": 64,
+      "nonce_hex_length": 32,
+      "token_version": 1,
+      "suite_byte": 34,
+      "hash_hex_length": 128,
+      "index_hex_length": 64,
+      "copied_aad": true,
+      "auto_dispatch": true,
+      "wrong_aad_rejected": true,
+      "index_deterministic": true
+    }
+  ],
+  "keyless_hash": true,
+  "layout": [
+    {
+      "width": 1100,
+      "fits": true
+    },
+    {
+      "width": 390,
+      "fits": true
+    }
+  ],
+  "limits": {
+    "key": 64,
+    "pt": 1048576,
+    "aad": 262144,
+    "aad2": 262144,
+    "ct": 2097152,
+    "hval": 1048576
+  },
+  "page_errors": []
+}

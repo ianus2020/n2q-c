@@ -1,38 +1,25 @@
-# N2Q robustness (release of unverified plaintext)
+# Plaintext must remain private until authentication succeeds
 
-Most AEADs come with a footnote: **do not use any plaintext until the tag
-verifies.** In practice implementations break that rule — they decrypt a large
-message in a streaming buffer, or a parser touches bytes early — and some modes
-degrade badly when that happens. The property that survives such mistakes is
-called **robustness under release of unverified plaintext (RUP)**.
+N2Q's SIV mode does **not** establish robustness under release of unverified
+plaintext (RUP). The earlier argument in this document was incorrect and is
+withdrawn. No RUP security proof for N2Q is provided.
 
-## Why N2Q's default mode is naturally robust
+A sealed message is `V || C`. The tag `V` is public. If a decryptor releases
+plaintext before verifying the tag, an attacker can keep `V`, replace `C` with
+zeroes, and obtain the keystream for that `V`. XOR with the original ciphertext
+then reveals the original plaintext. The final tag rejection does not undo this
+leak. SIV nonce-misuse resistance does not imply safe release before verification.
 
-The primary mode is **SIV** and it is **two-pass**:
+The reference `open` APIs return plaintext only after checking the tag. C callers
+must check the return value: failed SIV/stream opens set the output length to zero
+and wipe tentative plaintext in the caller's buffer. The raw C APIs still require
+correctly sized buffers and keys; they cannot infer pointer capacities. They do
+not make concurrent reads of tentative plaintext safe.
 
-1. the synthetic tag `V` is computed as a PRF over `(nonce, ad, plaintext)`;
-2. the keystream that encrypts the plaintext is derived **from `V`**.
+N2QF v2 file helpers use private temporary output and only publish it after the
+mandatory final record and EOF have been verified. Chunk-selection helpers also
+verify the whole container before releasing the selected chunk. See
+[n2qf.md](n2qf.md) for framing, migration and limits.
 
-Decryption reverses this: recover the plaintext from `V` and the ciphertext, then
-recompute the PRF and compare. Two consequences matter for RUP:
-
-- **No public, malleable IV drives the keystream.** In online AEADs (GCM,
-  ChaCha-Poly) the keystream depends only on key+nonce, so an attacker who learns
-  released plaintext can XOR-manipulate ciphertext into chosen plaintext. In SIV
-  the keystream depends on `V`, which depends on the *plaintext itself* — an
-  attacker cannot steer it without already knowing the tag.
-- **Nonce misuse is already contained.** Repeating a nonce leaks only whether two
-  (ad, plaintext) pairs were equal — not a catastrophic keystream reuse.
-
-So even a decryptor that leaks plaintext before checking the tag does not hand an
-attacker a chosen-ciphertext lever. The sponge/duplex and SIV proofs are what
-underwrite this; the reference `open` still returns nothing on a failed tag.
-
-## Honest scope
-
-RUP-robustness here is a **design property inherited from the SIV/sponge
-construction**, argued above — not a machine-checked theorem for N2Q
-specifically. Like every other security claim in this project it assumes the QP
-permutation is close to ideal and is pending external review (milestone M6).
-The practical guidance is unchanged: **still verify before you act on
-plaintext** — robustness is a safety net, not a licence.
+These implementation rules prevent known release paths. They do not constitute
+an independent cryptographic audit or a general memory-erasure guarantee.

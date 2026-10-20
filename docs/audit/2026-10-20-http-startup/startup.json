@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "startup_seconds": 0.068,
+  "loopback_url": "http://127.0.0.1:18766/",
+  "data": "public browser fixture build"
+}

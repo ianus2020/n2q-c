@@ -1,0 +1,8 @@
+{
+  "source_commit": "2035562ad63bedd3b753de62505bb537b6037204",
+  "script_sha256": "62b012022a1c626cfcf16c708adcad826e5c3b060a64af8addbdf077da2135ee",
+  "control": "getfqdn unavailable",
+  "old_startup": "failed",
+  "reverse_dns_calls": 1,
+  "data": "local startup fixture only; no remote requests"
+}

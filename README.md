@@ -10,11 +10,15 @@ QP-320 (5×64, the **N2Q-128** suite) and QP-640 (5×128, the **N2Q-256** suite)
 sharing the same S-box. One permutation yields the whole library: authenticated
 encryption (the default mode is the **misuse-resistant SIV**, plus a fast
 streaming mode), hashing, a password KDF, and a searchable **blind index**. The
-point for auditability is that the security of the entire library **reduces to a
-single question** — how close QP-w is to a random permutation (the sponge/duplex
-and SIV proofs guarantee the rest).
+design must be assessed at both the permutation and mode-composition levels.
+General sponge or SIV results do not certify this implementation or its extensions.
 
 > **Status:** see [STATUS.md](STATUS.md) for what is verified, what is not, and where this project is appropriate to use.
+
+> **Security fixes and compatibility:** [remediation record](docs/security-fixes.md),
+> [N2QF v2 and migration](docs/n2qf.md), [web build and tests](impl/n2q-c-wasm/README.md).
+>
+> **Implementation audit close-out:** [final report and remaining conditions](docs/audit-closure.ru.md).
 
 ---
 
@@ -30,8 +34,8 @@ and SIV proofs guarantee the rest).
   Swift**, plus a **WebAssembly** build. Constant-time by design; cross-checked
   byte-for-byte against shared KAT vectors.
 - **[docs/cryptanalysis.md](docs/cryptanalysis.md)** — the cryptanalysis dossier
-  with measured results (avalanche, degree, differential, timing) and
-  round-margin bounds.
+  with measured results (avalanche, cubes, differential, timing) and their
+  limitations. Round margins and claimed security levels remain unproven.
 - **[docs/threat-model.md](docs/threat-model.md)** — assets, adversary model,
   security goals, out-of-scope items, and usage requirements.
 - **[docs/comparison.md](docs/comparison.md)** — security (by design) and speed
@@ -48,7 +52,14 @@ and SIV proofs guarantee the rest).
 | M2 | Constant selection: S-box, rotations, round constants + KAT | ✅ done |
 | M3 | Reference implementations: Rust, C, Python, Go, PHP, Swift + WASM tester, KAT cross-check | ✅ done |
 | M4 | In-house cryptanalysis (avalanche / degree / differential / timing), round finalization | ◐ measurements done; a certified MILP bound is open |
-| M5 | Wire format, password KDF (Balloon), threat model | ✅ done |
-| M6 | External audit / publication / public challenge | — |
+| M5 | Wire format, password KDF (Argon2id), threat model | ✅ done |
+| M6 | Independent external cryptanalysis; confidential review is possible | Open |
 
 ---
+
+The [closed additional audit](docs/cryptographic-audit-2026-10-19.ru.md),
+[local HTTPS/CoNe stand](tools/local_stand/README.md) and
+[offline migration tools](tools/migration/README.md) have reproducible records
+in [the local verification report](docs/stage-15-local-verification.ru.md).
+The repository remains private. M6 review can be confidential; publication or a
+public challenge requires a separate owner decision.

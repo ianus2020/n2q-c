@@ -1,0 +1,6 @@
+#include "old-convergent.c"
+int main(void) {
+    uint8_t key[16]={0}, content[1]={0}, dek[16], output[32];
+    n2q_conv_seal(key,16,content,SIZE_MAX,dek,output,0);
+    return 0;
+}

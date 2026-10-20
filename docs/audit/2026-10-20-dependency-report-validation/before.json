@@ -1,0 +1,14 @@
+[
+  {
+    "case": "missing",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "malformed",
+    "exit_code": 0,
+    "stdout": "native.json: incomplete report\n",
+    "stderr": ""
+  }
+]

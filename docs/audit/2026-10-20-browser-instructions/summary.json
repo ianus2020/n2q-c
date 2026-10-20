@@ -1,0 +1,26 @@
+{
+  "baseline_commit": "1fe5450dd1bcd1858fb37a58d4e205a9f87f5453",
+  "negative_control_exit_code": 1,
+  "positive_control_exit_code": 0,
+  "schema": 1,
+  "scope": "Local browser setup instructions only; no deployment or CI changes.",
+  "source_sha256": {
+    "impl/n2q-c-wasm/README.md": {
+      "after": "a086dd78ef4743a55aed75a16977176965fe4a5ae86c7277d1af6e5a73018de8",
+      "before": "da492b7d1b6000d135123fc30e1b386796106154c27d55d3248f7886b38cac3b"
+    },
+    "impl/n2q-c-wasm/web/app.js": {
+      "after": "f9f2f961507e8295f524ff4e0dba321d7ed2edbf86825654db517c8332ee5a7f",
+      "before": "f9f2f961507e8295f524ff4e0dba321d7ed2edbf86825654db517c8332ee5a7f"
+    },
+    "scripts/serve-web.py": {
+      "after": "934473b8066502f4e94d0bf5b485f8374d0493e837905fc821a479415ac50db2",
+      "before": "934473b8066502f4e94d0bf5b485f8374d0493e837905fc821a479415ac50db2"
+    },
+    "tests/web.cjs": {
+      "after": "4260d0a86507be480000e0791b75c9d14536985719f746a8b53d8755078325bb",
+      "before": "4260d0a86507be480000e0791b75c9d14536985719f746a8b53d8755078325bb"
+    }
+  },
+  "temporary_servers_stopped": true
+}

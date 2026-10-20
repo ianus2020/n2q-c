@@ -1,0 +1,35 @@
+{
+  "baseline_commit": "3d3fbf4e63238c0a9391d7aa0f39fc71bef27785",
+  "files": [
+    {
+      "path": "impl/n2q-c-wasm/web/app.js",
+      "before_sha256": "e0eaea509824121edca4f962bf392c287c2fe835d9f280f3884694c2f4dc65c3",
+      "after_sha256": "18109ed1b7512e85cca1c64d1e57de7f4742ab850897159705dee48895adfd49"
+    },
+    {
+      "path": "tests/web.cjs",
+      "before_sha256": "b46e33f0861448a906204ff7e7ab90ca803ee400effcc029765df96537620744",
+      "after_sha256": "6da18b761a06bd7ed11728b32c729f6fff2b1667bf4e3d06483f73b80cbaa72e"
+    }
+  ],
+  "public_build_manifest": {
+    "js": {
+      "bytes": 20377,
+      "sha256": "f601b6b23af943944db1e7a0e4c89c61042e3e14b1002cd2d2996ab51cb3f4af"
+    },
+    "version": 1,
+    "wasm": {
+      "bytes": 55423,
+      "sha256": "3d95373c31f76d8f36ba37da74db1d8a4782ccc690a327b5112fe9cb09c11702"
+    }
+  },
+  "local_https_release": "0c32ee1821aca27719d4851f4f9e3439b9d36b8454dda3af1afe2f5d7827d39b",
+  "regression": {
+    "before": "FAILED: new key retained previous decrypted output",
+    "http_after": "passed",
+    "https_after": "passed"
+  },
+  "dependency_scan": "passed: five Cargo locks, npm, Gitleaks; full reports retained",
+  "data": "synthetic browser fixtures only",
+  "limitation": "Clearing displayed DOM results does not establish secure erasure of JavaScript or WASM memory."
+}

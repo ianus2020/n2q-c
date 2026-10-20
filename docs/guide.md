@@ -100,10 +100,11 @@ let pt  = openToken(key, [UInt8]("ctx".utf8), tok)
 
 #### JavaScript (WASM)
 
-```js
-const tok = seal128(true /* fast */, keyHex, nonceHex, "ctx", "secret");
-const pt  = open128(keyHex, "ctx", tok);
-```
+See the [complete browser-console example](../impl/n2q-c-wasm/README.md#javascript-example):
+load and initialize the WASM module, generate a key and nonce, then call
+`seal128(false, keyHex, nonceHex, aad, plaintext)` and `open128(keyHex, aad, token)`.
+Here `false` selects Secure (16 rounds). The same instructions cover the 256-bit
+bindings, UTF-8 limits and the worker used by the ready-made interface.
 
 ---
 
@@ -148,18 +149,24 @@ PHP: `n2q_blind_index(N2Q_SECURE, $key, $v)` · Swift: `blindIndex(SECURE, key, 
 - **Exact match only.** Range queries are deliberately unsupported (see §5).
 - Index a normalised value (`lower(trim(email))`), or lookups will miss.
 
-### 3.3. Passwords → keys (Balloon KDF)
-
-**When:** the key is derived from a user password.
+### 3.3. Passwords → keys (Argon2id v19)
 
 ```rust
-use n2q_c_ref::pw;
-let key32 = pw::derive(password, salt, s_cost, t_cost);   // [u8; 32]
+use n2q_c_ref::pw::{self, Costs};
+let key32 = pw::derive(password, salt, Costs::default())?; // SecretKey256
+// n256::seal(profile, key32.expose(), nonce, ad, plaintext)
 ```
 
-**Pitfalls:** the salt is per-user, ≥16 bytes, stored in the clear. Tune
-`s_cost`/`t_cost` so derivation takes ~100–500 ms on your hardware. **Never** use
-a password directly as a key.
+Generate a fresh 16–64-byte salt with a CSPRNG. Store it with `argon2id-v19`
+and the costs. Defaults: 64 MiB, 3 passes, 1 lane. Validate per-call limits
+before allocation; servers must also bound concurrency. Password length:
+1 byte – 1 MiB. Invalid inputs and allocation failure return `Result`.
+
+This **replaces** the experimental custom N2Q-PW/Balloon KDF and changes
+derived keys. Old encrypted data requires an explicit trusted offline migration;
+see [stage 4](stage-4-keys-kdf.ru.md). Owned keys have no Copy/Clone/Serialize,
+redact Debug and wipe their buffer on Drop. Caller/OS copies remain outside
+their control.
 
 ### 3.4. Files of any format (the N2QF container)
 
@@ -170,27 +177,26 @@ a password directly as a key.
 | Python | `encrypt_file(bits, profile, key, in, out)` / `decrypt_file(bits, key, in, out)` |
 | Go | `EncryptFile(profile, key, in, out) error` / `DecryptFile(key, in, out) error` |
 | Rust | `file::encrypt_file(profile, &key, in, out)` / `file::decrypt_file(&key, in, out)` |
-| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, in, out)` |
+| C | `enc_file(profile, key, bits, in, out)` / `dec_file(key, bits, in, out)` |
 | PHP | `n2q_encrypt_file($profile,$key,$in,$out)` / `n2q_decrypt_file($key,$in,$out)` |
 | Swift | `encryptFile(profile, key, in, out)` / `decryptFile(key, in, out)` |
 
-Format: `"N2QF" | ver | suite | { le32(len) | sealed }*`, 64 KB blocks, overhead
-≈ **0.07 %**. The profile and suite live in the header, so decryption does not
-need them passed in.
-
-**Verified:** a file encrypted in one language opens in all the others
-(Python ↔ Rust ↔ Go ↔ C ↔ Swift, byte-for-byte).
+**N2QF v2** includes a fresh file identity, records of at most 64 KiB and a
+mandatory authenticated final record. v1 is rejected. Output is published
+atomically after full validation. Rust/PHP/Swift file helpers support N2Q-128;
+C/Go/Python support both sizes. See [format, limits and migration](n2qf.md).
 
 ### 3.5. Seeking inside encrypted media
 
-**When:** a player must jump into the middle of an encrypted video.
+**Scope:** reference chunk selection validates the entire file first; it is
+not currently an efficient random-access media API.
 
 ```python
 cont = m.n2qf_build(key, [chunk0, chunk1, chunk2])
-data = m.seek_chunk(key, cont, 1)        # only the chunk you need
+data = m.seek_chunk(key, cont, 1)        # validates all records before returning the selected chunk
 ```
 Go: `SeekChunk(key, buf, index)` · Rust: `seek_chunk(&key, &buf, i)` ·
-C: `n2q_seek_chunk(key, buf, buflen, index, out, &outlen)`
+C: `n2q_seek_chunk(key, buf, buflen, index, out, outcap, &outlen)`
 
 **Pitfall:** the index is a **chunk number**, not a byte offset. Mapping
 "seconds → chunk" is your container's job.
@@ -255,6 +261,10 @@ Rotation rewrites only the envelope (tens of bytes).
 one compromised `dek` opens the whole estate.
 
 ### 3.9. Deduplicating encrypted storage (convergent)
+
+`master_key` must be exactly **16 bytes**; other lengths are rejected. Rust
+requires `&[u8;16]`; the C API also requires output capacities. Historical data
+using other key lengths needs an explicit migration decision.
 
 **When:** backups or cloud storage where identical files must not be stored twice.
 

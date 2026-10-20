@@ -1,0 +1,39 @@
+{
+  "binary_sha256": "7424642f7ebf3265ac2c5f63faaf36d68f17fa96d8ca55ea10b7ed7a9454e0e9",
+  "build": "cargo build --release --locked --manifest-path tools/cryptanalysis/Cargo.toml --bin audit; opt-level=3",
+  "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "code_sha256": {
+    "impl/c/n2q_convergent.c": "210d189b4be71c1fd7120d92b5bb4a050fd706e6189a79b13a35f14abb68cd34",
+    "impl/n2q-c-ref/src/consts.rs": "f2dab6ad5c182245279c32a0aef2f9c3678df28e11c8da8a7107c4b77c8634ac",
+    "impl/n2q-c-ref/src/modes.rs": "9c39fd677fd83b28e3e3dbfab720681c7a0070c0c7d46203676e5085a95ff188",
+    "impl/n2q-c-ref/src/modes_ext.rs": "d16f5c41202824efc3215d0d4684dfdb05eb2c52add1f980f8b51a51fd5de832",
+    "impl/n2q-c-ref/src/perm.rs": "d5fa8e9085cb87280f2cbc726430fa816e507b5ca5423973ce989beb45b0910a",
+    "tools/cryptanalysis/Cargo.lock": "6b842a34ad332f122f584d9cefaaa8b8807c2a02261dedf05aa037746531fe0b",
+    "tools/cryptanalysis/exact.py": "2cbcd654c0a16ee659af4d0f8143bfbdb2fda706890eaa8de92d6516e9eeea95",
+    "tools/cryptanalysis/src/bin/audit.rs": "c13ffc14a65019a64bfd2eba4bd6460597628e3f01710b9f573972c2b716a084",
+    "tools/cryptanalysis/summarize.py": "5b28ca79d9eec4e6083c42460a8d654805ffdd43fb1d48f81f7db0f703727f9a",
+    "tools/cryptanalysis/trails.py": "382a41da390e55bca9a697ed27f85b80babdc87736725dc5ef31d9d04196b793"
+  },
+  "commands": [
+    "python3 tools/cryptanalysis/exact.py",
+    "tools/cryptanalysis/target/release/audit full",
+    "solver-venv/bin/python tools/cryptanalysis/trails.py --output smt (15000 ms per check)",
+    "tools/cryptanalysis/target/release/audit timing",
+    "python3 tools/cryptanalysis/summarize.py DIRECTORY"
+  ],
+  "cpu": "Apple M4 Max",
+  "historical_trials": "SAT used identical unchanged permutation constants/tool source from stage 9; final full/timing runs used stage 10. Intermediate smoke and interrupted/noisy timing results are excluded.",
+  "local_limitations": [
+    "Full native script stopped at missing go; PHP also absent. Earlier local Rust/C/Python checks passed, final cross-language validation is performed in GitHub CI.",
+    "Extended local libFuzzer launch failed at linker: Apple clang lacks libclang_rt.fuzzer_osx.a; no local extended fuzz results are claimed. CI supplies Linux libFuzzer."
+  ],
+  "machine": "arm64",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "python": "3.9.6",
+  "recorded_utc": "2026-10-19T14:51:29.313969+00:00",
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)\nbinary: rustc\ncommit-hash: 31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd\ncommit-date: 2026-06-26\nhost: aarch64-apple-darwin\nrelease: 1.96.1\nLLVM version: 22.1.2",
+  "schema": 1,
+  "source_commit": "11b763cfa88d00750cf02c633758d5ce4f686f48",
+  "timing": "separate run after experiments/SAT; no other agent-started CPU-intensive tasks; ordinary macOS scheduling, no affinity or frequency isolation",
+  "z3": "4.15.4.0 Python package / 4.15.4 core"
+}

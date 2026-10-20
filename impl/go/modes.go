@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/subtle"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -18,7 +19,7 @@ var convAD = []byte("n2q-conv")
 var zero16 = make([]byte, 16)
 
 // envelope + rotation
-func Wrap(kek, dek []byte) []byte           { return Seal(Secure, kek, zero16, envAD, dek) }
+func Wrap(kek, dek []byte) []byte            { return Seal(Secure, kek, zero16, envAD, dek) }
 func Unwrap(kek, blob []byte) ([]byte, bool) { return Open(Secure, kek, zero16, envAD, blob) }
 func Rewrap(oldK, newK, blob []byte) ([]byte, bool) {
 	d, ok := Unwrap(oldK, blob)
@@ -45,7 +46,7 @@ func OpenCommitting(key, nonce, ad, token []byte, profile int) ([]byte, bool) {
 		return nil, false
 	}
 	kc, sealed := token[:32], token[32:]
-	if !bytes.Equal(commit(key, sealed[:16]), kc) {
+	if subtle.ConstantTimeCompare(commit(key, sealed[:16]), kc) != 1 {
 		return nil, false
 	}
 	return Open(profile, key, nonce, ad, sealed)
@@ -53,9 +54,15 @@ func OpenCommitting(key, nonce, ad, token []byte, profile int) ([]byte, bool) {
 
 // convergent (dedup)
 func ConvSeal(mk, content []byte, profile int) (dek, ct []byte) {
+	if !valid(profile, mk, 16) {
+		return nil, nil
+	}
 	m := make([]byte, 0, len(mk)+len(content))
 	m = append(append(m, mk...), content...)
-	dek = Hash(Secure, m)[:16]
+	h := Hash(Secure, m)
+	dek = append([]byte(nil), h[:16]...)
+	clear(m)
+	clear(h)
 	return dek, Seal(profile, dek, zero16, convAD, content)
 }
 func ConvOpen(dek, ct []byte, profile int) ([]byte, bool) {
@@ -156,44 +163,15 @@ func FrankReportVerify(cf, opening, msg []byte) bool {
 }
 
 // seekable N2QF
-func N2qfBuild(key []byte, chunks [][]byte, profile int) []byte {
-	suite := byte(0x01)
-	if profile == Fast {
-		suite |= 0x20
-	}
-	out := append([]byte("N2QF"), 1, suite)
-	for i, ch := range chunks {
-		nonce := make([]byte, 16)
-		binary.LittleEndian.PutUint64(nonce, uint64(i))
-		sealed := Seal(profile, key, nonce, nil, ch)
-		l := make([]byte, 4)
-		binary.LittleEndian.PutUint32(l, uint32(len(sealed)))
-		out = append(out, l...)
-		out = append(out, sealed...)
-	}
-	return out
+func N2qfBuild(key []byte, chunks [][]byte, profile int) ([]byte, error) {
+	return writeContainer(profile, key, chunks)
 }
 func SeekChunk(key, buf []byte, index int) ([]byte, bool) {
-	if len(buf) < 6 || !bytes.Equal(buf[:4], []byte("N2QF")) {
+	chunks, err := readContainer(key, buf)
+	if err != nil || index < 0 || index >= len(chunks) {
 		return nil, false
 	}
-	profile := Secure
-	if buf[5]&0x20 != 0 {
-		profile = Fast
-	}
-	p, i := 6, 0
-	for p+4 <= len(buf) {
-		l := int(binary.LittleEndian.Uint32(buf[p : p+4]))
-		p += 4
-		if i == index {
-			nonce := make([]byte, 16)
-			binary.LittleEndian.PutUint64(nonce, uint64(index))
-			return Open(profile, key, nonce, nil, buf[p:p+l])
-		}
-		p += l
-		i++
-	}
-	return nil, false
+	return chunks[index], true
 }
 
 // streaming AEAD (seq -> nonce, sliding replay window)
@@ -215,14 +193,17 @@ func (s *StreamTx) Seal(aad, pt []byte) []byte {
 }
 
 type StreamRx struct {
-	key          []byte
-	p            int
-	max, win     uint64
-	started      bool
+	key      []byte
+	p        int
+	max, win uint64
+	started  bool
 }
 
 func NewStreamRx(key []byte, profile int) *StreamRx { return &StreamRx{key: key, p: profile} }
 func (r *StreamRx) Open(aad, pkt []byte) ([]byte, bool) {
+	if len(pkt) < 24 {
+		return nil, false
+	}
 	seq := binary.LittleEndian.Uint64(pkt[:8])
 	if r.started && seq <= r.max {
 		diff := r.max - seq
@@ -288,6 +269,9 @@ func NewRatchetRx(root []byte) *RatchetRx {
 	return &RatchetRx{ck: c, skip: map[uint64][]byte{}}
 }
 func (r *RatchetRx) Open(aad, pkt []byte) ([]byte, bool) {
+	if len(pkt) < 24 {
+		return nil, false
+	}
 	seq := binary.LittleEndian.Uint64(pkt[:8])
 	nonce := make([]byte, 16)
 	binary.LittleEndian.PutUint64(nonce, seq)
@@ -319,6 +303,15 @@ func (r *RatchetRx) Open(aad, pkt []byte) ([]byte, bool) {
 	}
 	for k, val := range skipped {
 		r.skip[k] = val
+	}
+	for len(r.skip) > 64 {
+		oldest := ^uint64(0)
+		for k := range r.skip {
+			if k < oldest {
+				oldest = k
+			}
+		}
+		delete(r.skip, oldest)
 	}
 	r.ck, r.next = cn, seq+1
 	return pt, true
@@ -360,7 +353,21 @@ func fpFill(v uint64, l int) string {
 	}
 	return string(b)
 }
+func validFPE(key, tw []byte, s string) bool {
+	if len(key) != 16 || len(tw) > 255 || len(s) < 2 || len(s) > 18 {
+		return false
+	}
+	for _, b := range []byte(s) {
+		if b < '0' || b > '9' {
+			return false
+		}
+	}
+	return true
+}
 func FpeEncrypt(key, tw []byte, s string) string {
+	if !validFPE(key, tw, s) {
+		return ""
+	}
 	n := len(s)
 	u, v := n/2, n-n/2
 	a, b, al, bl := fpAtoi(s[:u]), fpAtoi(s[u:]), u, v
@@ -375,6 +382,9 @@ func FpeEncrypt(key, tw []byte, s string) string {
 	return fpFill(a, al) + fpFill(b, bl)
 }
 func FpeDecrypt(key, tw []byte, s string) string {
+	if !validFPE(key, tw, s) {
+		return ""
+	}
 	n := len(s)
 	u, v := n/2, n-n/2
 	a, b, al, bl := fpAtoi(s[:u]), fpAtoi(s[u:]), u, v

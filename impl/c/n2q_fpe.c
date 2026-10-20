@@ -37,10 +37,10 @@ static void str_num(uint64_t v, int len, char *out) { for (int i = len - 1; i >=
 /* round function: pseudorandom y in [0, 10^m) from (round i, tweak, half value) */
 static uint64_t fpe_round(const uint8_t key[16], const uint8_t *tw, size_t tl,
                           int i, int n, int m, uint64_t bval) {
-    uint8_t buf[80];
+    uint8_t buf[4 + 255 + 8];
     size_t p = 0;
     buf[p++] = (uint8_t)i; buf[p++] = (uint8_t)n; buf[p++] = (uint8_t)m; buf[p++] = (uint8_t)tl;
-    for (size_t j = 0; j < tl && p < 64; j++) buf[p++] = tw[j];
+    for (size_t j = 0; j < tl; j++) buf[p++] = tw[j];
     for (int b = 7; b >= 0; b--) buf[p++] = (uint8_t)(bval >> (8 * b));
     uint8_t mac[16];
     mac_128(key, buf, p, 6 /* FPE domain */, mac, 16);
@@ -57,7 +57,7 @@ static int valid(const char *s, size_t n) {
 
 int n2q_fpe_encrypt(const uint8_t key[16], const uint8_t *tweak, size_t tlen,
                     const char *in, char *out, size_t n) {
-    if (!valid(in, n)) return 0;
+    if (tlen > 255 || !valid(in, n)) return 0;
     init_anf();
     int u = (int)n / 2, v = (int)n - u;
     uint64_t A = num_str(in, u), B = num_str(in + u, v);
@@ -77,7 +77,7 @@ int n2q_fpe_encrypt(const uint8_t key[16], const uint8_t *tweak, size_t tlen,
 
 int n2q_fpe_decrypt(const uint8_t key[16], const uint8_t *tweak, size_t tlen,
                     const char *in, char *out, size_t n) {
-    if (!valid(in, n)) return 0;
+    if (tlen > 255 || !valid(in, n)) return 0;
     init_anf();
     int u = (int)n / 2, v = (int)n - u;
     uint64_t A = num_str(in, u), B = num_str(in + u, v);

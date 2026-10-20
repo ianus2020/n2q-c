@@ -1,0 +1,29 @@
+# REVIEW TEMPLATE for Linux systemd; not installed or tested on macOS.
+# Publication is a separate operator action; the serving process has no write
+# exception for the immutable public-release tree.
+[Unit]
+Description=N2Q reference local HTTPS web host
+After=network.target
+
+[Service]
+Type=simple
+User=n2q-web
+Group=n2q-web
+UMask=0077
+WorkingDirectory=/opt/n2q
+ExecStart=/usr/bin/python3 /opt/n2q/tools/local_stand/web.py serve --directory /var/lib/n2q-web --cert /etc/n2q/web.pem --key /etc/n2q/web.key --port 9443
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=256M
+CPUQuota=100%
+TasksMax=64
+LimitNOFILE=256
+
+[Install]
+WantedBy=multi-user.target

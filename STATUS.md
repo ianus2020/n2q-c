@@ -14,7 +14,35 @@ measurements** — not a proven or independently confirmed guarantee.
 **Do not use N2Q to protect real secrets or production data.** For production
 today, use a vetted, widely reviewed library: libsodium, AES-GCM, or Ascon.
 
+## Current implementation limits
+
+Core ports use ANF rather than state-indexed S-box lookup. Python/PHP runtimes,
+Go/Swift compilers, garbage collection and WASM/JIT behavior are not certified
+constant-time. A historical C timing result cannot establish this for all ports.
+N2QF v1 is rejected; [v2](docs/n2qf.md) requires authenticated EOF. Files and
+stateful extensions still require application resource limits and independent
+review. The six path-based N2QF ports stream bounded records to private staging
+files and publish after authenticated EOF. Password KDF v2 uses bounded
+Argon2id v19; legacy custom PW keys require explicit migration. CoNe signing
+requires durable reservations plus an external monotonic anchor; no deployment
+backend is validated. A persistent [local reference anchor](tools/anchor/README.md)
+and C mTLS callback are provided; separate deployment rollback/storage domains
+remain an operator responsibility. C core ANF constants require no runtime initialization.
+The browser verifies its JS/WASM pair and handles worker failure/deadlines.
+The loopback TLS stand enforces an absolute request deadline and isolates its
+test CA configuration; all seven security CI jobs are required on main.
+[Recorded source CI](docs/stage-20-ci-verification.ru.md) passed all seven jobs.
+No RUP robustness is claimed ([correction](docs/robustness.md)).
+Convergent master keys are fixed at 16 bytes; C convergent APIs require output
+capacities. The [closed additional AI-assisted audit](docs/cryptographic-audit-2026-10-19.ru.md)
+records experiments and fixes; it is not an independent external review.
+
 ## What *is* verified
+
+The agreed AI-assisted implementation audit is closed as of 20 October 2026.
+Its [close-out report](docs/audit-closure.ru.md) records completed fixes,
+verification evidence and the operational work that remains open. Closing this
+implementation work does not close the external-review milestone above.
 
 These are facts, reproducible on your own machine from this repository:
 
@@ -23,17 +51,18 @@ These are facts, reproducible on your own machine from this repository:
 | Six implementations agree **byte-for-byte** (Rust, C, Python, Go, PHP, Swift) | run each self-test; compare with `impl/conformance/vectors.txt` |
 | Constants are **reproducible from a public seed** — no hand-picked values | `tools/const-search` reproduces `APPENDIX-A.md` |
 | Measured cryptanalysis: diffusion, avalanche, degree, differential, timing | `docs/cryptanalysis.md`, `tools/cryptanalysis` |
-| Constant-time by design (no tables, no secret-dependent branches); dudect \|t\| = 0.48 | `docs/cryptanalysis.md` |
+| Lane-wise ANF S-box in the six core ports; no state-indexed S-box lookup | KATs and source; this does not prove runtime constant-time behavior |
 | Every extended mode ships a self-test that passes | `docs/conformance.md` |
 | Cross-language interop for files, modes and federation parcels | the cross-check tests in each port |
+| Implementation regressions, ASan/UBSan, TSan, Go race checks and bounded fuzz smoke | CI and [execution ledger](docs/implementation-progress.ru.md); these are bounded checks, not cryptographic proofs |
 
 ## What is **not** verified
 
 | Not verified | Consequence |
 |---|---|
 | **No external audit or public cryptanalysis** | Unknown weaknesses may exist. This is the big one. |
-| No certified differential/linear bound | Only an upper bound from a solver-free search; a proof needs a full MILP/SAT model (`docs/cryptanalysis.md`) |
-| No side-channel validation on hardware | Constant-time *by construction*, but not measured on smartcards/embedded targets |
+| No full-round differential/linear bound | Exact local results and bounded 2/3-round SAT do not establish full-round attack costs or mode security (`docs/cryptanalysis.md`) |
+| No broad side-channel validation | Recorded Rust-host timing experiment only; no smartcard/embedded/power/EM/fault certification |
 | Federation (`FireLine`) and certificates (`CoNe`) are new | Newer than the core, with correspondingly less scrutiny |
 | `CoNe` is **stateful** and simplified vs RFC 8391 / FIPS 205 | Reusing a one-time index enables forgery; multi-target resistance is weaker than the standards (`docs/cone.md`) |
 | Reference implementations are not performance-hardened | See `docs/performance.md` for measured numbers and the optimisation roadmap |
@@ -60,14 +89,16 @@ data, credentials, or anything whose exposure would cause harm.
 
 ## The path to production readiness
 
-Milestones M1–M5 are complete (specification, reproducible constants,
-implementations, in-house cryptanalysis, hardening). **M6 — external audit and a
-public break-it challenge — is the gate.** Until M6 is done and its findings are
-published and addressed, the guidance above does not change.
+Implementation hardening is ongoing; previous milestone completion labels
+were not evidence that every parser, file format or extension was secure.
+See [the remediation record](docs/security-fixes.md) for changes and remaining
+work. Independent external cryptanalysis can be confidential; its findings must
+be documented and addressed, together with the operational release gates.
+Internal tests do not close that milestone. This repository and audit stay
+private; disclosure requires a separate owner decision.
 
 ## Reporting a weakness
 
-Found a break, a bug, or a flawed argument? That is the single most valuable
-contribution to this project — please open an issue at
-<https://github.com/ianus2020/n2q-c/issues>. Negative results are welcome and
-will be published.
+Record weaknesses in the private repository or through an agreed confidential
+channel with its owner. Include reproduction and affected revision. Disclosure
+decisions remain with the owner.

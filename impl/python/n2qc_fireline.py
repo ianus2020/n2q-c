@@ -17,22 +17,39 @@ Wire format (see the C reference for the rationale):
 
 No master/trunk key ever travels: only a wrap of a single-use data key.
 """
+import os
 import struct
 
 import n2qc
 
 S, F = n2qc.SECURE, n2qc.FAST
-RID, WRAP = 8, 32
+RID, WRAP, MAX_RECIPIENTS = 8, 32, 32
+MAX_PAYLOAD, MAX_AAD = 16 << 20, 1 << 20
 FL_AD = b"n2q-fireline-v1"
 ZERO = b"\x00" * 16
 
-OK, FORMAT, NOT_FOR_ME, AUTH = 0, -1, -2, -3
+OK, FORMAT, NOT_FOR_ME, AUTH, ARG = 0, -1, -2, -3, -4
 
-def peer(name, seed):
-    """A partner: public routing label + the pairwise trunk key (never sent)."""
-    rid = name.encode()[:RID].ljust(RID, b"\x00")
-    trunk = bytes((seed + i * 7) & 0xFF for i in range(16))
-    return {"id": rid, "trunk": trunk}
+def peer(name, trunk):
+    """Import a 16-byte CSPRNG trunk key and a unique 1..8-byte UTF-8 label."""
+    if not isinstance(name, str) or not isinstance(trunk, bytes) or len(trunk) != 16:
+        raise ValueError("invalid peer name or key")
+    rid = name.encode("utf-8")
+    if not 1 <= len(rid) <= RID or b"\x00" in rid:
+        raise ValueError("routing label must contain 1..8 UTF-8 bytes without NUL")
+    return {"id": rid.ljust(RID, b"\x00"), "trunk": trunk}
+
+def new_peer(name):
+    """Create a partner key with the OS CSPRNG; share it over a trusted channel."""
+    return peer(name, os.urandom(16))
+
+def seal_fresh_parcel(rcpts, ad, pt):
+    """Generate a fresh data key and nonce, and use the Secure profile."""
+    return seal_parcel(rcpts, os.urandom(16), os.urandom(16), ad, pt, fast=False)
+
+def _demo_peer(name, seed):
+    """Deterministic TEST VECTOR only. Never use for partner keys."""
+    return peer(name, bytes((seed + i * 7) & 0xFF for i in range(16)))
 
 def _wrap(trunk, rid, dek):
     return n2qc.seal(128, S, trunk, ZERO, FL_AD + rid, dek)
@@ -46,47 +63,62 @@ def _header_len(n):
 def _payload_ad(header, ad):
     return n2qc.hash(128, S, b"\x0a" + header, 32) + (ad or b"")
 
+def _valid_peer(value):
+    return (isinstance(value, dict) and isinstance(value.get("id"), bytes)
+            and len(value["id"]) == RID and isinstance(value.get("trunk"), bytes)
+            and len(value["trunk"]) == 16)
+
+
 def seal_parcel(rcpts, dek, nonce, ad, pt, fast=True):
-    """Build a parcel for `rcpts` (list of peer dicts). Returns bytes."""
-    suite = 0x01 | (0x20 if fast else 0)
+    """Build a parcel for 1..32 distinct recipient IDs. Valid wire bytes unchanged."""
+    if not isinstance(rcpts, (list, tuple)) or not 1 <= len(rcpts) <= MAX_RECIPIENTS:
+        raise ValueError("invalid recipient count")
+    if any(not _valid_peer(r) for r in rcpts) or len({r["id"] for r in rcpts}) != len(rcpts):
+        raise ValueError("invalid or duplicate recipient")
+    if (type(fast) is not bool or not isinstance(pt, bytes) or not isinstance(ad, bytes)
+            or len(pt) > MAX_PAYLOAD or len(ad) > MAX_AAD):
+        raise ValueError("invalid profile or payload length")
+    n2qc._validate(128, S, dek, nonce)
+    suite = 0x21 if fast else 0x01
     hdr = b"N2QL" + bytes([1, suite]) + struct.pack("<H", len(rcpts))
-    for r in rcpts:
-        hdr += r["id"] + _wrap(r["trunk"], r["id"], dek)
+    for recipient in rcpts:
+        hdr += recipient["id"] + _wrap(recipient["trunk"], recipient["id"], dek)
     body = n2qc.seal(128, F if fast else S, dek, nonce, _payload_ad(hdr, ad), pt)
     return hdr + nonce + struct.pack("<I", len(body)) + body
 
+
 def open_parcel(me, parcel, ad):
-    """Open a parcel addressed to `me`. Returns (code, payload_or_None)."""
-    if len(parcel) < 8 or parcel[:4] != b"N2QL" or parcel[4] != 1:
+    """Return (code, plaintext_or_None); validate complete framing before crypto."""
+    if not _valid_peer(me) or not isinstance(ad, bytes) or len(ad) > MAX_AAD:
+        return ARG, None
+    if not isinstance(parcel, (bytes, bytearray)) or len(parcel) < 8:
         return FORMAT, None
-    if parcel[5] & 0x0F != 0x01:
+    if parcel[:4] != b"N2QL" or parcel[4] != 1 or parcel[5] not in (0x01, 0x21):
         return FORMAT, None
-    fast = bool(parcel[5] & 0x20)
     (n,) = struct.unpack("<H", parcel[6:8])
+    if not 1 <= n <= MAX_RECIPIENTS:
+        return FORMAT, None
     hlen = _header_len(n)
     if len(parcel) < hlen + 20:
         return FORMAT, None
-
-    dek = None
-    for i in range(n):
-        off = 8 + i * (RID + WRAP)
-        rid, wrap = parcel[off : off + RID], parcel[off + RID : off + RID + WRAP]
+    (blen,) = struct.unpack("<I", parcel[hlen + 16:hlen + 20])
+    if blen < 16 or blen > MAX_PAYLOAD + 16 or blen != len(parcel) - hlen - 20:
+        return FORMAT, None
+    ids = [bytes(parcel[8 + i * (RID + WRAP):8 + i * (RID + WRAP) + RID]) for i in range(n)]
+    if len(set(ids)) != n:
+        return FORMAT, None
+    for i, rid in enumerate(ids):
         if rid != me["id"]:
             continue
-        dek = _unwrap(me["trunk"], rid, wrap)
+        offset = 8 + i * (RID + WRAP) + RID
+        dek = _unwrap(me["trunk"], rid, parcel[offset:offset + WRAP])
         if dek is None:
-            return AUTH, None  # our block, but it does not authenticate
-        break
-    if dek is None:
-        return NOT_FOR_ME, None
-
-    nonce = parcel[hlen : hlen + 16]
-    (blen,) = struct.unpack("<I", parcel[hlen + 16 : hlen + 20])
-    body = parcel[hlen + 20 : hlen + 20 + blen]
-    if len(body) != blen:
-        return FORMAT, None
-    pt = n2qc.open(128, F if fast else S, dek, nonce, _payload_ad(parcel[:hlen], ad), body)
-    return (OK, pt) if pt is not None else (AUTH, None)
+            return AUTH, None
+        nonce, body = parcel[hlen:hlen + 16], parcel[hlen + 20:]
+        pt = n2qc.open(128, F if parcel[5] == 0x21 else S, dek, nonce,
+                       _payload_ad(parcel[:hlen], ad), body)
+        return (OK, pt) if pt is not None else (AUTH, None)
+    return NOT_FOR_ME, None
 
 if __name__ == "__main__":
     import os
@@ -100,7 +132,7 @@ if __name__ == "__main__":
             fails += 1
 
     print("N2Q-FireLine (Python) self-test")
-    B, C, D = peer("bank-b", 0x11), peer("corp-c", 0x55), peer("other-d", 0x99)
+    B, C, D = _demo_peer("bank-b", 0x11), _demo_peer("corp-c", 0x55), _demo_peer("other-d", 0x99)
     dek = bytes(0xA0 + i for i in range(16))
     nonce = bytes(0x30 + i for i in range(16))
     msg = b"quarterly settlement report"
