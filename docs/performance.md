@@ -10,12 +10,21 @@ been measured — the fast build is future work, tracked as a milestone.
 
 | Workload | N2Q-128 Fast | N2Q-256 Fast | Notes |
 |---|---|---|---|
-| Bulk AEAD | ~16 MB/s | ~24 MB/s | un-vectorised reference (see `docs/comparison.md`) |
-| Streaming (1200 B/pkt) | ~6.5 MB/s | ~12.6 MB/s | per-packet, incl. SIV two passes (`impl/c/n2q_bench.c`) |
+| Bulk AEAD | ~15 MB/s | ~22.5 MB/s | un-vectorised reference (see `docs/comparison.md`) |
+| Streaming (1200 B/pkt) | ~6.9 MB/s | ~12.1 MB/s | per-packet, incl. SIV two passes (`impl/c/n2q_bench.c`) |
 
-For context, an SIMD ChaCha20-Poly1305 does ~700 MB/s and AES-256-GCM (AES-NI)
-~2–5 GB/s on the same class of machine. N2Q-256 is faster than N2Q-128 because
-its 128-bit lanes push twice the bytes per permutation call.
+Conditions: Apple M4 Max, single core, Rust 1.96.1 `--release` and Apple clang 21
+at `-O2`. Bulk figures are the median of three `tools/bench` runs (spread under
+1%); streaming figures are the median of five `impl/c/n2q_bench.c` runs (spread
+about 7%, so treat them as approximate). Re-measuring on another machine or
+toolchain will move these numbers; earlier revisions of this file quoted figures
+roughly 6% higher taken on different hardware.
+
+On the same machine `tools/bench` measures XChaCha20-Poly1305 at ~690 MB/s and
+the AES-256-GCM crate at ~230 MB/s. A hardware-accelerated AES implementation on
+a CPU with AES instructions reaches GB/s figures, but that is not what was
+measured here. N2Q-256 is faster than N2Q-128 because its 128-bit lanes push
+twice the bytes per permutation call.
 
 ## The hot path
 

@@ -12,13 +12,13 @@ same process on the same CPU (Apple Silicon, arm64), 1 MiB buffer, release+LTO.
 
 | Algorithm | Throughput | vs XChaCha |
 |---|--:|--:|
-| XChaCha20-Poly1305 (RustCrypto, SIMD) | **712 MB/s** | 1× |
-| AES-256-GCM (RustCrypto) | **245 MB/s** | 0.34× |
-| N2Q-256 streaming — **Fast** (8 rnd) | 24.1 MB/s | ~30× slower |
-| N2Q-256 streaming — Secure (16 rnd) | 12.2 MB/s | ~58× slower |
-| N2Q-128 streaming — **Fast** (8 rnd) | 16.0 MB/s | ~44× slower |
-| N2Q-128 streaming — Secure (16 rnd) | 8.0 MB/s | ~89× slower |
-| N2Q-128 SIV — Secure (2-pass) | 4.0 MB/s | ~180× slower |
+| XChaCha20-Poly1305 (RustCrypto, SIMD) | **690 MB/s** | 1× |
+| AES-256-GCM (RustCrypto) | **230 MB/s** | 0.33× |
+| N2Q-256 streaming — **Fast** (8 rnd) | 22.5 MB/s | ~31× slower |
+| N2Q-256 streaming — Secure (16 rnd) | 11.5 MB/s | ~60× slower |
+| N2Q-128 streaming — **Fast** (8 rnd) | 15.0 MB/s | ~46× slower |
+| N2Q-128 streaming — Secure (16 rnd) | 7.5 MB/s | ~92× slower |
+| N2Q-128 SIV — Secure (2-pass) | 3.7 MB/s | ~187× slower |
 
 The **Fast profile** (user-selectable, recorded in the token) roughly **doubles**
 throughput for a labelled margin trade — still ~2.4× above the M4 saturation

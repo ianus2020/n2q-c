@@ -94,11 +94,15 @@ were not evidence that every parser, file format or extension was secure.
 See [the remediation record](docs/security-fixes.md) for changes and remaining
 work. Independent external cryptanalysis can be confidential; its findings must
 be documented and addressed, together with the operational release gates.
-Internal tests do not close that milestone. This repository and audit stay
-private; disclosure requires a separate owner decision.
+Internal tests do not close that milestone. The repository and the audit
+materials were made public on 20 October 2026 by the owner's decision; being
+public is not a security claim and changes none of the guidance above. The audit
+reports under `docs/` describe the repository as private because it was private
+while they were written; they are dated records and have not been rewritten.
 
 ## Reporting a weakness
 
-Record weaknesses in the private repository or through an agreed confidential
-channel with its owner. Include reproduction and affected revision. Disclosure
-decisions remain with the owner.
+Open an issue at <https://github.com/ianus2020/n2q-c/issues>, or use an agreed
+confidential channel with the owner if you would rather report privately.
+Include reproduction steps and the affected revision. Negative results are
+welcome; disclosure decisions remain with the owner.

@@ -6,8 +6,10 @@
  * Measures per-packet seal/open throughput (MB/s of plaintext) and packet rate
  * at a typical 1200-byte media-packet size, for both suites and both profiles.
  * Reference implementation, single core — see the numbers as a floor, not a
- * ceiling.  */
+ * ceiling.
+ *
  * Audit status: see STATUS.md in the repository root.
+ */
 #include "n2q_stream.c" /* stream layer + QP core (no main: N2Q_STREAM_DEMO off) */
 
 #include <stdio.h>
