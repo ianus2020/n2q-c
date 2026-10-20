@@ -41,6 +41,26 @@ const assert = require('node:assert/strict');
       await page.selectOption('#suite',suite==='128'?'256':'128');
       assert.equal(await page.inputValue('#key'),key);
     }
+    // Replacing a key must invalidate the displayed results produced with the
+    // previous key, just like editing the key field manually does.
+    await page.selectOption('#suite','128');
+    await page.click('#btn-key');
+    await page.waitForFunction(()=>document.querySelector('#key').value.length===32);
+    const previousKey=await page.inputValue('#key');
+    await page.fill('#pt','key replacement fixture');await page.fill('#aad','ctx');
+    await page.click('#btn-enc');
+    await page.waitForFunction(()=>document.querySelector('#out-ct').textContent.startsWith('nqc.'));
+    await page.click('#btn-copy');await page.click('#btn-dec');
+    await page.waitForFunction(()=>document.querySelector('#out-pt').textContent==='key replacement fixture');
+    await page.fill('#hval','index fixture');await page.click('#btn-bi');
+    await page.waitForFunction(()=>/^[0-9a-f]+$/i.test(document.querySelector('#out-h').textContent));
+    await page.click('#btn-key');
+    await page.waitForFunction(old=>document.querySelector('#key').value!==old,previousKey);
+    assert.equal(await page.textContent('#out-pt'),'','new key retained the previous decrypted output');
+    assert.equal(await page.textContent('#out-h'),'','new key retained the previous blind index');
+    assert.equal(await page.textContent('#out-ct'),'');
+    assert.equal(await page.inputValue('#nonce'),'');
+    assert.equal(await page.isDisabled('#btn-copy'),true);
     await page.fill('#key','aжb');await page.click('#btn-enc');
     await page.waitForFunction(() => document.querySelector('#out-ct').textContent.startsWith('Ошибка:'));
     assert.equal(await page.isDisabled('#btn-copy'),true);

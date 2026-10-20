@@ -58,7 +58,11 @@ function bind(id, output, op, args, success) {
   };
 }
 const params = () => ({suite: $('suite').value, fast: $('profile').value === 'fast', key: $('key').value});
-bind('btn-key', 'engine', 'key', params, result => { invalidate(); $('key').value = result; $('engine').textContent = 'Новый ключ создан. Сохраните его самостоятельно.'; });
+bind('btn-key', 'engine', 'key', params, result => {
+  invalidate(); $('key').value = result;
+  $('out-pt').textContent = ''; $('out-h').textContent = '';
+  $('engine').textContent = 'Новый ключ создан. Сохраните его самостоятельно.';
+});
 bind('btn-enc', 'out-ct', 'seal', () => ({...params(), ad: $('aad').value, pt: $('pt').value}), result => {
   lastToken = result.token; lastAAD = $('aad').value; $('nonce').value = result.nonce; $('out-ct').textContent = result.token;
 });
