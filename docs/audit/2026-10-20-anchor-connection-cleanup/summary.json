@@ -1,0 +1,34 @@
+{
+  "baseline_commit": "e831994c9d041a3a8dd1f394146ef45222480710",
+  "limits": [
+    "Synthetic temporary SQLite data and injected OperationalError, not physical disk or power-loss tests.",
+    "Local reference backend only; an operational independent rollback domain remains open.",
+    "Existing HTTPError cleanup warning is retained in the Python log."
+  ],
+  "negative_control": {
+    "exit_code": 1,
+    "failed_setup_subtests": 3,
+    "tests": 3
+  },
+  "positive_control": {
+    "all_python_tests": 63,
+    "anchor_tests": 9,
+    "exit_code": 0,
+    "python39_connection_tests": 3
+  },
+  "schema": 1,
+  "source_sha256": {
+    "scripts/verification-record.py": {
+      "after": "4505769fdd9aa322229eb7f6df4d769b78bea97d261a09bcb90dc438e6a8b468",
+      "before": "fdde385084bbe8a502c2ab9e3fd64cd7b5caa2185a9ad01263b497ec6c6cb1c2"
+    },
+    "tests/test_anchor_service.py": {
+      "after": "fbf88b58dccdbed6445bf727aaf1381d9e62e1b5afca7ca2d9f163c787f59d74",
+      "before": "522528e4a938aab1f184d9e6ba434b593e5ee6c286207b598449a1a16015a74f"
+    },
+    "tools/anchor/server.py": {
+      "after": "a2ab14412d47562757685d5f77fd2d2c0313e55530f36575d4d4238d3af5a19f",
+      "before": "dd36453e4df3c94582ff3dd55defb66ae71346a5f748ab7130cdc2df169c26d6"
+    }
+  }
+}

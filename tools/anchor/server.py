@@ -51,12 +51,16 @@ class Store:
         private_path(self.path)
         db = sqlite3.connect('file:' + quote(str(self.path), safe='/') + '?mode=rw',
                              uri=True, timeout=2, isolation_level=None)
-        db.execute('PRAGMA synchronous=FULL')
-        db.execute('PRAGMA fullfsync=ON')
-        if db.execute('PRAGMA journal_mode').fetchone()[0] != 'wal':
+        try:
+            db.execute('PRAGMA synchronous=FULL')
+            db.execute('PRAGMA fullfsync=ON')
+            if db.execute('PRAGMA journal_mode').fetchone()[0] != 'wal':
+                raise ValueError('anchor requires WAL mode')
+            return db
+        except BaseException:
+            # A setup failure never transfers ownership to reserve()/closing().
             db.close()
-            raise ValueError('anchor requires WAL mode')
-        return db
+            raise
 
     def reserve(self, key_id, index):
         db = self.connect()

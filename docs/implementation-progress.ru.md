@@ -35,7 +35,8 @@
 | 27: запуск HTTP test host без reverse DNS | 3fc65c8 | Старый bind FAIL при недоступном getfqdn; новый startup/GET/HEAD/headers PASS, 51 Python и полный browser suite PASS; CI 39346530913 все 7 PASS |
 | 28: очистка результата при переносе нового токена | 1fe5450 | Старый frontend FAIL: plaintext предыдущего токена оставался видимым; исправление и полный browser suite PASS по HTTP/временному HTTPS, fresh dependency audit PASS |
 | 29: инструкция запуска browser regressions | 44dd002 | Прежняя команда без response headers воспроизвела FAIL; исправленная инструкция и полный browser suite PASS; CI 39370273704 все 7 PASS |
-| 30: полнота отчётов зависимостей | [отчёт](stage-30-dependency-report-validation.ru.md) | Старый helper/driver принимал неполные отчёты при exit 0 инструментов; девять новых controls и все 60 Python тестов PASS, fresh dependency audit PASS |
+| 30: полнота отчётов зависимостей | e831994 | Старый helper/driver принимал неполные отчёты при exit 0 инструментов; девять новых controls и все 60 Python тестов PASS, fresh dependency audit PASS |
+| 31: SQLite cleanup при ошибке настройки | [отчёт](stage-31-anchor-connection-cleanup.ru.md) | Старый connect удерживал соединения при трёх отказах PRAGMA; исправление, 9 anchor и все 63 Python теста PASS; соединения явно закрываются |
 
 По последнему указанию владельца текущая работа ограничена исправлением
 подтверждённых ошибок, стандартными регрессионными тестами, проверкой зависимостей

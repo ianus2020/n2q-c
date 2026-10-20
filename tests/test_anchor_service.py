@@ -1,5 +1,6 @@
 """Local mTLS/SQLite integration, including the actual C signer callback."""
 import concurrent.futures
+from contextlib import closing
 import hashlib
 import http.client
 import json
@@ -15,6 +16,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
@@ -192,7 +194,7 @@ class AnchorService(unittest.TestCase):
             self.assertEqual(result.returncode,3,result.stdout+result.stderr)
             self.assertIn('signature_bytes=0',result.stdout)
             self.assertEqual(self.journal.stat().st_size,37+8)
-            with sqlite3.connect(str(self.db)) as db:
+            with closing(sqlite3.connect(str(self.db))) as db:
                 self.assertEqual(db.execute('SELECT last_index FROM counters WHERE key_id=?',(self.key_id,)).fetchone(),(0,))
             self.assertIn('verified_index=1',self.sign().stdout)
         finally:
@@ -214,6 +216,69 @@ class AnchorService(unittest.TestCase):
         self.assertEqual(self.sign(port=free_port()).returncode,3)
         self.assertEqual(self.journal.stat().st_size,length+8)
         self.assertEqual(self.sign(ca=self.pki/'client.pem').returncode,3)
+
+
+class StoreConnections(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / 'anchor.sqlite'
+        initialize(self.path)
+
+    def tracked_connections(self, fail_on=None):
+        opened = []
+        connect = sqlite3.connect
+        class Connection(sqlite3.Connection):
+            closed = False
+            def execute(self, query, *args, **kwargs):
+                if query == fail_on:
+                    raise sqlite3.OperationalError('synthetic connection setup failure')
+                return super().execute(query, *args, **kwargs)
+            def close(self):
+                self.closed = True
+                return super().close()
+        def open_connection(*args, **kwargs):
+            db = connect(*args, factory=Connection, **kwargs)
+            opened.append(db)
+            return db
+        def close_all():
+            for db in opened:
+                db.close()
+        self.addCleanup(close_all)
+        return opened, mock.patch('tools.anchor.server.sqlite3.connect', side_effect=open_connection)
+
+    def test_setup_errors_close_database(self):
+        for query in ['PRAGMA synchronous=FULL', 'PRAGMA fullfsync=ON', 'PRAGMA journal_mode']:
+            with self.subTest(query=query):
+                opened, patch = self.tracked_connections(query)
+                with patch:
+                    with self.assertRaisesRegex(sqlite3.OperationalError, 'synthetic'):
+                        Store(self.path)
+                self.assertEqual(len(opened), 1)
+                self.assertTrue(opened[0].closed, 'failed connection setup retained the database handle')
+
+    def test_non_wal_rejection_closes_database(self):
+        with closing(sqlite3.connect(str(self.path))) as db:
+            self.assertEqual(db.execute('PRAGMA journal_mode=DELETE').fetchone(), ('delete',))
+        opened, patch = self.tracked_connections()
+        with patch:
+            with self.assertRaisesRegex(ValueError, 'WAL'):
+                Store(self.path)
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(opened[0].closed)
+
+    def test_successful_connection_remains_owned_by_caller(self):
+        store = Store(self.path)
+        opened, patch = self.tracked_connections()
+        with patch:
+            db = store.connect()
+        try:
+            self.assertEqual(len(opened), 1)
+            self.assertFalse(db.closed)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone(), (1,))
+        finally:
+            db.close()
+        self.assertTrue(db.closed)
 
 
 if __name__ == '__main__':

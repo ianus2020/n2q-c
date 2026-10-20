@@ -29,7 +29,7 @@ def record(job):
         "impl/n2q-c-wasm/web/index.html","impl/n2q-c-wasm/web/app.css","tests/web.cjs",
         "tools/cryptanalysis/exact.py","tools/cryptanalysis/trails.py",
         "tools/cryptanalysis/src/bin/audit.rs","tools/cryptanalysis/summarize.py",
-        "tools/anchor/server.py","tools/local_stand/tls.py","tools/local_stand/pki.py",
+        "tools/anchor/server.py","tests/test_anchor_service.py","tools/local_stand/tls.py","tools/local_stand/pki.py",
         "tools/local_stand/web.py","tools/local_stand/run.py",
         "tools/migration/n2q_migrate.py","impl/n2q-c-ref/examples/migration_keys.rs",
         "impl/c/n2q_cone_anchor_http.c","impl/c/n2q_cone_anchor_http.h"]
