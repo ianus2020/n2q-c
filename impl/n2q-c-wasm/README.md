@@ -12,11 +12,13 @@ wasm-pack 0.13.1 (the version tested for this build):
 rustup target add wasm32-unknown-unknown
 cargo install wasm-pack --version 0.13.1 --locked
 scripts/build-web.sh
-python3 -m http.server 8765 --bind 127.0.0.1 --directory impl/n2q-c-wasm/web
+python3 scripts/serve-web.py --port 8765
 ```
 
 Open http://127.0.0.1:8765. Build with the checked-in Cargo.lock; generated `web/pkg`
 is deliberately ignored so stale binaries are not shipped alongside changed source.
+The loopback test host sends the CSP, isolation and other response headers checked
+by the browser regression suite.
 Deploy HTML, CSS, JS, worker and the generated package together, over HTTPS.
 
 The UI uses a module worker, fresh OS-random nonce per encryption, strict key

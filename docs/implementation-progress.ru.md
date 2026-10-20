@@ -33,7 +33,8 @@
 | 25: управление длительной серией fuzzing | b45bbdf | SIGTERM orphan воспроизведён и исправлен; checkpoints, wall deadline, serial seeds/fail-closed; 8 controls PASS macOS/Linux, 50 Python PASS; real smoke 14 523 executions / 2 seeds PASS |
 | 26: очистка отображаемых результатов при новом ключе | 2035562 | Дефект кнопки воспроизведён browser regression; полный suite PASS HTTP/локальный HTTPS; fresh RustSec/npm/Gitleaks audit PASS; logs/hashes сохранены |
 | 27: запуск HTTP test host без reverse DNS | 3fc65c8 | Старый bind FAIL при недоступном getfqdn; новый startup/GET/HEAD/headers PASS, 51 Python и полный browser suite PASS; CI 39346530913 все 7 PASS |
-| 28: очистка результата при переносе нового токена | [отчёт](stage-28-frontend-copy-state.ru.md) | Старый frontend FAIL: plaintext предыдущего токена оставался видимым; исправление и полный browser suite PASS по HTTP/временному HTTPS, fresh dependency audit PASS |
+| 28: очистка результата при переносе нового токена | 1fe5450 | Старый frontend FAIL: plaintext предыдущего токена оставался видимым; исправление и полный browser suite PASS по HTTP/временному HTTPS, fresh dependency audit PASS |
+| 29: инструкция запуска browser regressions | [отчёт](stage-29-browser-instructions.ru.md) | Прежняя команда без response headers воспроизвела FAIL; инструкция использует существующий loopback host, заголовки и полный browser suite PASS с Python 3.9.6 |
 
 По последнему указанию владельца текущая работа ограничена исправлением
 подтверждённых ошибок, стандартными регрессионными тестами, проверкой зависимостей
