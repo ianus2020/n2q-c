@@ -34,7 +34,8 @@
 | 26: очистка отображаемых результатов при новом ключе | 2035562 | Дефект кнопки воспроизведён browser regression; полный suite PASS HTTP/локальный HTTPS; fresh RustSec/npm/Gitleaks audit PASS; logs/hashes сохранены |
 | 27: запуск HTTP test host без reverse DNS | 3fc65c8 | Старый bind FAIL при недоступном getfqdn; новый startup/GET/HEAD/headers PASS, 51 Python и полный browser suite PASS; CI 39346530913 все 7 PASS |
 | 28: очистка результата при переносе нового токена | 1fe5450 | Старый frontend FAIL: plaintext предыдущего токена оставался видимым; исправление и полный browser suite PASS по HTTP/временному HTTPS, fresh dependency audit PASS |
-| 29: инструкция запуска browser regressions | [отчёт](stage-29-browser-instructions.ru.md) | Прежняя команда без response headers воспроизвела FAIL; инструкция использует существующий loopback host, заголовки и полный browser suite PASS с Python 3.9.6 |
+| 29: инструкция запуска browser regressions | 44dd002 | Прежняя команда без response headers воспроизвела FAIL; исправленная инструкция и полный browser suite PASS; CI 39370273704 все 7 PASS |
+| 30: полнота отчётов зависимостей | [отчёт](stage-30-dependency-report-validation.ru.md) | Старый helper/driver принимал неполные отчёты при exit 0 инструментов; девять новых controls и все 60 Python тестов PASS, fresh dependency audit PASS |
 
 По последнему указанию владельца текущая работа ограничена исправлением
 подтверждённых ошибок, стандартными регрессионными тестами, проверкой зависимостей

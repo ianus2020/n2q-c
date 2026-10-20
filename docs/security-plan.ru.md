@@ -37,7 +37,7 @@
 Этапы и реальная история CI: [журнал выполнения](implementation-progress.ru.md).
 Передача на внешнюю проверку и оставшиеся условия: [этап 7](stage-7-release-review.ru.md).
 
-По дополнительному закрытому аудиту и последующим обычным исправлениям выполнены этапы 9–29:
+По дополнительному закрытому аудиту и последующим обычным исправлениям выполнены этапы 9–30:
 [криптографический отчёт](cryptographic-audit-2026-10-19.ru.md),
 [локальный HTTPS/anchor стенд](../tools/local_stand/README.md),
 [offline migration/PW recovery](../tools/migration/README.md),
@@ -48,7 +48,8 @@
 [состояние фронтенда после нового ключа](stage-26-frontend-key-state.ru.md),
 [воспроизводимый запуск test host](stage-27-http-test-host.ru.md),
 [состояние формы при переносе токена](stage-28-frontend-copy-state.ru.md),
-[инструкция браузерного стенда](stage-29-browser-instructions.ru.md).
+[инструкция браузерного стенда](stage-29-browser-instructions.ru.md),
+[полнота отчётов зависимостей](stage-30-dependency-report-validation.ru.md).
 Публикация проекта не входит в согласованную работу; внешнюю экспертизу можно
 проводить конфиденциально. Реальные данные/ключи и production не переносились.
 

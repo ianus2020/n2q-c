@@ -1,0 +1,46 @@
+{
+  "baseline_commit": "44dd0029a64bd6865cd02fd4aa53d91e5786b1d0",
+  "dependency_audit": {
+    "cargo_locks": 5,
+    "exit_code": 0,
+    "gitleaks_findings": 0,
+    "history_commits": 62,
+    "npm_vulnerabilities": 0
+  },
+  "limits": [
+    "No new research campaign, deployment or real-data migration.",
+    "ResourceWarnings in the full Python log are retained, not suppressed."
+  ],
+  "negative_control": {
+    "exit_code": 1,
+    "failed_subtests": 26,
+    "old_malformed_report_exit_code": 0,
+    "old_missing_report_exit_code": 0,
+    "tests": 9
+  },
+  "positive_control": {
+    "all_python_tests": 60,
+    "exit_code": 0,
+    "python39_tests": 9,
+    "summary_tests": 9
+  },
+  "schema": 1,
+  "source_sha256": {
+    "scripts/audit-summary.py": {
+      "after": "cb0cb2bbdc1511b69fb636988b6c9650a109a0c2b359acc9a3a342014541cd4b",
+      "before": "a63409134a0b1f17795c65edafe373ae6db9e39547017d7b1dab0168aa414294"
+    },
+    "scripts/dependency-audit.sh": {
+      "after": "31e7482090733a8f1ce1168fdb5be7c9e00f44ac24762493dddc51d5ba04132a",
+      "before": "31e7482090733a8f1ce1168fdb5be7c9e00f44ac24762493dddc51d5ba04132a"
+    },
+    "scripts/verification-record.py": {
+      "after": "fdde385084bbe8a502c2ab9e3fd64cd7b5caa2185a9ad01263b497ec6c6cb1c2",
+      "before": "24d0d7ac86f2232a401912d6bff15a5728ff656b02c8134a7c0384d251d3ad10"
+    },
+    "tests/test_audit_summary.py": {
+      "after": "696452116943e3908e8a63769889d28aff475255c1fb4127040879371fe1140a",
+      "before": null
+    }
+  }
+}
