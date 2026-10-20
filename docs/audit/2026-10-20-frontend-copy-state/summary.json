@@ -1,0 +1,109 @@
+{
+  "baseline_commit": "3fc65c8f0681129a9d060f32cb6237e7d411e509",
+  "dependency_audit": {
+    "cargo_locks": 5,
+    "exit_code": 0,
+    "gitleaks_findings": 0,
+    "history_commits": 60,
+    "npm_vulnerabilities": 0
+  },
+  "limitations": [
+    "Display-state regression only; no new cryptographic research campaign.",
+    "Ephemeral test CA; browser trust bypass used only in explicit local test mode.",
+    "Persistent stand and real data unchanged."
+  ],
+  "negative_control": {
+    "exit_code": 1,
+    "reason": "copy retained plaintext from the previous token",
+    "synthetic_plaintext": "key replacement fixture"
+  },
+  "positive_controls": {
+    "http_exit_code": 0,
+    "temporary_https_exit_code": 0
+  },
+  "schema": 1,
+  "source_sha256": {
+    "impl/n2q-c-wasm/web/app.js": {
+      "after": "f9f2f961507e8295f524ff4e0dba321d7ed2edbf86825654db517c8332ee5a7f",
+      "before": "18109ed1b7512e85cca1c64d1e57de7f4742ab850897159705dee48895adfd49"
+    },
+    "impl/n2q-c-wasm/web/crypto-worker.js": {
+      "after": "3b0878d988180375d12258511c49a008f7fbac211f774b03a1d1030ead56ef38",
+      "before": "3b0878d988180375d12258511c49a008f7fbac211f774b03a1d1030ead56ef38"
+    },
+    "package-lock.json": {
+      "after": "443af0758dfde004f4562bf31584760e8f93d5f5d7f53124edc2c4720aa46002",
+      "before": "443af0758dfde004f4562bf31584760e8f93d5f5d7f53124edc2c4720aa46002"
+    },
+    "scripts/dependency-audit.sh": {
+      "after": "31e7482090733a8f1ce1168fdb5be7c9e00f44ac24762493dddc51d5ba04132a",
+      "before": "31e7482090733a8f1ce1168fdb5be7c9e00f44ac24762493dddc51d5ba04132a"
+    },
+    "tests/web.cjs": {
+      "after": "4260d0a86507be480000e0791b75c9d14536985719f746a8b53d8755078325bb",
+      "before": "6da18b761a06bd7ed11728b32c729f6fff2b1667bf4e3d06483f73b80cbaa72e"
+    }
+  },
+  "staged_git_scan": {
+    "exit_code": 0,
+    "findings": 0
+  },
+  "web_manifest": {
+    "js": {
+      "bytes": 20377,
+      "sha256": "f601b6b23af943944db1e7a0e4c89c61042e3e14b1002cd2d2996ab51cb3f4af"
+    },
+    "version": 1,
+    "wasm": {
+      "bytes": 55423,
+      "sha256": "3d95373c31f76d8f36ba37da74db1d8a4782ccc690a327b5112fe9cb09c11702"
+    }
+  },
+  "working_directory_scan": {
+    "count": 8,
+    "exit_code": 1,
+    "findings": [
+      {
+        "file": ".local-stand/pki/client.key",
+        "line": 1,
+        "rule": "private-key"
+      },
+      {
+        "file": ".local-stand/pki/server.key",
+        "line": 1,
+        "rule": "private-key"
+      },
+      {
+        "file": ".local-stand/pki/ca.key",
+        "line": 1,
+        "rule": "private-key"
+      },
+      {
+        "file": ".local-stand/pki/unlisted.key",
+        "line": 1,
+        "rule": "private-key"
+      },
+      {
+        "file": "APPENDIX-A.md",
+        "line": 122,
+        "rule": "generic-api-key"
+      },
+      {
+        "file": "APPENDIX-A.md",
+        "line": 132,
+        "rule": "generic-api-key"
+      },
+      {
+        "file": "docs/audit/2026-10-19-local/verification.json",
+        "line": 12,
+        "rule": "generic-api-key"
+      },
+      {
+        "file": "impl/conformance/vectors.txt",
+        "line": 6,
+        "rule": "generic-api-key"
+      }
+    ],
+    "not_counted_as_pass": true
+  }
+}

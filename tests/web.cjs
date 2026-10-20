@@ -52,6 +52,18 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(()=>document.querySelector('#out-ct').textContent.startsWith('nqc.'));
     await page.click('#btn-copy');await page.click('#btn-dec');
     await page.waitForFunction(()=>document.querySelector('#out-pt').textContent==='key replacement fixture');
+    // Copying a different encryption result changes the decryption inputs
+    // programmatically and must clear the plaintext from the previous token.
+    await page.fill('#pt','copied token fixture');await page.fill('#aad','new ctx');
+    await page.click('#btn-enc');
+    await page.waitForFunction(()=>document.querySelector('#out-ct').textContent.startsWith('nqc.'));
+    const copiedToken=await page.textContent('#out-ct');
+    await page.click('#btn-copy');
+    assert.equal(await page.inputValue('#ct'),copiedToken);
+    assert.equal(await page.inputValue('#aad2'),'new ctx');
+    assert.equal(await page.textContent('#out-pt'),'','copy retained plaintext from the previous token');
+    await page.click('#btn-dec');
+    await page.waitForFunction(()=>document.querySelector('#out-pt').textContent==='copied token fixture');
     await page.fill('#hval','index fixture');await page.click('#btn-bi');
     await page.waitForFunction(()=>/^[0-9a-f]+$/i.test(document.querySelector('#out-h').textContent));
     await page.click('#btn-key');

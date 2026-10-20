@@ -70,7 +70,7 @@ bind('btn-dec', 'out-pt', 'open', () => ({...params(), ad: $('aad2').value, toke
 bind('btn-hash', 'out-h', 'hash', () => ({...params(), value: $('hval').value}));
 bind('btn-bi', 'out-h', 'index', () => ({...params(), value: $('hval').value}));
 bind('btn-test', 'out-test', 'test', params);
-$('btn-copy').onclick = () => { if (!lastToken) return; $('ct').value = lastToken; $('aad2').value = lastAAD; };
+$('btn-copy').onclick = () => { if (!lastToken) return; $('ct').value = lastToken; $('aad2').value = lastAAD; $('out-pt').textContent = ''; };
 ['suite', 'profile', 'key', 'aad', 'pt'].forEach(id => $(id).addEventListener('input', invalidate));
 $('btn-show').onclick = () => { const show = $('key').type === 'password'; $('key').type = show ? 'text' : 'password'; $('btn-show').textContent = show ? 'Скрыть ключ' : 'Показать ключ'; $('btn-show').setAttribute('aria-pressed', String(show)); };
 $('btn-clear').onclick = () => {

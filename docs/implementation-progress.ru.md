@@ -32,7 +32,8 @@
 | 24: расширенный изолированный фаззинг | source 8f8b23a, evidence 1840b42 | 3 614 029 выполнений / 7 целей PASS; 32 497 modes и 8872 convergent property sets; CI 39310709645 все 7 PASS; ограничения — stage-24-expanded-fuzzing.ru.md |
 | 25: управление длительной серией fuzzing | b45bbdf | SIGTERM orphan воспроизведён и исправлен; checkpoints, wall deadline, serial seeds/fail-closed; 8 controls PASS macOS/Linux, 50 Python PASS; real smoke 14 523 executions / 2 seeds PASS |
 | 26: очистка отображаемых результатов при новом ключе | 2035562 | Дефект кнопки воспроизведён browser regression; полный suite PASS HTTP/локальный HTTPS; fresh RustSec/npm/Gitleaks audit PASS; logs/hashes сохранены |
-| 27: запуск HTTP test host без reverse DNS | отдельный коммит этапа | Старый bind FAIL при недоступном getfqdn; новый startup/GET/HEAD/headers PASS, 51 Python и полный browser suite PASS; CI manifest включает frontend/test hashes |
+| 27: запуск HTTP test host без reverse DNS | 3fc65c8 | Старый bind FAIL при недоступном getfqdn; новый startup/GET/HEAD/headers PASS, 51 Python и полный browser suite PASS; CI 39346530913 все 7 PASS |
+| 28: очистка результата при переносе нового токена | [отчёт](stage-28-frontend-copy-state.ru.md) | Старый frontend FAIL: plaintext предыдущего токена оставался видимым; исправление и полный browser suite PASS по HTTP/временному HTTPS, fresh dependency audit PASS |
 
 По последнему указанию владельца текущая работа ограничена исправлением
 подтверждённых ошибок, стандартными регрессионными тестами, проверкой зависимостей
